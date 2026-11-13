@@ -575,6 +575,7 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
 </div>
 <!-- CHIFFRES -->
 <div id="p-chiffres" hidden>
+  <section class="card" id="sante" style="margin-bottom:14px"><h2><span>Santé des données</span><span class="tag" id="nsante"></span></h2><div id="sante-l"></div></section>
   <div class="bar" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px">
     <div class="seg" id="cper"><button data-p="mois">Ce mois</button><button data-p="an">Cette année</button><button data-p="perso">Personnalisée</button></div>
     <span id="cdates" class="plage" style="display:none"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg><input type="date" id="cdu" title="Du"><span class="fl">→</span><input type="date" id="cau" title="Au"></span></div>
@@ -1222,6 +1223,12 @@ document.getElementById('qd').value=store.get('qd','');
 document.getElementById('qd').oninput=devisVue;document.getElementById('voirdem').onchange=devisVue;
 
 /* ---------- chiffre du mois ---------- */
+/* ---------- santé des données (13/11, J : « rendre toutes les données le plus juste possible ») ---------- */
+setTimeout(function(){const S=D.sante||[],el=document.getElementById('sante-l');if(!el)return;   // après l'index NX
+  const ic={ok:'✓',warn:'!',bad:'✕'},cl={ok:'ok',warn:'warn',bad:'bad'};
+  const nb=S.filter(x=>x.etat!=='ok').length;document.getElementById('nsante').textContent=nb?nb+' point(s) à voir':'tout est bon';
+  el.innerHTML=S.map(x=>`<div class="it" style="padding:8px 16px;border-top:1px solid var(--line)"><div class="t"><span class="chip ${cl[x.etat]}">${ic[x.etat]}</span> <b>${esc(x.titre)}</b> <span class="tag">${esc(x.detail)}</span></div>${x.exemples&&x.exemples.length&&x.etat!=='ok'?`<div class="sub" style="margin-top:4px">${x.exemples.map(n=>NX[n]?`<b class="lien-fiche" data-fiche="${esc(n)}" style="cursor:pointer;text-decoration:underline">${esc(n)}</b>`:esc(n)).join(' · ')}</div>`:''}</div>`).join('')||'<p class="vide" style="padding:14px">Pas encore de contrôle.</p>';
+  el.querySelectorAll('[data-fiche]').forEach(b=>b.onclick=()=>fiche(b.dataset.fiche))},0);
 function moisVue(m0,fin){
   const S=D.sst||[], P=D.planning||[];
   const nb=Math.round((new Date(fin)-new Date(m0))/864e5)+1, dec=(d,k)=>{const x=new Date(d);x.setDate(x.getDate()-k);return x.toISOString().slice(0,10)};
@@ -1265,7 +1272,7 @@ const plat=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''
 function chercherTout(q){q=plat(q).trim();if(q.length<2)return [];const mots=q.split(/\s+/),res=[];
   const ok=t=>{const h=plat(t);return mots.every(m=>h.includes(m))};
   for(const o of Object.values(NX)){const x=o.pl||o.sst||o.dv||o.bc||{};
-    const txt=[o.n,x.n_bc,x.n_devis,x.libelle,x.client,x.bailleur,x.commune,x.adresse,x.statut,o.bc&&o.bc.motif,o.sst&&Object.keys(o.sst.sst||{}).join(' '),(o.ag||[]).map(e=>e.equipe+' '+e.lieu+' '+e.titre+' '+e.note).join(' ')].join(' ');
+    const txt=[o.n,x.n_bc,x.n_devis,x.libelle,x.client,x.bailleur,x.commune,x.adresse,x.statut,o.bc&&o.bc.motif,o.sst&&Object.keys(o.sst.sst||{}).join(' '),(o.ag||[]).map(e=>e.equipe+' '+e.lieu+' '+e.titre+' '+e.note).join(' '),((D.logements||{})[o.n]||{}).nom,((D.logements||{})[o.n]||{}).adresse].join(' ');   // 13/11 : aussi le nom du locataire
     if(ok(txt))res.push({n:o.n,type:o.dv&&!o.pl&&!o.sst?'Devis':'Commande',l1:[x.n_bc||x.n_devis,x.commune||'',x.statut||''].filter(Boolean).join(' · '),l2:(o.ag&&o.ag[0]?o.ag[0].lieu:x.adresse||x.libelle||''),exact:o.n===q||plat(x.n_bc)===q})}
   L.filter(l=>!l.n_nexxio&&ok([l.n_bc,l.commune,l.bailleur,l.motif].join(' '))).forEach(l=>res.push({bc:l.n_bc,type:'BC non saisi',l1:[l.n_bc,l.commune,l.statut].join(' · '),l2:l.motif||''}));
   (D.demandes||[]).filter(d=>ok([d.sujet,(d.refs||[]).join(' '),d.expediteur,d.extrait].join(' '))).forEach(d=>res.push({dem:1,type:'Demande de devis',l1:d.sujet,l2:jm(d.recu.slice(0,10))+' · '+(d.expediteur||'')}));
@@ -1320,7 +1327,7 @@ function appels(n){try{return JSON.parse(NOTE.get('app:'+n)||'[]')}catch(e){retu
 // un appel = « date|résultat » (avant le 12/11 au soir : la date seule)
 const ISSUES=['Pas de réponse','Messagerie','À rappeler','RDV pris'];
 // numéro rappelé dans le SMS au locataire : celui de « Gestion Bureau » dans Nexxio (vu le 12/11 sur 5266), à changer ici si besoin
-const SMS_TEL='07 52 92 96 84';
+const SMS_TEL=D.sms_tel||'';   // 13/11 : donné par les données (la page web publique ne contient aucun numéro)
 function appelInfo(s){const [d,r]=String(s||'').split('|');return {d:d||'',r:r||''}}
 function etatAppels(n){const a=appels(n).map(appelInfo), der=a[a.length-1];
   return {n:a.length, der, rdv:a.some(x=>x.r==='RDV pris'), jamais:!a.length, epuise:a.length>=3&&!a.some(x=>x.r==='RDV pris')}}
