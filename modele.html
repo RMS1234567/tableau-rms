@@ -81,6 +81,8 @@ td b{cursor:default}
 @media (max-width:620px){.journee ul{padding-left:0}.journee .et-t .btn{margin-left:0}}
 .trimob{display:none}@media (max-width:620px){.trimob{display:block;width:100%;margin:0 0 8px;padding:8px;font-size:16px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}}
 th.triable{cursor:pointer;user-select:none}th.triable:hover{color:var(--ink)}.wrap tbody tr{cursor:pointer}
+.planif .pf{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:flex-end;margin:6px 0}.planif .pf label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--muted)}
+.planif .pf label.ck{flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:13.5px}.planif .pf input:not([type=checkbox]),.planif .pf select{font:inherit;font-size:16px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
 .rdvloc .appels{margin:8px 0}.rdvloc .appel{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:4px 0}.rdvloc .appel>span:first-child{width:56px;color:var(--muted);font-size:12.5px}
 .rdvloc textarea{width:100%;box-sizing:border-box;margin:4px 0;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:16px}
 .rdvloc input[type=datetime-local]{font:inherit;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
@@ -631,7 +633,7 @@ const flag=p=>({get:k=>{try{return localStorage.getItem(p+k)==='1'}catch(e){retu
 const IMP=flag('imp:'), OK=flag('ok:'), FACT=flag('fact:'), DEV=flag('dev:'), CLES=flag('cles:'), ENV=flag('env:');
 const PAY=flag('pay:');   // 13/11 (J) : facture de sous-traitant payée (bon à payer), clé = nom du fichier de la facture   // env: rapport envoyé au bailleur (12/11)
 // 12/11 (J) : aussi les commentaires (« com: ») et les tentatives d'appel au locataire (« app: »), partagés de la même façon
-const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:'], CO_TXT=['com:','app:'];
+const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','plan:'], CO_TXT=['com:','app:','plan:'];   // plan: demande de planification (13/11)
 const NOTE={get:k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},
   set:(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k);localStorage.setItem('ts:'+k,Date.now())}catch(e){}coSave()}};
 // coches des autres PC, relues par le robot (D.coches) : la plus récente gagne, avant le premier affichage
@@ -1298,13 +1300,48 @@ function fiche(n){const o=NX[n];if(!o)return;const pl=o.pl||{},s=o.sst||{},b=o.b
     ${c('Sous-traitant(s)',s.sst&&Object.keys(s.sst).length?Object.entries(s.sst).map(([k,v])=>esc(k)+' · '+eur(v)).join('<br>'):'')}${c('Délai du BC',fr(b.fin))}${c('Contrôle robot',b.risque?pill(b.risque):'')}</div>
     ${(o.ag||[]).length?`<div class="s"><h4>Agenda</h4>${o.ag.sort((a,b)=>a.debut<b.debut?-1:1).map(e=>`<div>${fr(e.debut.slice(0,10))} ${esc(e.debut.slice(11,16))} · <b>${esc(e.equipe)}</b>${e.prix?' · '+eur(e.prix):''}<span class="b2">${esc(e.lieu)}${e.note?' · '+esc(e.note):''}</span></div>`).join('')}</div>`:''}
     ${rdvLoc(n,pl)}
+    ${planifBloc(n,pl,s)}
     ${b.motif?`<div class="s"><h4>Note du robot</h4>${esc(b.motif)}</div>`:''}
     <div class="s">${b.pdf?pdfA(b.pdf,'Voir le BC (PDF)')+' · ':''}<a href="https://rmsbatiment.app.nexxio.fr/main/item?order_number=${encodeURIComponent(n)}" target="_blank">Ouvrir dans Nexxio</a>${agendaUrl(n,pl,x)?` · <a class="btn" href="${esc(agendaUrl(n,pl,x))}" target="_blank" title="Ouvre Google Agenda avec l'événement rempli comme le bouton de Nexxio : choisir l'agenda du sous-traitant puis Enregistrer">Ajouter à l'agenda</a>`:''}</div>`;
-  lierRdvLoc(n);
+  lierRdvLoc(n);lierPlanif(n);
   const f=document.getElementById('fiche');f.hidden=false;document.getElementById('ffermer').onclick=()=>f.hidden=true;f.onclick=e=>{if(e.target===f)f.hidden=true}}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('fiche').hidden=true});
 // 13/11 (J) : même événement que le lien « Ajoutez le à votre agenda Google » de Nexxio (vu sur 5264) : « RMS BATIMENT - <n° BC> »,
 // RDV d'une heure, adresse, « Intervention n°X » (lien avec la commande pour la lecture des agendas). Il reste à choisir l'agenda.
+/* ---------- bouton « Planifier » (13/11, J : des boutons qui agissent dans Nexxio) ----------
+   Le clic écrit la demande « plan:<n> » dans les coches partagées ; le robot la lit à son passage (toutes les 10 min),
+   fait les gestes dans Nexxio (pilote, sous-traitant, RDV, SMS / mail, Planifier), relit, et écrit le résultat
+   (D.actions). Écrans relevés sur la commande test 5274. Un clic = cette commande seulement. */
+const ANN={morning:'Matin','afternoon':'Après-midi',all_day:'Journée entière','exact schedule':'Horaire exact'};
+const planDem=n=>{try{const v=NOTE.get('plan:'+n);return v?JSON.parse(v):null}catch(e){return null}};
+function planEtat(n){const d=planDem(n), a=(D.actions||{})['plan:'+n], ts=+(()=>{try{return localStorage.getItem('ts:plan:'+n)}catch(e){return 0}})()||0;
+  const res=a&&(!d||a.ts>=ts)?a:null;
+  if(d&&!res)return `<span class="chip info">Demande envoyée</span> RDV le ${fr(d.d)} à ${esc(d.h)} (${ANN[d.a]||''})${d.sst?' · '+esc(d.sst):''}${d.sms?' · SMS au locataire':''}${d.mail?' · mail au gestionnaire':''}<span class="b2">Le robot la fait à son prochain passage (toutes les 10 minutes), puis le résultat s'affiche ici. <a href="#" id="pf-annuler">Annuler la demande</a></span>`;
+  if(res)return `<span class="chip ${res.etat==='ok'?'ok':'bad'}">${res.etat==='ok'?'Fait par le robot':'Non fait'}</span> ${esc(res.message)}<span class="b2">le ${fr((res.quand||'').slice(0,10))} à ${esc((res.quand||'').slice(11,16))}${res.par?' · demandé par '+esc(res.par):''}</span>`;
+  return ''}
+function planifBloc(n,pl,s){const st=(pl&&pl.statut)||'';if(!/^(Prise en compte|Planifi)/.test(st))return '';
+  const g=(D.logements||{})[n]||{}, occ=!!(g.nom&&!g.vacant), act=Object.keys((s&&s.sst)||{}).filter(x=>!/lakchiri|gestion bureau/i.test(x));
+  const noms=[...new Set((D.sst||[]).flatMap(x=>Object.keys(x.sst||{})))].filter(x=>!/lakchiri|gestion bureau/i.test(x)).sort((a,b)=>a.localeCompare(b,'fr'));
+  const re=/^Planifi/.test(st);
+  return `<div class="s planif"><h4>${re?'Re-planifier':'Planifier'} dans Nexxio</h4>
+    <div class="pf"><label>Date<input type="date" id="pf-d" min="${today}"></label><label>Heure<input type="time" id="pf-h" value="08:00" step="900"></label>
+      <label>Annoncer au client<select id="pf-a">${Object.entries(ANN).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label>
+      <label>Sous-traitant<input id="pf-s" list="pf-l" value="${esc(act[0]||'')}" placeholder="${act.length?'':'nom comme dans Nexxio'}"><datalist id="pf-l">${noms.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></label></div>
+    <div class="pf"><label class="ck"><input type="checkbox" id="pf-sms" ${occ?'checked':''}> SMS de confirmation au locataire${occ?'':' (logement vacant ou locataire non lu)'}</label>
+      <label class="ck"><input type="checkbox" id="pf-mail"> Mail de confirmation au gestionnaire</label>
+      <button class="btn" id="pf-go">${re?'Re-planifier':'Planifier'}</button></div>
+    <div id="pf-etat" style="margin-top:8px">${planEtat(n)}</div></div>`}
+function lierPlanif(n){const go=document.getElementById('pf-go');if(!go)return;const et=document.getElementById('pf-etat');
+  const lierAnnul=()=>{const a=document.getElementById('pf-annuler');if(a)a.onclick=e=>{e.preventDefault();NOTE.set('plan:'+n,'');et.innerHTML=planEtat(n)||'Demande annulée.'}};lierAnnul();
+  go.onclick=async()=>{const d=document.getElementById('pf-d').value,h=document.getElementById('pf-h').value;
+    if(!d||!h){et.innerHTML='<span class="chip warn">Choisir la date et l\'heure du RDV.</span>';return}
+    if(d<today){et.innerHTML='<span class="chip warn">La date est passée.</span>';return}
+    const part=await coEtat().catch(()=>'off');
+    if(part!=='on'){et.innerHTML='<span class="chip bad">Demande non envoyée</span> Le partage des coches n\'est pas actif sur ce PC : le robot ne verrait pas la demande. Cliquer « Activer le partage » en haut du tableau, puis recommencer.';return}
+    const sms=document.getElementById('pf-sms').checked, mail=document.getElementById('pf-mail').checked, sst=document.getElementById('pf-s').value.trim();
+    if(!confirm(`Planifier la commande ${n} dans Nexxio ?\n\nRDV le ${fr(d)} à ${h} (${ANN[document.getElementById('pf-a').value]})`+(sst?`\nSous-traitant : ${sst}`:'')+(sms?'\nSMS de confirmation envoyé au locataire':'')+(mail?'\nMail de confirmation envoyé au gestionnaire':'')))return;
+    NOTE.set('plan:'+n,JSON.stringify({d,h,a:document.getElementById('pf-a').value,sst,sms:sms?1:0,mail:mail?1:0,par:WEB?webQui():''}));
+    et.innerHTML=planEtat(n);lierAnnul()}}
 function agendaUrl(n,pl,x){const r=(pl&&pl.rdv_iso)||'';if(!/^\d{4}-\d\d-\d\d/.test(r))return '';
   const f=d=>d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
   const hm=d=>'T'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0')+'00';
