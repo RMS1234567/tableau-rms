@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tableau de bord · RMS BATIMENT</title><script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.27.0/lib/msal-browser.min.js"></script></head>
+<body style="font-family:system-ui,sans-serif;background:#f4f5f7;color:#222;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px">
+<div style="max-width:420px;text-align:center"><h2 style="margin:0 0 8px">RMS BATIMENT</h2><p id="m">Connexion à votre compte Microsoft…</p></div>
+<script>
+// Page publique sans aucune donnée : après connexion avec un compte RMS BATIMENT, elle lit le tableau dans OneDrive
+// (BC CLIENTS\tableau_donnees.json, écrit par le robot) et l'affiche avec modele.html. Rien n'est stocké ailleurs.
+const CFG={"clientId": "c6968cdc-3175-4c69-98b0-2b0745026f3d", "tenant": "11d245f1-d0ba-4d98-8353-123935f094fc", "dossier": "BC CLIENTS", "scopes": ["Files.ReadWrite.All", "User.Read"], "msal": "https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.27.0/lib/msal-browser.min.js"};
+const m=document.getElementById('m');
+const app=new msal.PublicClientApplication({auth:{clientId:CFG.clientId,authority:'https://login.microsoftonline.com/'+CFG.tenant,
+  redirectUri:location.origin+location.pathname},cache:{cacheLocation:'localStorage'}});
+async function g(t,u){const r=await fetch('https://graph.microsoft.com/v1.0'+u,{headers:{Authorization:'Bearer '+t},cache:'no-store'});if(!r.ok)throw new Error(r.status+' sur '+u);return r}
+async function jeton(){await app.initialize();const r=await app.handleRedirectPromise();const a=(r&&r.account)||app.getAllAccounts()[0];
+  if(!a){await app.loginRedirect({scopes:CFG.scopes});return null}
+  try{return (await app.acquireTokenSilent({scopes:CFG.scopes,account:a})).accessToken}catch(e){await app.acquireTokenRedirect({scopes:CFG.scopes,account:a});return null}}
+async function dossier(t){   // BC CLIENTS : dans mon OneDrive (ou raccourci), sinon partagé avec moi
+  try{const j=await(await g(t,'/me/drive/root:/'+encodeURIComponent(CFG.dossier))).json();const x=j.remoteItem||j;return {d:(x.parentReference||j.parentReference).driveId,i:x.id}}catch(e){}
+  const s=await(await g(t,'/me/drive/sharedWithMe')).json();const x=(s.value||[]).find(v=>v.name===CFG.dossier);
+  if(!x)throw new Error('dossier « '+CFG.dossier+' » introuvable dans votre OneDrive');const r=x.remoteItem||x;return {d:r.parentReference.driveId,i:r.id}}
+(async()=>{try{const t=await jeton();if(!t)return;m.textContent='Chargement du tableau…';const b=await dossier(t);
+  const [dat,mod]=await Promise.all([g(t,'/drives/'+b.d+'/items/'+b.i+':/tableau_donnees.json:/content').then(r=>r.text()),fetch('modele.html',{cache:'no-store'}).then(r=>r.text())]);
+  const cfg=JSON.stringify({clientId:CFG.clientId,tenant:CFG.tenant,scopes:CFG.scopes,base:b});
+  const html=mod.replace('/*DATA*/null',()=>dat.split('</').join('<\\/')).replace('/*WEB*/null',()=>cfg).replace('<!--WEB-->',()=>'<script src="'+CFG.msal+'"><\/script>');
+  document.open();document.write(html);document.close()}catch(e){m.textContent='Erreur : '+e.message}})();
+</script></body></html>

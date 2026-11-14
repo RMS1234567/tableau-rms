@@ -80,7 +80,7 @@ td b{cursor:default}
 .journee li{padding:3px 0;font-size:13.5px;cursor:pointer}.journee li:hover{color:var(--accent)}.journee .ok-et{color:var(--vert)}
 @media (max-width:620px){.journee ul{padding-left:0}.journee .et-t .btn{margin-left:0}}
 .trimob{display:none}@media (max-width:620px){.trimob{display:block;width:100%;margin:0 0 8px;padding:8px;font-size:16px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}}
-th.triable{cursor:pointer;user-select:none}th.triable:hover{color:var(--ink)}.wrap tbody tr{cursor:pointer}
+th.triable{cursor:pointer;user-select:none}th.triable:hover{color:var(--ink)}.wrap tbody tr{cursor:pointer}#tcli tr,#tbail tr{cursor:default}.kpi.fixe{pointer-events:none}.voirplus{display:none}
 .planif .pf{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:flex-end;margin:6px 0}.planif .pf label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--muted)}
 .planif .pf label.ck{flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:13.5px}.planif .pf input:not([type=checkbox]),.planif .pf select{font:inherit;font-size:16px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
 .rdvloc .appels{margin:8px 0}.rdvloc .appel{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:4px 0}.rdvloc .appel>span:first-child{width:56px;color:var(--muted);font-size:12.5px}
@@ -407,6 +407,66 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
  select,input[type=search]{font-size:16px}
  .tabs button{font-size:11px}
  .kpi .spark{display:none}   /* 11/11 : la courbe recouvrait le titre de la carte */
+ /* 13/11 (J) : « l'ergonomie sur téléphone est à revoir ». Vu : 9 grosses tuiles (deux écrans) avant la liste du planning,
+    donc toucher une tuile semblait ne rien faire ; une commande à planifier ou une facture SST prenait un demi-écran ;
+    filtres écrasés en 6 colonnes. Tuiles en bande à faire défiler, collée en haut ; cartes sur 3 ou 4 lignes. */
+ .side{position:relative;top:auto}
+ #ptiles{flex-wrap:nowrap!important;overflow-x:auto;gap:8px;margin:0 -12px;padding:8px 12px;scrollbar-width:none;position:sticky;top:0;z-index:20;background:var(--bg)}
+ #ptiles::-webkit-scrollbar,#ffact::-webkit-scrollbar,#fap::-webkit-scrollbar{display:none}
+ #ptiles .kpi.grand,#ptiles .kpi.petit{flex:0 0 auto;min-width:96px;max-width:170px;padding:8px 12px;text-align:left}
+ #ptiles .kpi .l{font-size:12px;white-space:nowrap}#ptiles .kpi.grand b,#ptiles .kpi.petit b{font-size:21px;margin:1px 0 0}#ptiles .kpi small{display:none}
+ #p-planning .bar{margin:8px 0!important}#p-planning .card.vue>p.sub,#p-planning .card.vue>p.tag{display:none}
+ #ffact,#fap{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none}#ffact button,#fap button{flex:0 0 auto;padding:9px 12px;white-space:nowrap}
+ .card>h2{flex-wrap:wrap;gap:4px 10px}.wrap td.nw{max-width:none}.bar select{min-width:0;max-width:100%}
+ .alerte-co{font-size:12px;padding:7px 12px;margin-bottom:10px}.alerte-co .btn{padding:5px 10px;font-size:12px}
+ .journee .etape{padding:12px 14px}.journee .et-t>div{flex:1 1 60%}.journee .et-t .btn{margin-left:44px}
+ #taplan tr{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"n cl ht" "pa pa pa" "lo lo lo" "tr tr tr";align-items:center;gap:4px 10px;padding:11px 12px}
+ #taplan td::before{display:none!important}
+ #taplan td:nth-child(6),#taplan td:nth-child(8),#taplan td:nth-child(1) .b2{display:none}
+ #taplan td:nth-child(1){grid-area:n;font-size:15px}
+ #taplan td:nth-child(3){grid-area:cl;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#taplan td:nth-child(3) .b2{display:inline;margin-left:6px;font-size:13px}
+ #taplan td:nth-child(7){grid-area:ht;text-align:right;font-weight:600}
+ #taplan td:nth-child(2){grid-area:pa}#taplan td:nth-child(2) .b2{display:inline;margin-left:8px}
+ #taplan td:nth-child(4){grid-area:lo;white-space:normal;max-width:none}#taplan td:nth-child(4)>b{display:block}#taplan td:nth-child(4) .b2{display:inline-block;margin:0 12px 0 0;font-size:13.5px}#taplan td:nth-child(4) a{display:inline-block;padding:6px 0;font-size:15px}
+ #taplan td:nth-child(5){grid-area:tr;font-size:12.5px;color:var(--muted)}
+ #taplan td.vide{grid-area:auto;grid-column:1/-1}
+ .bapt tr{grid-template-columns:auto minmax(0,1fr) auto 30px;grid-template-areas:"d f m p" "c c c p";align-items:center;gap:2px 10px;padding:9px 12px}
+ .bapt td::before{display:none!important}
+ .bapt td:nth-child(1){grid-area:d;font-size:12.5px;color:var(--muted)}.bapt td:nth-child(2){grid-area:f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bapt td:nth-child(2) .b2{display:none}
+ .bapt td:nth-child(3){grid-area:m;text-align:right}.bapt td:nth-child(4){grid-area:c}.bapt td:nth-child(5){grid-area:p;justify-self:end}.bapt input[type=checkbox]{width:26px;height:26px}
+ /* 13/11 au soir (J) : « repasse en revue le site et corrige les défauts ». Vu sur téléphone : planning par équipe coupé après
+    le mardi (impossible d'aller au mercredi), « Qui dorment » = 277 cartes d'affilée (68 000 px), cases à cocher de 20 px. */
+ .wrap.wsem{overflow-x:auto;-webkit-overflow-scrolling:touch}
+ .semaine{grid-template-columns:84px repeat(6,minmax(108px,1fr));min-width:740px}
+ .semaine .eq{position:sticky;left:0;z-index:1;background:var(--card);border-right:1px solid var(--line);font-size:11.5px;overflow-wrap:anywhere}.semaine .h.eq{background:var(--soft)}
+ .wrap tr.plus{display:none}
+ .voirplus{display:block;width:calc(100% - 24px);margin:12px;padding:13px;font-size:14px;font-weight:600;text-align:center}
+ .wrap td input[type=checkbox],.journee input[type=checkbox]{width:26px;height:26px}
+ .journee li label{display:inline-flex;align-items:center;gap:7px;min-height:34px;vertical-align:middle;margin-right:4px}
+ .wrap td .btn{padding:8px 12px}#tfact td:nth-child(5) .b2 .btn{padding:6px 10px}
+ .motif details.det summary{padding:7px 0}
+ .voirplus+#plus{display:none}.card>.trimob{width:calc(100% - 24px);margin:0 12px 8px}#copiedort{margin:0 12px}
+ /* une commande de l'accueil prenait 470 px (9 champs l'un sous l'autre), une commande qui dort 240 px : 4 et 3 lignes */
+ #tb tr{grid-template-columns:auto auto minmax(0,1fr) auto;grid-template-areas:"n ba co ht" "bc bc et et" "su su su su" "pdf d d fin";align-items:center;gap:5px 10px;padding:11px 12px}
+ #tb td{padding:0}#tb td:not(:nth-child(7)):not(:nth-child(1))::before{display:none!important}
+ #tb td:nth-child(3){display:contents}#tb td:nth-child(3)>b{grid-area:n;font-size:15px}
+ #tb td:nth-child(3)>.b2{grid-area:bc;margin:0;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#tb td:nth-child(3)>.b2+.b2{display:none}
+ #tb td:nth-child(4){grid-area:ba}#tb td:nth-child(4) .b2{display:none}
+ #tb td:nth-child(5){grid-area:co;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #tb td:nth-child(6){grid-area:ht;text-align:right;font-weight:600}
+ #tb td:nth-child(1){grid-area:d;font-size:12px;color:var(--muted);white-space:nowrap}#tb td:nth-child(1) .b2{display:inline;margin-left:5px}#tb td:nth-child(1)::before{display:inline;margin-right:6px}
+ #tb td:nth-child(2){grid-area:et;justify-self:end;display:flex;align-items:center;gap:10px}#tb td:nth-child(2) .b2{display:none}#tb .ok-box{margin:0}
+ #tb td:nth-child(8){grid-area:su}
+ #tb td:nth-child(9){grid-area:pdf}#tb td:nth-child(9) .b2{display:inline;margin-left:8px}#tb td:nth-child(9) .jn{display:none}
+ #tb td:nth-child(7){grid-area:fin;justify-self:end;font-size:12px;color:var(--muted)}#tb td:nth-child(7)::before{display:inline;margin-right:6px}
+ #tb td.vide{grid-area:auto;grid-column:1/-1;padding:14px 0}
+ #tdort tr{grid-template-columns:auto auto minmax(0,1fr) auto;grid-template-areas:"n cl co ht" "j st st st" "pq pq pq pq";align-items:center;gap:3px 10px;padding:10px 12px}
+ #tdort td::before{display:none!important}#tdort td:nth-child(3),#tdort td:nth-child(8){display:none}
+ #tdort td:nth-child(2){grid-area:n;font-size:15px}#tdort td:nth-child(4){grid-area:cl}
+ #tdort td:nth-child(5){grid-area:co;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #tdort td:nth-child(9){grid-area:ht;text-align:right;font-weight:600}
+ #tdort td:nth-child(1){grid-area:j}#tdort td:nth-child(6){grid-area:st;font-size:12.5px;color:var(--muted)}
+ #tdort td:nth-child(7){grid-area:pq;font-size:12.5px}#tdort td.vide{grid-area:auto;grid-column:1/-1}
 }
 </style></head><body>
 <div class="app">
@@ -489,7 +549,7 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
   <section class="card vue" data-v="equipe" hidden><h2><span>Planning par équipe</span><span class="tag" id="nequipe"></span></h2>
     <div class="bar"><button class="btn" id="semp">‹ Semaine précédente</button><button class="btn" id="sema">Cette semaine</button><button class="btn" id="sems">Semaine suivante ›</button><span class="tag" id="semt"></span>
       <input type="search" id="qe" placeholder="Filtrer une équipe…" style="margin-left:auto"></div>
-    <div class="wrap"><div class="semaine" id="tsem"></div></div>
+    <div class="wrap wsem"><div class="semaine" id="tsem"></div></div>
     <p class="sub" id="asuivi" style="padding:10px 16px"></p></section>
 </div>
 <!-- DEVIS -->
@@ -577,6 +637,7 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
 </div>
 <!-- CHIFFRES -->
 <div id="p-chiffres" hidden>
+  <section class="card" id="etatrobot" style="margin-bottom:14px"><h2><span>État du robot</span><span class="tag" id="netat"></span></h2><div id="etat-l"></div></section>
   <section class="card" id="sante" style="margin-bottom:14px"><h2><span>Santé des données</span><span class="tag" id="nsante"></span></h2><div id="sante-l"></div></section>
   <div class="bar" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px">
     <div class="seg" id="cper"><button data-p="mois">Ce mois</button><button data-p="an">Cette année</button><button data-p="perso">Personnalisée</button></div>
@@ -606,17 +667,21 @@ const D=/*DATA*/null;
 // BC CLIENTS\tableau_donnees.json dans OneDrive et remplace WEB par {clientId, tenant, scopes, base:{d:drive, i:dossier}}.
 // Fichier ouvert sur le PC : WEB reste null et tout marche comme avant.
 const WEB=/*WEB*/null;
+// 14/11 (J, chantier « coches en direct, sans OneDrive ») : page en ligne Firebase. index.html se connecte (compte créé par
+// J), lit les données envoyées par le robot dans Firestore, laisse ses outils dans window.__fb et met WEB = {fb:true}.
+const FB=WEB&&WEB.fb?window.__fb:null;
 let webApp=null;
 async function webJeton(){if(!webApp){webApp=new msal.PublicClientApplication({auth:{clientId:WEB.clientId,authority:'https://login.microsoftonline.com/'+WEB.tenant,
     redirectUri:location.origin+location.pathname},cache:{cacheLocation:'localStorage'}});await webApp.initialize()}
   const a=webApp.getAllAccounts()[0];return (await webApp.acquireTokenSilent({scopes:WEB.scopes,account:a})).accessToken}
-const webQui=()=>{try{return ((webApp&&webApp.getAllAccounts()[0])||{}).username||WEB.qui||''}catch(e){return ''}};
+const webQui=()=>{if(FB)return FB.qui();try{return ((webApp&&webApp.getAllAccounts()[0])||{}).username||WEB.qui||''}catch(e){return ''}};
 async function webG(u,o={}){const t=await webJeton();
   const r=await fetch('https://graph.microsoft.com/v1.0/drives/'+WEB.base.d+'/items/'+WEB.base.i+u,{...o,headers:{Authorization:'Bearer '+t,...(o.headers||{})}});
   if(!r.ok)throw new Error('OneDrive '+r.status);return r}
 // liens vers les PDF (BC, factures) : relatifs à BC CLIENTS ; en version web, ouverts depuis OneDrive
 if(WEB)document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href]');if(!a)return;const h=a.getAttribute('href')||'';
   if(!h||/^(https?:|mailto:|tel:|sms:|#|javascript:|blob:|data:)/i.test(h))return;e.preventDefault();e.stopPropagation();
+  if(FB){alert('Les PDF restent dans OneDrive, dossier BC CLIENTS :\n'+decodeURI(h).split('/').join('\\'));return}
   const w=window.open('about:blank','_blank');
   webG(':/'+h.split('/').map(s=>encodeURIComponent(decodeURIComponent(s))).join('/')).then(r=>r.json())
     .then(j=>{if(w)w.location=j['@microsoft.graph.downloadUrl'];else location.href=j['@microsoft.graph.downloadUrl']})
@@ -629,13 +694,13 @@ const L=D.lignes, today=(()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.g
 const store={get:(k,d)=>{try{const v=sessionStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set:(k,v)=>{try{sessionStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const st=Object.assign({p:'mois',b:'',r:'',q:'',k:'jour',asc:false,kpi:''},store.get('st',{}));let tout=false;const MAXL=30;
 // 12/11 (J) : chaque coche garde son heure (« ts: ») pour être partagée entre les PC (voir « coches partagées » plus bas)
-const flag=p=>({get:k=>{try{return localStorage.getItem(p+k)==='1'}catch(e){return false}},set:(k,v)=>{try{v?localStorage.setItem(p+k,'1'):localStorage.removeItem(p+k);localStorage.setItem('ts:'+p+k,Date.now())}catch(e){}coSave()}});
+const flag=p=>({get:k=>{try{return localStorage.getItem(p+k)==='1'}catch(e){return false}},set:(k,v)=>{try{v?localStorage.setItem(p+k,'1'):localStorage.removeItem(p+k);localStorage.setItem('ts:'+p+k,Date.now())}catch(e){}coSave(p+k)}});
 const IMP=flag('imp:'), OK=flag('ok:'), FACT=flag('fact:'), DEV=flag('dev:'), CLES=flag('cles:'), ENV=flag('env:');
 const PAY=flag('pay:');   // 13/11 (J) : facture de sous-traitant payée (bon à payer), clé = nom du fichier de la facture   // env: rapport envoyé au bailleur (12/11)
 // 12/11 (J) : aussi les commentaires (« com: ») et les tentatives d'appel au locataire (« app: »), partagés de la même façon
-const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','plan:'], CO_TXT=['com:','app:','plan:'];   // plan: demande de planification (13/11)
+const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','plan:','ext:'], CO_TXT=['com:','app:','plan:','ext:'];   // plan: demande de planification (13/11)
 const NOTE={get:k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},
-  set:(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k);localStorage.setItem('ts:'+k,Date.now())}catch(e){}coSave()}};
+  set:(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k);localStorage.setItem('ts:'+k,Date.now())}catch(e){}coSave(k)}};
 // coches des autres PC, relues par le robot (D.coches) : la plus récente gagne, avant le premier affichage
 (function(){try{for(const [k,c] of Object.entries(D.coches||{})){if(!CO_P.some(p=>k.startsWith(p))||!Array.isArray(c))continue;
   if(+c[1]>(+localStorage.getItem('ts:'+k)||0)){const txt=CO_TXT.some(p=>k.startsWith(p));
@@ -795,7 +860,7 @@ function heros(aR,aO,aI,j,m){
     if(g==='rouge'){st.kpi='rouge';st.p='tout';st.r='rouge';rendre();document.getElementById('commandes').scrollIntoView({behavior:'smooth'})}
     else if(g==='imp'){document.getElementById('imp').scrollIntoView({behavior:'smooth',block:'center'})}
     else if(g==='devis'){dv='dem';store.set('dv','dem');onglet('devis');devisVue();window.scrollTo(0,0)}
-    else{pv='fact';store.set('pv','fact');onglet('planning');planning();window.scrollTo(0,0)}});
+    else{pv='fact';store.set('pv','fact');onglet('planning');planning();window.scrollTo(0,0);telListe()}});
 }
 function kpis(){
   const j=L.filter(l=>l.jour===today), m=L.filter(l=>l.jour.slice(0,7)===today.slice(0,7)), c=r=>j.filter(l=>l.risque===r).length;
@@ -880,7 +945,7 @@ document.getElementById('toutimp').onclick=()=>{if(confirm('Marquer tous les BC 
     <div class="ts">${[esc(l.commune),l.ht?eur(l.ht)+' HT':'','reçu '+ilya(l.jour)].filter(Boolean).join(' · ')}</div>
     <div class="tr">${r.includes('accepter')?'<span class="chip warn">À accepter sur l\'Extranet</span>':''}${r.includes('reprendre')?'<span class="chip bad">À reprendre</span>':''}${r.includes('prendre')?'<span class="chip warn">À prendre en compte</span>':''}${r.includes('delai')?`<span class="chip bad">Délai dépassé le ${fr(l.fin)}</span>`:''}${r.includes('pdf')?'<span class="chip">PDF à joindre</span>':''}${r.includes('rdvnx')?'<span class="chip warn">RDV pris : à mettre dans Nexxio</span>':''}${/RDV à prendre/i.test(l.motif)?'<span class="chip info">RDV à prendre</span>':''}</div>
     ${resume(l.motif)?`<div class="tm" title="Cliquer pour lire le détail du robot" data-court="${esc(resume(l.motif))}" data-long="${esc(humain(l.motif))}">${esc(resume(l.motif))}</div>`:''}</div>
-    <div class="ta">${l.pdf?`<a class="bt p" href="${encodeURI(l.pdf)}" target="_blank">Voir le BC</a>`:''}${l.n_nexxio?`<a class="bt" href="${NXURL(l.n_nexxio)}" target="_blank">Nexxio ↗</a>`:''}</div></div>`}).join(''):'<div class="vide">Rien en attente. Tout est à jour.</div>';
+    <div class="ta">${r.includes('accepter')&&/^[A-Za-z]\d{5}$/.test(l.n_bc||'')?extBouton(l.n_bc):''}${l.pdf?`<a class="bt p" href="${encodeURI(l.pdf)}" target="_blank">Voir le BC</a>`:''}${l.n_nexxio?`<a class="bt" href="${NXURL(l.n_nexxio)}" target="_blank">Nexxio ↗</a>`:''}</div></div>`}).join(''):'<div class="vide">Rien en attente. Tout est à jour.</div>';
   document.querySelectorAll('#faire .tm').forEach(x=>x.onclick=()=>{const o=x.classList.toggle('open');x.textContent=o?x.dataset.long:(x.dataset.court||x.dataset.long)});
 })();
 
@@ -976,7 +1041,7 @@ function equipeVue(){
     +(eqs.length?eqs.map(eq=>`<div class="eq">${esc(eq)}<span class="b2">${ev.filter(e=>e.equipe===eq).length} RDV</span></div>`+jours.map(d=>{const es=ev.filter(e=>e.equipe===eq&&e.debut.slice(0,10)===d).sort((a,b)=>a.debut<b.debut?-1:1);
       return `<div>${es.map(e=>`<span class="ev ${d<today?'passe':''}" ${e.n_nexxio?`data-n="${esc(e.n_nexxio)}"`:''} title="${esc(e.note||'')}"><b>${esc(e.debut.slice(11,16))} ${esc(e.n_nexxio||e.titre||'')}</b>${e.prix?` · ${eur(e.prix)}`:''}<span>${esc(commune(e.lieu)||e.titre||'')}</span></span>`).join('')}</div>`}).join('')).join('')
       :'<div class="vide" style="grid-column:1/-1;border:0">Aucun RDV dans les agendas cette semaine.</div>');
-  document.querySelectorAll('#tsem .ev[data-n]').forEach(e=>e.onclick=()=>fiche(e.dataset.n));
+  document.querySelectorAll('#tsem .ev[data-n]').forEach(e=>e.onclick=()=>fiche(e.dataset.n));telSemaine();
   const g=D.agenda_genere?new Date(D.agenda_genere):null;
   document.getElementById('asuivi').textContent=g?`Agendas Google lus le ${g.toLocaleDateString('fr-FR')} à ${g.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}, relus toutes les heures.`+((D.agenda_erreurs||[]).length?' Illisibles : '+D.agenda_erreurs.join(' ; '):''):'';
 }
@@ -1038,7 +1103,7 @@ function planning(){
     tb(dort.length,'Qui dorment',dort.filter(x=>x._j>30).length+' depuis plus de 30 jours','var(--rouge)','dort'),
     ...((D.extranet||[]).length?[(()=>{const E=extranetLignes(),f=E.filter(x=>x.faire);return tb(f.length,'Extranet Alliade',E.filter(x=>x.k==='liv').length+' à livrer · '+E.filter(x=>x.k==='fact').length+' à facturer','var(--orange)','ext')})()]:[]),
     tb((D.agenda||[]).filter(e=>(e.debut||'').slice(0,10)===today).length,'Par équipe',D.agenda_genere?new Set((D.agenda||[]).filter(e=>e.debut>=lundiDe(0)&&e.debut<lundiDe(1)).map(e=>e.equipe)).size+' équipes sur la semaine':'agendas pas encore reliés','var(--accent)','equipe')].join('');
-  document.querySelectorAll('#ptiles .kpi').forEach(b=>b.onclick=()=>{pv=b.dataset.v;store.set('pv',pv);planning()});
+  document.querySelectorAll('#ptiles .kpi').forEach(b=>b.onclick=()=>{pv=b.dataset.v;store.set('pv',pv);planning();telListe()});
   document.querySelectorAll('#p-planning .vue').forEach(sct=>sct.hidden=sct.dataset.v!==pv);
   document.getElementById('lvoirfact').hidden=pv!=='fact';
   const nb=document.getElementById('nb-pla');nb.hidden=!aF.length;nb.textContent=aF.length;nb.style.background='var(--vert)';
@@ -1161,9 +1226,9 @@ function extranetVue(){
     +esc((g?`Lu sur l'Extranet le ${g.toLocaleDateString('fr-FR')} à ${g.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}. `:'')+'Commandes en cours du service travaux (les sinistres n\'y sont pas), croisées avec Nexxio (statut, RDV de l\'agenda, rapports). Le robot ne livre et ne facture rien sur l\'Extranet : J le fait.');
   document.getElementById('text').innerHTML=r.length?r.map(x=>`<tr ${x.n?`data-n="${esc(x.n)}" style="cursor:pointer"`:''}><td class="nw"><b>${esc(x.e.numero)}</b>${x.e.retard?`<span class="b2"><span class="chip ${x.e.retard>30?'bad':'warn'}">${x.e.retard} j de retard</span></span>`:''}${x.e.relance?'<span class="b2"><span class="chip bad">relancée</span></span>':''}</td>
     <td class="nw">${fr(x.e.date)}</td><td>${esc((x.e.agence||'').replace(/^ALH\//,''))}<span class="b2">${esc(x.e.description)}</span></td><td class="num">${eur(x.e.ttc)}</td>
-    <td>${esc(x.e.statut)}<span class="b2">${esc(x.e.rdv)}</span></td><td>${x.n?`<b>${esc(x.n)}</b><span class="b2">${esc(x.st)}</span>`:'<span class="tag">non trouvée</span>'}</td><td>${x.c?`<span class="chip ${x.c}">${esc(x.a)}</span>`:esc(x.a)}</td></tr>`).join('')
+    <td>${esc(x.e.statut)}<span class="b2">${esc(x.e.rdv)}</span></td><td>${x.n?`<b>${esc(x.n)}</b><span class="b2">${esc(x.st)}</span>`:'<span class="tag">non trouvée</span>'}</td><td>${x.c?`<span class="chip ${x.c}">${esc(x.a)}</span>`:esc(x.a)}${x.k==='acc'?`<span class="b2">${extBouton(x.e.numero)}</span>`:''}</td></tr>`).join('')
     :'<tr><td colspan="7" class="vide">Aucune commande pour ce filtre.</td></tr>';
-  document.querySelectorAll('#text tr[data-n]').forEach(tr=>tr.onclick=()=>fiche(tr.dataset.n));
+  document.querySelectorAll('#text tr[data-n]').forEach(tr=>tr.onclick=e=>{if(e.target.closest('button,.extv'))return;fiche(tr.dataset.n)});   // 14/11 : le bouton « Valider » n'ouvre pas la fiche
   store.set('extf',f);
 }
 let pv=store.get('pv','fact');
@@ -1226,11 +1291,15 @@ document.getElementById('qd').oninput=devisVue;document.getElementById('voirdem'
 
 /* ---------- chiffre du mois ---------- */
 /* ---------- santé des données (13/11, J : « rendre toutes les données le plus juste possible ») ---------- */
-setTimeout(function(){const S=D.sante||[],el=document.getElementById('sante-l');if(!el)return;   // après l'index NX
+// 14/11 (J, roadmap) : « État du robot » (dernier passage de chaque tâche, erreurs du jour) affiché comme la santé des données
+setTimeout(function(){[['sante','sante-l','nsante'],['etat_robot','etat-l','netat']].forEach(function([cle,idl,idn]){const S=(D[cle]||[]).slice(),el=document.getElementById(idl);if(!el)return;   // après l'index NX
+  // les lignes sont figées à l'heure du tableau : si le robot s'arrête, c'est cette première ligne, calculée à l'ouverture, qui le dit
+  if(cle==='etat_robot'){const min=Math.round((Date.now()-new Date(D.genere_iso||0))/60000);
+    S.unshift({titre:'Tableau de bord à jour',etat:min>60?'bad':min>30?'warn':'ok',detail:(min<90?'il y a '+min+' min':'il y a '+Math.round(min/60)+' h')+(min>30?' : le robot ne tourne plus ou son PC est éteint ; les lignes ci-dessous datent de ce moment':' : le robot tourne'),exemples:[]})}
   const ic={ok:'✓',warn:'!',bad:'✕'},cl={ok:'ok',warn:'warn',bad:'bad'};
-  const nb=S.filter(x=>x.etat!=='ok').length;document.getElementById('nsante').textContent=nb?nb+' point(s) à voir':'tout est bon';
+  const nb=S.filter(x=>x.etat!=='ok').length;document.getElementById(idn).textContent=nb?nb+' point(s) à voir':'tout est bon';
   el.innerHTML=S.map(x=>`<div class="it" style="padding:8px 16px;border-top:1px solid var(--line)"><div class="t"><span class="chip ${cl[x.etat]}">${ic[x.etat]}</span> <b>${esc(x.titre)}</b> <span class="tag">${esc(x.detail)}</span></div>${x.exemples&&x.exemples.length&&x.etat!=='ok'?`<div class="sub" style="margin-top:4px">${x.exemples.map(n=>NX[n]?`<b class="lien-fiche" data-fiche="${esc(n)}" style="cursor:pointer;text-decoration:underline">${esc(n)}</b>`:esc(n)).join(' · ')}</div>`:''}</div>`).join('')||'<p class="vide" style="padding:14px">Pas encore de contrôle.</p>';
-  el.querySelectorAll('[data-fiche]').forEach(b=>b.onclick=()=>fiche(b.dataset.fiche))},0);
+  el.querySelectorAll('[data-fiche]').forEach(b=>b.onclick=()=>fiche(b.dataset.fiche))})},0);
 function moisVue(m0,fin){
   const S=D.sst||[], P=D.planning||[];
   const nb=Math.round((new Date(fin)-new Date(m0))/864e5)+1, dec=(d,k)=>{const x=new Date(d);x.setDate(x.getDate()-k);return x.toISOString().slice(0,10)};
@@ -1342,6 +1411,21 @@ function lierPlanif(n){const go=document.getElementById('pf-go');if(!go)return;c
     if(!confirm(`Planifier la commande ${n} dans Nexxio ?\n\nRDV le ${fr(d)} à ${h} (${ANN[document.getElementById('pf-a').value]})`+(sst?`\nSous-traitant : ${sst}`:'')+(sms?'\nSMS de confirmation envoyé au locataire':'')+(mail?'\nMail de confirmation envoyé au gestionnaire':'')))return;
     NOTE.set('plan:'+n,JSON.stringify({d,h,a:document.getElementById('pf-a').value,sst,sms:sms?1:0,mail:mail?1:0,par:WEB?webQui():''}));
     et.innerHTML=planEtat(n);lierAnnul()}}
+// 14/11 (J, roadmap : « Valider une commande Extranet depuis le dashboard ») : bouton « Valider » sur une commande de
+// l'Extranet qui attend l'accord de J (250 € HT ou moins, ou contrôle à voir), au lieu du fichier accepter_extranet.txt.
+// Le clic écrit « ext:<n° Extranet> » dans les coches partagées ; le robot l'accepte au passage suivant
+// (robot.accepter_demandes) et écrit le résultat dans D.actions. Un clic = cette commande seulement.
+function extEtat(n){const v=NOTE.get('ext:'+n), a=(D.actions||{})['ext:'+n], ts=+(()=>{try{return localStorage.getItem('ts:ext:'+n)}catch(e){return 0}})()||0;
+  const res=a&&(!v||a.ts>=ts)?a:null;
+  if(v&&!res)return '<span class="chip info">Demande envoyée</span> <span class="tag">le robot l\'accepte à son prochain passage</span>';
+  if(res)return `<span class="chip ${res.etat==='ok'?'ok':'bad'}">${res.etat==='ok'?'Acceptée par le robot':'Non acceptée'}</span> <span class="tag">${esc(res.message||'')}</span>`;
+  return ''}
+function extBouton(n){return `<span class="extv">${extEtat(n)||`<button class="btn" data-extok="${esc(n)}">Valider sur l'Extranet</button>`}</span>`}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-extok]');if(!b)return;e.stopPropagation();const n=b.dataset.extok, z=b.closest('.extv');
+  const part=await coEtat().catch(()=>'off');
+  if(part!=='on'){z.innerHTML='<span class="chip bad">Demande non envoyée</span> <span class="tag">le partage des coches n\'est pas actif sur ce PC : cliquer « Activer le partage » en haut du tableau, puis recommencer</span>';return}
+  if(!confirm(`Accepter la commande ${n} sur l'Extranet Alliade ?\n\nLe robot l'accepte à son prochain passage, puis la saisit dans Nexxio.`))return;
+  NOTE.set('ext:'+n,JSON.stringify({q:Date.now(),par:WEB?webQui():''}));z.innerHTML=extEtat(n)});
 function agendaUrl(n,pl,x){const r=(pl&&pl.rdv_iso)||'';if(!/^\d{4}-\d\d-\d\d/.test(r))return '';
   const f=d=>d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
   const hm=d=>'T'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0')+'00';
@@ -1577,7 +1661,7 @@ function bapVue(L,eq,P){
     return `<div class="s" style="margin:0 0 14px"><h4 style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span><b>${esc(nom)}</b></span>
       <span class="chip ok">À payer ${e0(som(o))} (${o.length})</span>${k.length?`<span class="chip warn">À vérifier ${e0(som(k))} (${k.length})</span>`:''}
       ${o.length?`<button class="btn" data-bapc="${esc(nom)}">Copier le bon à payer</button>`:''}</h4>
-      <div class="wrap"><table><thead><tr><th>Reçue</th><th>Facture</th><th class="num">Montant HT</th><th>Contrôle</th><th>Payé</th></tr></thead><tbody>
+      <div class="wrap"><table><thead><tr><th>Reçue</th><th>Facture</th><th class="num">Montant HT</th><th>Contrôle</th><th>Payé</th></tr></thead><tbody class="bapt">
       ${[...o,...k].map(x=>`<tr data-f="${esc(x.f.fichier)}" style="cursor:pointer"><td class="nw">${fr((x.f.recu||'').slice(0,10))}</td><td>${esc(x.f.numero||x.f.fichier)}${x.f.date?`<span class="b2">du ${fr(x.f.date)}</span>`:''}</td>
         <td class="num"><b>${x.f.ht!=null?eur(x.f.ht):'?'}</b></td><td>${x.pb.length?x.pb.map(p=>`<span class="chip warn">${esc(p)}</span>`).join(' '):'<span class="chip ok">À payer</span>'}</td>
         <td><input type="checkbox" data-pay="${esc(x.f.fichier)}" title="Payé (virement fait)"></td></tr>`).join('')}</tbody></table></div></div>`}).join('')
@@ -1692,7 +1776,7 @@ function sstVue(){
   const libre=p=>p.nom!==SANS&&p.nom!==ATT, att=par[ATT];
   const caTot=Object.values(par).filter(libre).reduce((s,p)=>s+p.ca,0), sans=par[SANS];
   const actifs=Object.values(par).filter(libre);
-  const tuile=(v,t,s,c,k)=>`<button class="kpi ${k&&ssel===k?'on':''}" style="--c:${c};${k?'':'cursor:default'}" ${k?`data-s="${esc(k)}"`:''}><span class="l">${t}</span><b>${v}</b><small>${s}</small></button>`;
+  const tuile=(v,t,s,c,k)=>`<button class="kpi ${k?'':'fixe'} ${k&&ssel===k?'on':''}" style="--c:${c};${k?'':'cursor:default'}" ${k?`data-s="${esc(k)}"`:''}><span class="l">${t}</span><b>${v}</b><small>${s}</small></button>`;
   document.getElementById('stiles').innerHTML=[
     tuile(actifs.length,'Sous-traitants actifs','sur la période','var(--accent)'),
     tuile(C.length-(sans?sans.c.length:0)-(att?att.c.length:0),'Commandes affectées',C.length+' commandes sur la période'+(att?' · '+att.c.length+' pas encore planifiées':''),'var(--accent)'),
@@ -1700,7 +1784,7 @@ function sstVue(){
     tuile(sans?sans.c.length:0,'Sans affectation',sans?'Planifiées ou plus, sans sous-traitant · cliquer':'Tout ce qui est planifié est affecté','var(--orange)',sans?SANS:'')].join('');
   const nb=r=>r.length;
   {const avec=C.filter(x=>x.cout!=null), ca=avec.reduce((s,x)=>s+(x.ht||0),0), co=avec.reduce((s,x)=>s+x.cout,0), sansPrix=C.filter(x=>x.cout==null&&clos(x)).length;
-   document.getElementById('smarge').innerHTML=D.agenda_genere?`Marge sur la période : <b>${e0(ca-co)}</b> (${ca?pct((ca-co)/ca):'—'}) sur ${avec.length} commandes dont le prix payé est dans l'agenda (CA ${e0(ca)}, payé ${e0(co)}). ${sansPrix?`<span class="chip warn">${sansPrix} commandes terminées sans prix dans l'agenda</span>`:''}`
+   document.getElementById('smarge').innerHTML=D.agenda_genere?`Marge sur la période : <b>${e0(ca-co)}</b> (${ca?pct((ca-co)/ca):'—'}) sur ${avec.length} commandes dont le prix payé est dans l'agenda${avec.some(x=>x.cout_facture)?' ou, à défaut, sur la facture du sous-traitant ('+avec.filter(x=>x.cout_facture).length+')':''} (CA ${e0(ca)}, payé ${e0(co)}). ${sansPrix?`<span class="chip warn">${sansPrix} commandes terminées sans prix dans l'agenda</span>`:''}`
      :'Coût et marge : en attente des adresses iCal des agendas (fichier ROBOT BC\\agendas.txt). Le prix payé est lu dans l\'événement de l\'agenda de l\'équipe (« 50 € »).'}
   document.getElementById('nsst').textContent=actifs.length?actifs.length+' sous-traitant(s) · '+e0(caTot)+' HT':'';
   document.getElementById('tsst').innerHTML=T.length?T.map(p=>{const s=!libre(p);return `<tr class="${ssel===p.nom?'on':''}" data-s="${esc(p.nom)}" style="cursor:pointer">
@@ -1725,6 +1809,25 @@ function sstVue(){
 document.getElementById('qs').value=store.get('qs','');
 document.getElementById('qs').oninput=sstVue;
 
+// 13/11 (J) : sur téléphone la liste est sous la bande de tuiles : on s'y place, et la tuile choisie reste visible dans la bande
+const TEL=()=>matchMedia('(max-width:700px)').matches;
+function telListe(){if(!TEL())return;const p=document.getElementById('ptiles'),o=p.querySelector('.kpi.on'),h=document.getElementById('psuivi');
+  if(o)p.scrollLeft=Math.max(0,o.offsetLeft-(p.clientWidth-o.offsetWidth)/2);
+  if(h)scrollTo(0,h.getBoundingClientRect().bottom+scrollY);telSemaine()}
+// 13/11 au soir : sur téléphone le planning par équipe se fait défiler de côté ; on arrive sur la colonne du jour
+function telSemaine(){const t=document.getElementById('tsem'),w=t.parentElement,a=t.querySelector('.h.auj');
+  if(a&&a.getClientRects().length&&matchMedia('(max-width:700px)').matches)w.scrollLeft=Math.max(0,a.getBoundingClientRect().left-w.getBoundingClientRect().left+w.scrollLeft-88)}
+// 13/11 au soir : sur téléphone, 20 cartes par liste puis un bouton « Afficher les suivantes » (vu : 277 commandes qui dorment
+// = 68 000 px à faire défiler). Le nombre affiché est gardé quand la liste se met à jour.
+const PAGE=20;
+function telPage(tb){const lim=tb._lim||PAGE,rows=[...tb.rows],n=rows.length,on=TEL();
+  rows.forEach((r,i)=>r.classList.toggle('plus',on&&i>=lim));
+  if(tb._plus){tb._plus.remove();tb._plus=null}
+  if(!on||n<=lim)return;
+  const b=tb._plus=document.createElement('button');b.className='btn voirplus';b.textContent=`Afficher les ${Math.min(PAGE*2,n-lim)} suivantes (${n-lim} restantes)`;
+  b.onclick=()=>{tb._lim=lim+PAGE*2;telPage(tb)};tb.closest('.wrap').after(b)}
+document.querySelectorAll('.wrap tbody[id]').forEach(tb=>{new MutationObserver(()=>telPage(tb)).observe(tb,{childList:true});telPage(tb)});
+matchMedia('(max-width:700px)').addEventListener('change',()=>document.querySelectorAll('.wrap tbody[id]').forEach(telPage));
 const onglet=t=>{['exploitation','planning','devis','sst','chiffres'].forEach(k=>document.getElementById('p-'+k).hidden=t!==k);
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));store.set('onglet',t)};
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{onglet(b.dataset.t);window.scrollTo(0,0)});
@@ -1760,7 +1863,7 @@ addEventListener('beforeunload',()=>store.set('y',scrollY));
 const occupe=()=>/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)||!document.getElementById('fiche').hidden||!document.getElementById('gres').hidden||String(getSelection()).length>0;
 let __rech=false;const recharger=()=>{if(document.hidden){__rech=true;return}if(occupe()){setTimeout(recharger,30*1000);return}store.set('y',scrollY);location.reload()};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&__rech){__rech=false;recharger()}});
-setTimeout(recharger,5*60*1000);
+if(!FB)setTimeout(recharger,5*60*1000);     // page Firebase : rechargée seulement quand le robot envoie de nouvelles données
 
 /* ---------- coches partagées entre les PC (12/11, J) ----------
    Les coches (imprimé, traité, facturé, devis) n'étaient gardées que dans le navigateur de chaque PC. Avec le bouton du menu,
@@ -1778,15 +1881,21 @@ function coSnap(){const c={};
   return c}
 async function coEtat(){if(WEB)return 'on';return !coDir?'off':(await coDir.queryPermission({mode:'readwrite'}))==='granted'?'on':'pause'}
 async function coBouton(err){const b=document.getElementById('partage');if(!b)return;const e=await coEtat().catch(()=>'off');b.hidden=false;b.className='btn partage '+(err?'pause':e);
-  b.textContent=err?'Partage des coches : réessayer':{off:'Partager mes coches entre les PC',on:'Coches partagées entre les PC ✓',pause:'Réactiver le partage des coches'}[e];
+  b.textContent=err?'Partage des coches : réessayer':FB?'Coches en direct ✓':{off:'Partager mes coches entre les PC',on:'Coches partagées entre les PC ✓',pause:'Réactiver le partage des coches'}[e];
+  if(FB){b.title=err?'Écriture refusée : '+(err.message||err):'Chaque coche est enregistrée en ligne et s\'affiche chez les autres en quelques secondes.';return}
   b.title=e==='on'?'Vos coches sont écrites dans BC CLIENTS\\COCHES TABLEAU (OneDrive) et reprises par les autres PC à la prochaine mise à jour du tableau.':'Choisir le dossier OneDrive - RMS BATIMENT\\BC CLIENTS\\COCHES TABLEAU'}
 async function coEcrire(){if(await coEtat()!=='on'){coBouton();return}
+  // 14/11 (Firebase) : seulement les clés changées ici, chacune avec son heure ; les autres restent telles quelles en ligne
+  if(FB){const ks=[...(coSale||[])];coSale=new Set();if(!ks.length)return;const c={},q=webQui();
+    for(const k of ks){const v=localStorage.getItem(k);c[k]=[v==null?0:CO_TXT.some(p=>k.startsWith(p))?v:1,+localStorage.getItem('ts:'+k)||Date.now(),q]}
+    try{await FB.ecrire(c)}catch(e){ks.forEach(k=>coSale.add(k));throw e}coBouton();return}
   const corps=JSON.stringify({maj:new Date().toISOString(),qui:WEB?webQui():'',coches:coSnap()});
   // 13/11 (J) : version web (page GitHub + compte Microsoft) : même fichier par navigateur, écrit dans OneDrive par Graph
   if(WEB){await webG(':/COCHES TABLEAU/coches-web-'+coId+'.json:/content',{method:'PUT',body:corps,headers:{'Content-Type':'application/json'}});coBouton();return}
   const f=await coDir.getFileHandle('coches-'+coId+'.json',{create:true}),w=await f.createWritable();
   await w.write(corps);await w.close();coBouton()}
-function coSave(){if(!coDir&&!WEB)return;clearTimeout(coT);coT=setTimeout(()=>coEcrire().catch(e=>coBouton(e)),400)}
+var coSale;   // clés changées depuis le dernier envoi (Firebase)
+function coSave(k){if(k&&CO_P.some(p=>k.startsWith(p)))(coSale=coSale||new Set()).add(k);if(!coDir&&!WEB)return;clearTimeout(coT);coT=setTimeout(()=>coEcrire().catch(e=>coBouton(e)),400)}
 // 13/11 (J) : « une solution pour les coches, un truc plus clair ». Bandeau en haut tant que le partage n'est pas actif sur ce
 // PC (un clic pour l'activer) ; une fois actif, les coches des autres PC sont relues toutes les 30 s dans le dossier partagé,
 // sans attendre que le robot refasse le tableau.
@@ -1811,17 +1920,30 @@ async function coLire(){if(!WEB&&(!coDir||await coEtat().catch(()=>'off')!=='on'
   else for await(const [nom,h] of coDir.entries()){if(h.kind!=='file'||!/^coches-.*\.json$/.test(nom)||moi(nom))continue;n++;
     try{chg+=coFusion(JSON.parse(await(await h.getFile()).text()))}catch(e){}}
   coLu=Date.now();coAutres=n;
-  if(chg)['journee','planning','devisVue','sstVue','facturesVue'].forEach(f=>{try{if(typeof window[f]==='function')window[f]()}catch(e){}});
+  if(chg)coRedessiner();
   coBandeau()}
+function coRedessiner(){['journee','planning','devisVue','sstVue','facturesVue'].forEach(f=>{try{if(typeof window[f]==='function')window[f]()}catch(e){}})}
+// 14/11 (Firebase) : le document partage/coches est écouté en direct. Au premier envoi reçu, les coches de ce navigateur plus
+// récentes que celles en ligne (ou absentes en ligne : coches d'avant, gardées sur ce PC) sont envoyées : reprise des coches.
+function coFB(c){const prem=!coLu,chg=coFusion({coches:c});coLu=Date.now();
+  if(prem){for(const [k,x] of Object.entries(coSnap()))if(!c[k]||+x[1]>+c[k][1])(coSale=coSale||new Set()).add(k);if(coSale&&coSale.size)coSave()}
+  if(chg)coRedessiner();coBandeau()}
 async function coBandeau(){const el=document.getElementById('alerte-co');if(!el)return;
+  if(FB){const vieux=D.genere_iso&&(Date.now()-new Date(D.genere_iso))>45*60000;el.className='alerte-co '+(vieux?'pause':'on');
+    el.innerHTML=`<span>✓ Connecté (${esc(webQui())}) · coches en direct${coLu?'':' (connexion…)'} · données du robot du ${esc(D.genere||'?')}${vieux?' : <b>le PC du bureau n\'a rien envoyé depuis</b>':''}</span><button class="btn" id="co-sortir">Se déconnecter</button>`;
+    document.getElementById('co-sortir').onclick=()=>FB.sortir();return}
   if(WEB){el.className='alerte-co on';el.innerHTML=`<span>✓ Connecté (${esc(webQui())}) · coches partagées${coAutres?' avec '+coAutres+' autre(s) navigateur(s)':''} · relues ${coLu?'à '+new Date(coLu).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'dans un instant'}</span><button class="btn" onclick="location.reload()">Actualiser les données</button>`;return}
   if(!('showDirectoryPicker' in window)){el.className='alerte-co off';el.innerHTML='<span>Les coches de ce navigateur ne sont pas partagées : ouvrir le tableau avec <b>Edge</b> ou <b>Chrome</b> sur ordinateur pour les partager.</span>';return}
   const e=await coEtat().catch(()=>'off');el.className='alerte-co '+e;
+  // 13/11 : sur téléphone le partage par dossier n'existe pas, le grand bandeau orange prenait un quart d'écran pour rien
+  if(e!=='on'&&TEL()){el.className='alerte-co off';el.innerHTML='<span>Coches non partagées sur ce téléphone : elles restent sur cet appareil.</span>';return}
   el.innerHTML=e==='on'?`<span>✓ Coches partagées avec les autres PC${coAutres?' ('+coAutres+' autre'+(coAutres>1?'s':'')+')':''} · relues ${coLu?'à '+new Date(coLu).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'au prochain passage'}</span>`
     :e==='pause'?'<span><b>Partage des coches en pause sur ce PC</b> : le navigateur redemande la permission à chaque ouverture du tableau.</span><button class="btn" id="co-go">Réactiver (1 clic)</button>'
     :'<span><b>Tes coches ne sont pas partagées</b> (facturé, envoyé, payé, appels, commentaires) : les autres PC ne les voient pas.</span><button class="btn" id="co-go">Activer le partage</button>';
   const b=document.getElementById('co-go');if(b)b.onclick=coActiver}
-if(WEB){coBouton();coLire().catch(e=>coBandeau());setInterval(()=>coLire().catch(()=>{}),30000)}
+if(FB){coBouton();coBandeau();FB.ecouter(coFB,e=>coBouton(e));
+  FB.meta(m=>{if(m.v&&m.v!==FB.v)recharger()})}      // nouvelles données du robot : rechargé dès que la page est libre
+else if(WEB){coBouton();coLire().catch(e=>coBandeau());setInterval(()=>coLire().catch(()=>{}),30000)}
 else if('showDirectoryPicker' in window&&'indexedDB' in window){
   document.getElementById('partage').onclick=coActiver;
   coIDB().then(d=>{coDir=d||null;coBouton();coSave();coLire();coBandeau()}).catch(()=>{coBouton();coBandeau()});
@@ -1858,18 +1980,23 @@ function journee(){
   const rdvnx=P.filter(x=>etatAppels(x.n_nexxio).rdv&&!x.rdv);
   // 5. blocages : BC à reprendre, commandes Extranet en attente d'accord
   const bloc=L.filter(l=>(l.etat==='À reprendre'||l.etat==='Accord de J attendu')&&l.jour>=jr(30)&&!FAIT(l));
+  // 6. alertes (14/11, roadmap : accueil « à faire, alertes, chiffres ») : tâche du robot en retard, erreur du jour, test ou
+  // contrôle en échec, écart de données en rouge ; le détail reste dans l'onglet Chiffres
+  const al=[...(D.etat_robot||[]).filter(x=>x.etat!=='ok'),...(D.sante||[]).filter(x=>x.etat==='bad')], suiv=(D.sante||[]).filter(x=>x.etat==='warn').length;
   document.getElementById('journee').innerHTML=`<h2><span>Ma journée</span><span class="tag">depuis ${nomJ} ${fr(debut)}</span></h2>
     ${etape(recues.length+enCrea.length,'Commandes à planifier',`${occ.length} locataire(s) à appeler · ${vac.length} logement(s) vacant(s), clés à récupérer${enCrea.length?` · ${enCrea.length} encore à prendre en compte`:''}`,l1,'Voir À planifier','aplan')}
     ${etape(l2.length,'Rapports à envoyer au bailleur','Arrivés depuis la veille : cocher « envoyé » une fois transmis (Extranet ou mail)',l2,'Voir les rapports','fact')}
     ${etape(aF.length,'Factures à faire',`${nouv.length} nouveau(x) rapport(s) · ${pretes.length} avec la facture du sous-traitant reçue · ${e0(aF.reduce((s,x)=>s+(x.restant||0),0))} HT en tout`,l3,'Voir À facturer','fact')}
     ${etape(ret.length+rdvnx.length,'Relances',`${ret.length} rapport(s) attendu(s) après RDV${rdvnx.length?` · ${rdvnx.length} RDV pris à mettre dans Nexxio`:''}`,rdvnx.map(x=>li(x.n_nexxio,`${esc(x.commune||'')} · RDV pris au téléphone : à mettre dans Nexxio`)),'Voir les relances','retard')}
-    ${etape(bloc.length,'BC bloqués','À reprendre ou commande Extranet en attente de ton accord',bloc.map(l=>li(l.n_nexxio||l.n_bc,`${esc(l.bailleur||'')} ${esc(l.n_bc)} · ${esc(l.etat)}`)),'Voir À faire','faire')}`;
+    ${etape(bloc.length,'BC bloqués','À reprendre ou commande Extranet en attente de ton accord',bloc.map(l=>li(l.n_nexxio||l.n_bc,`${esc(l.bailleur||'')} ${esc(l.n_bc)} · ${esc(l.etat)}`)),'Voir À faire','faire')}
+    ${etape(al.length,'Alertes du robot et des données',al.length?'Tâche en retard, erreur ou écart : le détail est dans l\'onglet Chiffres':`Les tâches du robot sont à l\'heure, aucun écart${suiv?` · ${suiv} point(s) à surveiller dans « Santé des données »`:''}`,al.map(x=>`<li style="cursor:default"><b>${esc(x.titre)}</b> · ${esc(x.detail)}</li>`),'Voir l\'état du robot','etat')}`;
   const J0=document.getElementById('journee');
   J0.querySelectorAll('[data-fiche]').forEach(e=>e.onclick=()=>{if(NX[e.dataset.fiche])fiche(e.dataset.fiche)});
   J0.querySelectorAll('[data-env]').forEach(c=>c.onchange=()=>{ENV.set(c.dataset.env,c.checked);setTimeout(journee,250)});
   J0.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const g=b.dataset.go;
     if(g==='faire'){document.getElementById('faire').scrollIntoView({behavior:'smooth'});return}
-    pv=g;store.set('pv',g);if(g==='fact')store.set('ffact','toutes');onglet('planning');planning();window.scrollTo(0,0)});
+    if(g==='etat'){onglet('chiffres');document.getElementById('etatrobot').scrollIntoView();return}
+    pv=g;store.set('pv',g);if(g==='fact')store.set('ffact','toutes');onglet('planning');planning();window.scrollTo(0,0);telListe()});
 }
 try{journee()}catch(e){console.error('Ma journée',e)}
 </script></body></html>

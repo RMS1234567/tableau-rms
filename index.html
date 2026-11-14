@@ -1,26 +1,51 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tableau de bord · RMS BATIMENT</title><script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.27.0/lib/msal-browser.min.js"></script></head>
-<body style="font-family:system-ui,sans-serif;background:#f4f5f7;color:#222;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px">
-<div style="max-width:420px;text-align:center"><h2 style="margin:0 0 8px">RMS BATIMENT</h2><p id="m">Connexion à votre compte Microsoft…</p></div>
-<script>
-// Page publique sans aucune donnée : après connexion avec un compte RMS BATIMENT, elle lit le tableau dans OneDrive
-// (BC CLIENTS\tableau_donnees.json, écrit par le robot) et l'affiche avec modele.html. Rien n'est stocké ailleurs.
-const CFG={"clientId": "c6968cdc-3175-4c69-98b0-2b0745026f3d", "tenant": "11d245f1-d0ba-4d98-8353-123935f094fc", "dossier": "BC CLIENTS", "scopes": ["Files.ReadWrite.All", "User.Read"], "msal": "https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.27.0/lib/msal-browser.min.js"};
-const m=document.getElementById('m');
-const app=new msal.PublicClientApplication({auth:{clientId:CFG.clientId,authority:'https://login.microsoftonline.com/'+CFG.tenant,
-  redirectUri:location.origin+location.pathname},cache:{cacheLocation:'localStorage'}});
-async function g(t,u){const r=await fetch('https://graph.microsoft.com/v1.0'+u,{headers:{Authorization:'Bearer '+t},cache:'no-store'});if(!r.ok)throw new Error(r.status+' sur '+u);return r}
-async function jeton(){await app.initialize();const r=await app.handleRedirectPromise();const a=(r&&r.account)||app.getAllAccounts()[0];
-  if(!a){await app.loginRedirect({scopes:CFG.scopes});return null}
-  try{return (await app.acquireTokenSilent({scopes:CFG.scopes,account:a})).accessToken}catch(e){await app.acquireTokenRedirect({scopes:CFG.scopes,account:a});return null}}
-async function dossier(t){   // BC CLIENTS : dans mon OneDrive (ou raccourci), sinon partagé avec moi
-  try{const j=await(await g(t,'/me/drive/root:/'+encodeURIComponent(CFG.dossier))).json();const x=j.remoteItem||j;return {d:(x.parentReference||j.parentReference).driveId,i:x.id}}catch(e){}
-  const s=await(await g(t,'/me/drive/sharedWithMe')).json();const x=(s.value||[]).find(v=>v.name===CFG.dossier);
-  if(!x)throw new Error('dossier « '+CFG.dossier+' » introuvable dans votre OneDrive');const r=x.remoteItem||x;return {d:r.parentReference.driveId,i:r.id}}
-(async()=>{try{const t=await jeton();if(!t)return;m.textContent='Chargement du tableau…';const b=await dossier(t);
-  const [dat,mod]=await Promise.all([g(t,'/drives/'+b.d+'/items/'+b.i+':/tableau_donnees.json:/content').then(r=>r.text()),fetch('modele.html',{cache:'no-store'}).then(r=>r.text())]);
-  const cfg=JSON.stringify({clientId:CFG.clientId,tenant:CFG.tenant,scopes:CFG.scopes,base:b});
-  const html=mod.replace('/*DATA*/null',()=>dat.split('</').join('<\\/')).replace('/*WEB*/null',()=>cfg).replace('<!--WEB-->',()=>'<script src="'+CFG.msal+'"><\/script>');
-  document.open();document.write(html);document.close()}catch(e){m.textContent='Erreur : '+e.message}})();
+<title>Tableau de bord · RMS BATIMENT</title>
+<style>body{font-family:system-ui,sans-serif;background:#efeee9;color:#23221c;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px;box-sizing:border-box}
+@media (prefers-color-scheme:dark){body{background:#131310;color:#ecebe5}input{background:#22211d;color:#ecebe5;border-color:#3a3934}}
+.b{max-width:360px;width:100%}h2{margin:0 0 6px}label{display:block;margin:12px 0 4px;font-size:14px}
+input{width:100%;box-sizing:border-box;padding:10px;border:1px solid #cfccc3;border-radius:8px;font-size:16px}
+button{margin-top:16px;width:100%;padding:11px;border:0;border-radius:8px;background:#2456d6;color:#fff;font-size:16px;font-weight:600}
+a{color:#2456d6;font-size:14px}#m{min-height:1.4em}</style></head>
+<body><div class="b"><h2>RMS BATIMENT</h2><p id="m">Chargement…</p>
+<form id="f" hidden><label for="e">E-mail</label><input id="e" type="email" autocomplete="username" required>
+<label for="p">Mot de passe</label><input id="p" type="password" autocomplete="current-password" required>
+<button>Se connecter</button><p><a href="#" id="oubli">Mot de passe oublié</a></p></form></div>
+<script type="module">
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import {getFirestore,doc,getDoc,setDoc,onSnapshot} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+const CFG={"apiKey": "AIzaSyDiM9bp4f7bzo4AalKVjWHdH6kwSOB3To8", "authDomain": "robot-rms.firebaseapp.com", "projectId": "robot-rms", "storageBucket": "robot-rms.firebasestorage.app", "messagingSenderId": "204001940861", "appId": "1:204001940861:web:c51f8da3d5d9110f95a814"};
+const app=initializeApp(CFG),auth=getAuth(app),db=getFirestore(app);
+const m=document.getElementById('m'),f=document.getElementById('f');let fait=false;
+const dire=e=>({'auth/invalid-credential':'E-mail ou mot de passe incorrect.','auth/invalid-email':'E-mail incorrect.',
+  'auth/too-many-requests':'Trop d\'essais : réessayer dans quelques minutes.','auth/network-request-failed':'Pas de connexion internet.',
+  'permission-denied':'Ce compte n\'a pas accès au tableau : demander à J.'})[e.code]||('Erreur : '+(e.message||e));
+const pause=t=>new Promise(r=>setTimeout(r,t));
+async function charger(){m.textContent='Chargement du tableau…';
+  let meta,parts=[];
+  for(let i=0;i<4;i++){   // le robot écrit les morceaux puis meta : on attend que tous les morceaux soient de la même version
+    meta=(await getDoc(doc(db,'tableau','meta'))).data();
+    if(!meta)throw new Error('le robot n\'a encore rien envoyé');
+    parts=await Promise.all([...Array(meta.parts)].map((_,k)=>getDoc(doc(db,'tableau','part'+k)).then(s=>s.data())));
+    if(parts.every(p=>p&&p.v===meta.v))break;await pause(3000)}
+  const bin=Uint8Array.from(atob(parts.map(p=>p.z).join('')),c=>c.charCodeAt(0));
+  const [dat,mod]=await Promise.all([new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream('gzip'))).text(),
+    fetch('modele.html',{cache:'no-store'}).then(r=>r.text())]);
+  const ref=doc(db,'partage','coches');
+  window.__fb={v:meta.v,qui:()=>(auth.currentUser||{}).email||'',sortir:()=>signOut(auth).then(()=>location.reload()),
+    ecrire:c=>setDoc(ref,{c},{merge:true}),
+    ecouter:(cb,err)=>onSnapshot(ref,s=>cb((s.data()||{}).c||{}),err),
+    meta:cb=>onSnapshot(doc(db,'tableau','meta'),s=>cb(s.data()||{}),()=>{})};
+  fait=true;
+  const html=mod.replace('/*DATA*/null',()=>dat.split('</').join('<\\/')).replace('/*WEB*/null',()=>'{"fb":true}');
+  document.open();document.write(html);document.close()}
+onAuthStateChanged(auth,u=>{if(fait)return;
+  if(!u){m.textContent='Connexion avec votre compte RMS BATIMENT.';f.hidden=false;return}
+  f.hidden=true;charger().catch(e=>{m.textContent=dire(e);f.hidden=false})});
+f.onsubmit=ev=>{ev.preventDefault();m.textContent='Connexion…';
+  signInWithEmailAndPassword(auth,document.getElementById('e').value.trim(),document.getElementById('p').value).catch(e=>m.textContent=dire(e))};
+document.getElementById('oubli').onclick=ev=>{ev.preventDefault();const e=document.getElementById('e').value.trim();
+  if(!e){m.textContent='Taper d\'abord votre e-mail.';return}
+  sendPasswordResetEmail(auth,e).then(()=>m.textContent='Un e-mail pour changer le mot de passe a été envoyé à '+e+'.').catch(x=>m.textContent=dire(x))};
 </script></body></html>
