@@ -681,7 +681,13 @@ async function webG(u,o={}){const t=await webJeton();
 // liens vers les PDF (BC, factures) : relatifs à BC CLIENTS ; en version web, ouverts depuis OneDrive
 if(WEB)document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href]');if(!a)return;const h=a.getAttribute('href')||'';
   if(!h||/^(https?:|mailto:|tel:|sms:|#|javascript:|blob:|data:)/i.test(h))return;e.preventDefault();e.stopPropagation();
-  if(FB){alert('Les PDF restent dans OneDrive, dossier BC CLIENTS :\n'+decodeURI(h).split('/').join('\\'));return}
+  // 14/11 (J : « que ça ouvre comme avant les pdf ») : le PDF est lu dans Firebase (copie envoyée par le robot) ;
+  // s'il n'y est pas encore, il s'ouvre dans OneDrive sur le web
+  if(FB){const ch=h.split('/').map(s=>decodeURIComponent(s)).join('/'),w=window.open('about:blank','_blank');
+    if(w)w.document.write('<p style="font-family:system-ui;padding:16px">Ouverture du PDF…</p>');
+    FB.pdf(ch).then(b=>{const u=URL.createObjectURL(b);if(w)w.location=u;else location.href=u})
+      .catch(()=>{const u=D.pdf_web?encodeURI(D.pdf_web)+ch.split('/').map(encodeURIComponent).join('/')+'?web=1':'';
+        if(u){if(w)w.location=u;else location.href=u}else{if(w)w.close();alert('PDF pas encore en ligne :\n'+ch)}});return}
   const w=window.open('about:blank','_blank');
   webG(':/'+h.split('/').map(s=>encodeURIComponent(decodeURIComponent(s))).join('/')).then(r=>r.json())
     .then(j=>{if(w)w.location=j['@microsoft.graph.downloadUrl'];else location.href=j['@microsoft.graph.downloadUrl']})

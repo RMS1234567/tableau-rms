@@ -36,7 +36,12 @@ async function charger(){m.textContent='Chargement du tableau…';
   window.__fb={v:meta.v,qui:()=>(auth.currentUser||{}).email||'',sortir:()=>signOut(auth).then(()=>location.reload()),
     ecrire:c=>setDoc(ref,{c},{merge:true}),
     ecouter:(cb,err)=>onSnapshot(ref,s=>cb((s.data()||{}).c||{}),err),
-    meta:cb=>onSnapshot(doc(db,'tableau','meta'),s=>cb(s.data()||{}),()=>{})};
+    meta:cb=>onSnapshot(doc(db,'tableau','meta'),s=>cb(s.data()||{}),()=>{}),
+    pdf:async ch=>{   // PDF copié par le robot : pdf/<sha1 du chemin> puis ses morceaux pdf/<clé>-<i>
+      const k=[...new Uint8Array(await crypto.subtle.digest('SHA-1',new TextEncoder().encode(ch)))].map(x=>x.toString(16).padStart(2,'0')).join('');
+      const m=(await getDoc(doc(db,'pdf',k))).data();if(!m)throw new Error('absent');
+      const z=(await Promise.all([...Array(m.n)].map((_,i)=>getDoc(doc(db,'pdf',k+'-'+i)).then(s=>(s.data()||{}).z||'')))).join('');
+      return new Blob([Uint8Array.from(atob(z),c=>c.charCodeAt(0))],{type:'application/pdf'})}};
   fait=true;
   const html=mod.replace('/*DATA*/null',()=>dat.split('</').join('<\\/')).replace('/*WEB*/null',()=>'{"fb":true}');
   document.open();document.write(html);document.close()}
