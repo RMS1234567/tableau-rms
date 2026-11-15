@@ -514,6 +514,7 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
 <!-- PLANNING -->
 <div id="p-planning" hidden>
   <p class="maj" id="psuivi"></p>
+  <div id="proul" style="margin:0 0 12px"></div>
   <div class="kpis" id="ptiles" style="grid-template-columns:repeat(auto-fit,minmax(128px,1fr))"></div>
   <div class="bar" style="border:1px solid var(--line);border-radius:var(--r);margin:14px 0"><input type="search" id="qp" placeholder="Rechercher : n° Nexxio, BC, commune, pilote…"><label class="tag" id="lvoirfact"><input type="checkbox" id="voirfact"> afficher aussi les commandes marquées facturées</label></div>
   <section class="card vue" data-v="fact"><h2><span>Rapport reçu : à facturer</span><span class="tag" id="nfact"></span></h2>
@@ -1099,13 +1100,26 @@ function planning(){
     return `<span class="b2" title="Proposition d'après l'historique : à affecter dans Nexxio">Proposé : ${top.map(o=>`${esc(o.n)} (${o.c?o.c+' à '+esc(x.commune):o.t+' '+esc(String(x.client).split(' ')[0])}${charge[o.n]?', '+charge[o.n]+' en cours':''})`).join(' · ')}</span>`};
   const note=x=>{const l=L.find(l=>l.n_nexxio===x.n_nexxio);return l&&l.motif?esc(l.motif):''};
   const tb=(v,t,s,c,k,g='petit')=>`<button class="kpi ${g} ${pv===k?'on':''} ${v===0?'zero':''}" style="--c:${c}" data-v="${k}"><span class="l">${t}</span><b>${v}</b><small>${s}</small></button>`;
+  // 15/11 (frère de J) : « voir les montants : combien il nous reste à planifier en CA, combien à facturer, nos
+  // chantiers en cours, pour voir le roulement ». Trois paquets qui ne se recoupent pas, au restant à facturer HT :
+  // à planifier = pris en compte sans RDV ; en cours = RDV posé (planifiée ou en cours), pas encore de rapport ;
+  // à facturer = rapport reçu, pas encore marqué facturé (la même somme que la tuile « À facturer »).
+  {const rest=x=>+(x.restant!=null?x.restant:x.ht)||0, som=l=>l.reduce((s,x)=>s+rest(x),0), fa=new Set(aF.map(x=>x.n_nexxio));
+    const rPlan=sansRdv.filter(x=>!fa.has(x.n_nexxio)), rCours=P.filter(x=>['Planifiée','Planifié','En cours'].includes(x.statut)&&!x.rapports&&!fa.has(x.n_nexxio));
+    const parts=[['À planifier',som(rPlan),rPlan.length,'var(--orange)',`dont ${e0(som(rPlan.filter(x=>!(dcmd(x)&&dcmd(x)<jr(90)))))} de moins de 3 mois`],
+      ['Chantiers en cours',som(rCours),rCours.length,'var(--accent)',`${rCours.filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)>=today).length} RDV à venir · ${rCours.filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)<today).length} RDV passés sans rapport`],
+      ['À facturer',som(aF),aF.length,'var(--vert)','rapport reçu']], tot=parts.reduce((s,p)=>s+p[1],0)||1;
+    document.getElementById('proul').innerHTML=`<div class="card" style="padding:12px 14px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><b>Roulement en CA (HT, restant à facturer)</b><span class="tag">Total ${e0(tot)}</span></div>
+      <div style="display:flex;height:10px;border-radius:5px;overflow:hidden;margin:10px 0;background:var(--soft)">${parts.map(p=>`<span title="${p[0]} : ${e0(p[1])}" style="width:${(p[1]/tot*100).toFixed(1)}%;background:${p[3]}"></span>`).join('')}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px">${parts.map(p=>`<div style="border-left:3px solid ${p[3]};padding-left:8px"><span class="tag">${p[0]} · ${p[2]} commande(s)</span><div style="font:700 20px/1.2 var(--titre)">${e0(p[1])}</div><small class="tag">${pct(p[1]/tot)} · ${p[4]}</small></div>`).join('')}</div></div>`}
   document.getElementById('ptiles').innerHTML=[
     tb(aF.length,'À facturer',e0(aF.reduce((s,x)=>s+(x.restant||0),0))+' HT, rapport reçu','var(--vert)','fact','grand'),
     tb(retard.length,'RDV passés sans rapport','À relancer auprès des équipes','var(--rouge)','retard','grand'),
-    tb(aplan.length,'À planifier','RDV à prendre','var(--orange)','aplan','grand'),
+    tb(aplan.length,'À planifier',e0(aplan.reduce((s,x)=>s+(+(x.restant!=null?x.restant:x.ht)||0),0))+' HT · RDV à prendre','var(--orange)','aplan','grand'),
     tb(cles.length,'Clés à récupérer',new Set(cles.map(agenceDe)).size+' agence(s) à passer','var(--orange)','cles'),
     tb(venir.filter(x=>x.rdv_iso.slice(0,10)===today).length,"RDV aujourd'hui",venir.length+' RDV à venir · '+venir.filter(x=>x.rdv_iso.slice(0,10)<=jrs(7)).length+' sur 7 jours','var(--accent)','venir'),
-    tb(cours.length,'En cours','Chantiers commencés','var(--accent)','cours'),
+    tb(cours.length,'En cours',e0(cours.reduce((s,x)=>s+(+(x.restant!=null?x.restant:x.ht)||0),0))+' HT · chantiers commencés','var(--accent)','cours'),
     tb(dort.length,'Qui dorment',dort.filter(x=>x._j>30).length+' depuis plus de 30 jours','var(--rouge)','dort'),
     ...((D.extranet||[]).length?[(()=>{const E=extranetLignes(),f=E.filter(x=>x.faire);return tb(f.length,'Extranet Alliade',E.filter(x=>x.k==='liv').length+' à livrer · '+E.filter(x=>x.k==='fact').length+' à facturer','var(--orange)','ext')})()]:[]),
     tb((D.agenda||[]).filter(e=>(e.debut||'').slice(0,10)===today).length,'Par équipe',D.agenda_genere?new Set((D.agenda||[]).filter(e=>e.debut>=lundiDe(0)&&e.debut<lundiDe(1)).map(e=>e.equipe)).size+' équipes sur la semaine':'agendas pas encore reliés','var(--accent)','equipe')].join('');
