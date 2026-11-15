@@ -704,7 +704,7 @@ const flag=p=>({get:k=>{try{return localStorage.getItem(p+k)==='1'}catch(e){retu
 const IMP=flag('imp:'), OK=flag('ok:'), FACT=flag('fact:'), DEV=flag('dev:'), CLES=flag('cles:'), ENV=flag('env:');
 const PAY=flag('pay:');   // 13/11 (J) : facture de sous-traitant payée (bon à payer), clé = nom du fichier de la facture   // env: rapport envoyé au bailleur (12/11)
 // 12/11 (J) : aussi les commentaires (« com: ») et les tentatives d'appel au locataire (« app: »), partagés de la même façon
-const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','plan:','ext:'], CO_TXT=['com:','app:','plan:','ext:'];   // plan: demande de planification (13/11)
+const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','plan:','ext:','wa:'], CO_TXT=['com:','app:','plan:','ext:','wa:'];   // wa: WhatsApp RDV (15/11)   // plan: demande de planification (13/11)
 const NOTE={get:k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},
   set:(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k);localStorage.setItem('ts:'+k,Date.now())}catch(e){}coSave(k)}};
 // coches des autres PC, relues par le robot (D.coches) : la plus récente gagne, avant le premier affichage
@@ -1375,10 +1375,10 @@ function fiche(n){const o=NX[n];if(!o)return;const pl=o.pl||{},s=o.sst||{},b=o.b
     ${c('Sous-traitant(s)',s.sst&&Object.keys(s.sst).length?Object.entries(s.sst).map(([k,v])=>esc(k)+' · '+eur(v)).join('<br>'):'')}${c('Délai du BC',fr(b.fin))}${c('Contrôle robot',b.risque?pill(b.risque):'')}</div>
     ${(o.ag||[]).length?`<div class="s"><h4>Agenda</h4>${o.ag.sort((a,b)=>a.debut<b.debut?-1:1).map(e=>`<div>${fr(e.debut.slice(0,10))} ${esc(e.debut.slice(11,16))} · <b>${esc(e.equipe)}</b>${e.prix?' · '+eur(e.prix):''}<span class="b2">${esc(e.lieu)}${e.note?' · '+esc(e.note):''}</span></div>`).join('')}</div>`:''}
     ${rdvLoc(n,pl)}
-    ${planifBloc(n,pl,s)}
+    ${planifBloc(n,pl,s)}${waBloc(n,pl)}
     ${b.motif?`<div class="s"><h4>Note du robot</h4>${esc(b.motif)}</div>`:''}
     <div class="s">${b.pdf?pdfA(b.pdf,'Voir le BC (PDF)')+' · ':''}<a href="https://rmsbatiment.app.nexxio.fr/main/item?order_number=${encodeURIComponent(n)}" target="_blank">Ouvrir dans Nexxio</a>${agendaUrl(n,pl,x)?` · <a class="btn" href="${esc(agendaUrl(n,pl,x))}" target="_blank" title="Ouvre Google Agenda avec l'événement rempli comme le bouton de Nexxio : choisir l'agenda du sous-traitant puis Enregistrer">Ajouter à l'agenda</a>`:''}</div>`;
-  lierRdvLoc(n);lierPlanif(n);
+  lierRdvLoc(n);lierPlanif(n);lierWa(n);
   const f=document.getElementById('fiche');f.hidden=false;document.getElementById('ffermer').onclick=()=>f.hidden=true;f.onclick=e=>{if(e.target===f)f.hidden=true}}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('fiche').hidden=true});
 // 13/11 (J) : même événement que le lien « Ajoutez le à votre agenda Google » de Nexxio (vu sur 5264) : « RMS BATIMENT - <n° BC> »,
@@ -1417,6 +1417,37 @@ function lierPlanif(n){const go=document.getElementById('pf-go');if(!go)return;c
     if(!confirm(`Planifier la commande ${n} dans Nexxio ?\n\nRDV le ${fr(d)} à ${h} (${ANN[document.getElementById('pf-a').value]})`+(sst?`\nSous-traitant : ${sst}`:'')+(sms?'\nSMS de confirmation envoyé au locataire':'')+(mail?'\nMail de confirmation envoyé au gestionnaire':'')))return;
     NOTE.set('plan:'+n,JSON.stringify({d,h,a:document.getElementById('pf-a').value,sst,sms:sms?1:0,mail:mail?1:0,par:WEB?webQui():''}));
     et.innerHTML=planEtat(n);lierAnnul()}}
+/* ---------- bouton « Envoyer le RDV par WhatsApp » (15/11, J : « Tout sur clic », « Oui, ce bouton ») ----------
+   Commande planifiée dans Nexxio, RDV à venir, locataire en place avec un portable sur le BC. Le clic écrit « wa:<n> »
+   ({q, tel, par}) dans les coches partagées ; le robot envoie le message modèle « rdv_planifie » validé par Meta, avec
+   un texte qu'il recalcule lui-même (robot.whatsapp_demandes), et écrit le résultat dans D.actions. Un clic = un message. */
+const JRS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+function waApercu(n,pl){const r=String((pl&&pl.rdv_iso)||''),d=new Date(r.slice(0,10)+'T12:00');
+  const cli={LMH:'Lyon Métropole Habitat',GLH:'Grand Lyon Habitat',INLI:"In'li",ALLIADE:'Alliade Habitat'}[String(pl.bailleur||'').toUpperCase()]||String(pl.client||'votre bailleur');
+  const m=String(pl.adresse||'').split(' - ').map(x=>x.trim()),cp=m.findIndex(x=>/^\d{5}./.test(x)),adr=cp>=0?m.slice(0,cp+1).join(', '):'votre logement';
+  const h=r.length>10&&r.slice(11,16)!=='00:00'?'à '+r.slice(11,13)+' h '+r.slice(14,16):'dans la journée';
+  return `Bonjour, RMS BATIMENT, mandaté par ${cli}, interviendra dans votre logement au ${adr} le ${JRS[d.getDay()]} ${fr(r.slice(0,10))} ${h}. En cas d'empêchement, merci de nous appeler au ${SMS_TEL}. Cordialement, RMS BATIMENT`}
+function waEtat(n){const v=NOTE.get('wa:'+n), a=(D.actions||{})['wa:'+n], ts=+(()=>{try{return localStorage.getItem('ts:wa:'+n)}catch(e){return 0}})()||0;
+  const res=a&&(!v||a.ts>=ts)?a:null;
+  if(v&&!res)return '<span class="chip info">Demande envoyée</span> <span class="tag">le robot envoie le WhatsApp à son prochain passage</span> <a href="#" id="wa-annuler">Annuler</a>';
+  if(res)return `<span class="chip ${res.etat==='ok'?'ok':'bad'}">${res.etat==='ok'?'WhatsApp envoyé':'Non envoyé'}</span> <span class="tag">${esc(res.message||'')} · le ${fr((res.quand||'').slice(0,10))} à ${esc((res.quand||'').slice(11,16))}${res.par?' · par '+esc(res.par):''}</span>`;
+  return ''}
+function waBloc(n,pl){const r=String((pl&&pl.rdv_iso)||''), g=(D.logements||{})[n]||{};
+  if(!pl||!/^Planifi/.test(pl.statut||'')||!/^\d{4}-\d\d-\d\d/.test(r)||r.slice(0,10)<today||g.vacant||!g.nom)return '';
+  const mob=[...new Set((g.tels||[]).map(t=>String(t).replace(/\D/g,'').replace(/^33(?=[67])/,'0')).filter(t=>/^0[67]\d{8}$/.test(t)))];
+  if(!mob.length)return '';
+  return `<div class="s wa"><h4>Prévenir le locataire par WhatsApp</h4>
+    <div class="tag" style="margin-bottom:6px">${esc(waApercu(n,pl))}</div>
+    <div class="pf"><label>Portable<select id="wa-t">${mob.map(t=>`<option value="${t}">${telAff(t)}</option>`).join('')}</select></label>
+      <button class="btn" id="wa-go">${NOTE.get('wa:'+n)?'Renvoyer':'Envoyer le RDV par WhatsApp'}</button></div>
+    <div id="wa-etat" style="margin-top:8px">${waEtat(n)}</div></div>`}
+function lierWa(n){const go=document.getElementById('wa-go');if(!go)return;const et=document.getElementById('wa-etat');
+  const annul=()=>{const a=document.getElementById('wa-annuler');if(a)a.onclick=e=>{e.preventDefault();NOTE.set('wa:'+n,'');et.innerHTML=waEtat(n)||'Demande annulée.'}};annul();
+  go.onclick=async()=>{const part=await coEtat().catch(()=>'off');
+    if(part!=='on'){et.innerHTML='<span class="chip bad">Demande non envoyée</span> Le partage des coches n\'est pas actif sur ce PC : le robot ne verrait pas la demande.';return}
+    const t=document.getElementById('wa-t').value;
+    if(!confirm(`Envoyer ce WhatsApp au ${telAff(t)} ?\n\n${waApercu(n,(D.planning||[]).find(x=>String(x.n_nexxio)===String(n))||{})}`))return;
+    NOTE.set('wa:'+n,JSON.stringify({q:Date.now(),tel:t,par:WEB?webQui():''}));et.innerHTML=waEtat(n);annul()}}
 // 14/11 (J, roadmap : « Valider une commande Extranet depuis le dashboard ») : bouton « Valider » sur une commande de
 // l'Extranet qui attend l'accord de J (250 € HT ou moins, ou contrôle à voir), au lieu du fichier accepter_extranet.txt.
 // Le clic écrit « ext:<n° Extranet> » dans les coches partagées ; le robot l'accepte au passage suivant
