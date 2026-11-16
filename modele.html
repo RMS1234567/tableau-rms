@@ -493,6 +493,42 @@ main section.card,main .hero,#proul{margin-bottom:14px!important}
 @media (max-width:700px){section.card.ferme>:not(h2){display:none!important}section.card.ferme>h2{margin-bottom:0}section.card.pliable>h2{cursor:pointer}
  section.card.pliable>h2>span:first-child::after{content:' ▾';color:var(--faint)}section.card.ferme>h2>span:first-child::after{content:' ▸'}
  .frise{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:10px;padding:10px 16px}.frise div:nth-child(4)::after{display:none}}
+
+/* 16/11 (J : « charte graphique : tout est monotone, on peut se perdre ; un peu de peps en restant sobre ») :
+   une couleur repère par onglet (--ton) pour le menu, le titre de page, le liseré des cartes et les boutons principaux.
+   Vert, orange et rouge gardent leur sens (OK, à vérifier, à reprendre) : aucun onglet ne les prend. */
+:root{--t-exploitation:#2456d6;--t-planning:#0e7c86;--t-devis:#9b3a74;--t-sst:#6a49c8;--t-chiffres:#46566e;--t-manager:#3d44b8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--t-exploitation:#86a3f2;--t-planning:#5cc6cf;--t-devis:#e48fc2;--t-sst:#b39cf5;--t-chiffres:#a9b6c9;--t-manager:#a8b0fb}}
+:root[data-theme="dark"]{--t-exploitation:#86a3f2;--t-planning:#5cc6cf;--t-devis:#e48fc2;--t-sst:#b39cf5;--t-chiffres:#a9b6c9;--t-manager:#a8b0fb}
+body{--ton:var(--t-exploitation)}
+body[data-onglet="planning"]{--ton:var(--t-planning)}body[data-onglet="devis"]{--ton:var(--t-devis)}body[data-onglet="sst"]{--ton:var(--t-sst)}
+body[data-onglet="chiffres"]{--ton:var(--t-chiffres)}body[data-onglet="manager"]{--ton:var(--t-manager)}
+.tabs button{--ton:var(--t-exploitation)}.tabs button[data-t="planning"]{--ton:var(--t-planning)}.tabs button[data-t="devis"]{--ton:var(--t-devis)}
+.tabs button[data-t="sst"]{--ton:var(--t-sst)}.tabs button[data-t="chiffres"]{--ton:var(--t-chiffres)}.tabs button[data-t="manager"]{--ton:var(--t-manager)}
+.tabs button svg{stroke:var(--ton);opacity:.85}
+.tabs button.on,.tabs button.on:hover{background:color-mix(in srgb,var(--ton) 13%,transparent)!important;color:var(--ton)!important}.tabs button.on svg{stroke:var(--ton)!important;opacity:1}
+/* titre de la page : où l'on est */
+#ptitre{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 16px;border-radius:var(--r);border:1px solid color-mix(in srgb,var(--ton) 22%,var(--line));
+  background:linear-gradient(90deg,color-mix(in srgb,var(--ton) 11%,var(--card)),var(--card) 70%)}
+#ptitre i{width:38px;height:38px;flex:none;border-radius:11px;display:grid;place-items:center;background:var(--ton)}
+#ptitre i svg{width:20px;height:20px;stroke:var(--bg);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#ptitre b{display:block;font:700 17px/1.2 var(--titre);color:var(--ink)}#ptitre small{color:var(--muted);font-size:12.5px}
+/* cartes : liseré et titre teintés de la couleur de l'onglet */
+main .card>h2{box-shadow:inset 3px 0 0 var(--ton);background:color-mix(in srgb,var(--ton) 4%,var(--card))}
+main .card>h2>span:first-child{color:var(--ink)}
+/* tuiles : leur couleur toujours visible (un trait en haut), plus marquée au survol ou choisie */
+.kpi::before{opacity:.6!important}.kpi:hover::before,.kpi.on::before{opacity:1!important}
+.kpi b{color:var(--c,var(--ink))}.kpi.zero b{color:var(--faint)}
+/* tableaux : lignes alternées, survol teinté */
+tbody tr:nth-child(even) td{background:color-mix(in srgb,var(--soft) 60%,var(--card))}
+tbody tr:hover td{background:color-mix(in srgb,var(--ton) 7%,var(--card))!important}
+/* boutons principaux pleins, de la couleur de l'onglet */
+.btn.prim{background:var(--ton);border-color:var(--ton);color:var(--bg)}.btn.prim:hover{background:color-mix(in srgb,var(--ton) 85%,var(--ink));border-color:var(--ton);color:var(--bg)}
+.btn:hover{border-color:var(--ton);color:var(--ton)}
+.journee .et-t b.n{color:var(--ton)}
+.seg button.on{background:var(--ton)!important;border-color:var(--ton)!important;color:var(--bg)!important}
+@media (max-width:700px){#ptitre{padding:10px 12px;margin-bottom:10px}#ptitre i{width:32px;height:32px}#ptitre b{font-size:15px}#ptitre small{display:none}}
+@media print{#ptitre{display:none}}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -503,7 +539,7 @@ main section.card,main .hero,#proul{margin-bottom:14px!important}
 </aside>
 <div class="contenu">
 <div class="entete"><div><h1 id="bonjour">Bonjour</h1><p id="resume"></p></div><div class="gsearch"><input type="search" id="gq" placeholder="Rechercher partout : n° Nexxio, BC, adresse, locataire, équipe…" autocomplete="off"><div id="gres" hidden></div></div><button class="theme" id="theme" title="Clair, sombre ou automatique"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span></span></button></div>
-<div id="alerte"></div><div id="alerte-cx" class="alerte-cx"></div><div id="alerte-co" class="alerte-co"></div>
+<div id="alerte"></div><div id="alerte-cx" class="alerte-cx"></div><div id="alerte-co" class="alerte-co"></div><div id="ptitre"></div>
 <div id="fiche" hidden><div class="in" id="fichein"></div></div><button class="btn" id="haut" hidden title="Haut de page">↑</button>
 <main>
 <!-- EXPLOITATION -->
@@ -2113,7 +2149,13 @@ function telPage(tb){const lim=tb._lim||PAGE,rows=[...tb.rows],n=rows.length,on=
 document.querySelectorAll('.wrap tbody[id]').forEach(tb=>{new MutationObserver(()=>telPage(tb)).observe(tb,{childList:true});telPage(tb)});
 matchMedia('(max-width:700px)').addEventListener('change',()=>document.querySelectorAll('.wrap tbody[id]').forEach(telPage));
 const onglet=t=>{['exploitation','planning','devis','sst','chiffres','manager'].forEach(k=>document.getElementById('p-'+k).hidden=t!==k);
-  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));store.set('onglet',t)};
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));store.set('onglet',t);document.body.dataset.onglet=t;ptitre(t)};
+// 16/11 (J, charte graphique) : titre de la page avec l'icône et la couleur de l'onglet, pour savoir où l'on est
+const PTIT={exploitation:['Exploitation','Ta journée, les BC reçus et ce qui bloque'],planning:['Planning et facturation','Planifier, relancer les équipes, facturer'],
+  devis:['Devis','Devis à faire valider et demandes de devis'],sst:['Sous-traitants','Équipes, rapports, factures et relevés'],
+  chiffres:['Chiffres','Commandé, facturé, à encaisser, marges et santé des données'],manager:['Manager','Compte rendu du jour et questions au manager']};
+function ptitre(t){const b=document.querySelector('.tabs button[data-t="'+t+'"] svg'),el=document.getElementById('ptitre'),x=PTIT[t];if(!el||!x)return;
+  el.innerHTML=`<i>${b?b.outerHTML:''}</i><div><b>${x[0]}</b><small>${x[1]}</small></div>`}
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{onglet(b.dataset.t);window.scrollTo(0,0)});
 
 /* ---------- thème clair / sombre / auto ---------- */
@@ -2243,7 +2285,7 @@ function journee(){
   // 16/11 (J : « Ma journée pas assez épurée ») : une étape à zéro disparaît ; chaque étape tient sur une ligne, ses commandes
   // se déplient d'un clic sur l'étape (gardé ouvert quand la carte se redessine)
   const OUV=journee.ouv=journee.ouv||new Set();
-  const etape=(n,titre,sous,liste,bouton,go)=>!n?'':`<div class="etape"><div class="et-t"${liste.length?` data-pli="${esc(titre)}" style="cursor:pointer"`:''}><b class="n">${n}</b><div><b>${titre}</b>${liste.length?` <span class="tag pli">${OUV.has(titre)?'▾ replier':'▸ voir'}</span>`:''}<div class="tag">${sous}</div></div>${bouton?`<button class="btn" data-go="${go}">${bouton}</button>`:''}</div>${liste.length?`<ul${OUV.has(titre)?'':' hidden'}>${liste.slice(0,6).join('')}${liste.length>6?`<li class="tag">… et ${liste.length-6} autre(s)</li>`:''}</ul>`:''}</div>`;
+  const etape=(n,titre,sous,liste,bouton,go)=>!n?'':`<div class="etape"><div class="et-t"${liste.length?` data-pli="${esc(titre)}" style="cursor:pointer"`:''}><b class="n">${n}</b><div><b>${titre}</b>${liste.length?` <span class="tag pli">${OUV.has(titre)?'▾ replier':'▸ voir'}</span>`:''}<div class="tag">${sous}</div></div>${bouton?`<button class="btn prim" data-go="${go}">${bouton}</button>`:''}</div>${liste.length?`<ul${OUV.has(titre)?'':' hidden'}>${liste.slice(0,6).join('')}${liste.length>6?`<li class="tag">… et ${liste.length-6} autre(s)</li>`:''}</ul>`:''}</div>`;
   // 1. commandes reçues depuis la veille, prises en compte, sans RDV
   const recues=[...new Set(L.filter(l=>l.n_nexxio&&l.jour>=debut).map(l=>l.n_nexxio))].map(n=>NXP[n]).filter(x=>x&&x.statut==='Prise en compte'&&!x.rdv);
   const occ=recues.filter(x=>!(LG[x.n_nexxio]||{}).vacant), vac=recues.filter(x=>(LG[x.n_nexxio]||{}).vacant);
