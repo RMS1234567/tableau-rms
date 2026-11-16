@@ -529,6 +529,22 @@ tbody tr:hover td{background:color-mix(in srgb,var(--ton) 7%,var(--card))!import
 .seg button.on{background:var(--ton)!important;border-color:var(--ton)!important;color:var(--bg)!important}
 @media (max-width:700px){#ptitre{padding:10px 12px;margin-bottom:10px}#ptitre i{width:32px;height:32px}#ptitre b{font-size:15px}#ptitre small{display:none}}
 @media print{#ptitre{display:none}}
+/* 16/11 (J : « plus de couleur ») : fond de page et menu légèrement teintés de l'onglet, titres de cartes et en-têtes de
+   tableaux plus marqués, tuiles sur fond de leur couleur, étapes de Ma journée dans une pastille colorée */
+body{background:color-mix(in srgb,var(--ton) 6%,var(--bg))!important;transition:background .25s}
+.side{background:color-mix(in srgb,var(--ton) 5%,var(--card))!important;border-color:color-mix(in srgb,var(--ton) 18%,var(--line))!important}
+main .card,main .hero{border-color:color-mix(in srgb,var(--ton) 16%,var(--line))}
+main .card>h2{box-shadow:inset 4px 0 0 var(--ton);background:color-mix(in srgb,var(--ton) 10%,var(--card))}
+main th{background:color-mix(in srgb,var(--ton) 6%,var(--card))!important;color:color-mix(in srgb,var(--ton) 55%,var(--muted))}
+.kpi{background:color-mix(in srgb,var(--c,var(--ton)) 7%,var(--card))!important;border-color:color-mix(in srgb,var(--c,var(--ton)) 25%,var(--line))!important}
+.kpi.on{background:color-mix(in srgb,var(--c,var(--ton)) 16%,var(--card))!important}
+.kpi::before{height:4px!important}
+.journee .et-t b.n{display:grid;place-items:center;min-width:40px;height:40px;padding:0 6px;border-radius:12px;font-size:19px;
+  background:color-mix(in srgb,var(--ton) 14%,var(--card));color:var(--ton)}
+.journee .etape:nth-of-type(6n+2) b.n{--ton:var(--t-planning)}.journee .etape:nth-of-type(6n+3) b.n{--ton:var(--t-sst)}
+.journee .etape:nth-of-type(6n+4) b.n{--ton:var(--t-devis)}.journee .etape:nth-of-type(6n+5) b.n{--ton:var(--t-manager)}.journee .etape:nth-of-type(6n) b.n{--ton:var(--t-chiffres)}
+#ptitre{background:linear-gradient(90deg,color-mix(in srgb,var(--ton) 22%,var(--card)),color-mix(in srgb,var(--ton) 5%,var(--card)) 75%)!important}
+.hero{background:linear-gradient(120deg,color-mix(in srgb,var(--ton) 9%,var(--card)),var(--card) 60%)!important}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -1960,7 +1976,7 @@ function rapprochementVue(L,eq,P){
   const nfS=l=>l.reduce((t,c)=>t+(c.prix||0),0);
   document.getElementById('trq').innerHTML=R.length?R.map(x=>`<tr data-rq="${esc(x.nom)}" style="cursor:pointer"><td><b>${esc(x.nom)}</b></td><td class="num">${x.C.length}</td><td class="num">${eur(x.fact)}</td><td class="num">${eur(x.ag)}</td>
     <td class="num"><b class="${Math.abs(x.ecart)>=1?'neg':''}">${eur(x.ecart)}</b></td><td class="num">${x.nf.length?`${x.nf.length}<span class="b2">${e0(nfS(x.nf))}${x.nf.some(c=>c.prix==null)?' + prix à mettre':''}</span>`:''}</td>
-    <td>${x.voir.length?`<span class="chip warn">${x.voir.length} commande(s)</span>`:'<span class="chip ok">Tout concorde</span>'}</td></tr>`).join('')
+    <td>${x.voir.length?`<span class="chip warn">${x.voir.length} commande(s)</span>`:''}${(n=>n?` <span class="chip warn">${n} prix à mettre</span>`:(x.voir.length?'':'<span class="chip ok">Tout concorde</span>'))(x.nf.filter(c=>c.prix==null).length)}</td></tr>`).join('')
     :`<tr><td colspan="7" class="vide">${FAC.length?'Aucune facture de sous-traitant pour ces critères.':'Aucune facture lue pour l\'instant.'}</td></tr>`;
   const x=R.find(y=>y.nom===RQSEL);
   document.getElementById('rq-det').innerHTML=x?`<h3 style="margin:16px 0 8px;font-size:15px">${esc(x.nom)}</h3>
