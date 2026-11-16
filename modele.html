@@ -701,7 +701,7 @@ main th{background:color-mix(in srgb,var(--ton) 6%,var(--card))!important;color:
       <select id="ch-type"><option value="">Tous les écarts</option></select><span id="per-ch"></span>
       <input type="search" id="ch-q" placeholder="Rechercher : n° Nexxio, BC, équipe…"></div>
     <section class="card"><h2><span>Écarts entre l'agenda et Nexxio</span><span class="tag" id="nch"></span></h2>
-      <p class="sub" style="padding-bottom:10px">Vérifié à chaque mise à jour du tableau (toutes les 10 min, agendas relus toutes les heures). Période : date du RDV.</p>
+      <p class="sub" style="padding-bottom:10px">Vérifié à chaque mise à jour du tableau (toutes les 5 min, agendas relus toutes les heures). Période : date du RDV.</p>
       <div class="wrap"><table><thead><tr><th>Commande</th><th>Client · commune</th><th>Écart</th><th>Agenda</th><th>Nexxio</th></tr></thead><tbody id="tch"></tbody></table></div></section>
   </div>
   <div id="sv-par">
@@ -1208,7 +1208,7 @@ function planning(){
   const retard=P.filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)<today&&!x.rapports&&['Planifiée','Planifié','En cours'].includes(x.statut)).sort((a,b)=>a.rdv_iso<b.rdv_iso?-1:1);
   const venir=P.filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)>=today).sort((a,b)=>a.rdv_iso<b.rdv_iso?-1:1);
   const dsuivi=D.suivi_genere?new Date(D.suivi_genere):null, age=dsuivi?Math.round((new Date()-dsuivi)/60000):null;
-  document.getElementById('psuivi').textContent=dsuivi?`Lu dans Nexxio le ${dsuivi.toLocaleDateString('fr-FR')} à ${dsuivi.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}, relu toutes les 10 minutes, 24 h sur 24. Ce qui avance dans Nexxio (ou un RDV posé dans l\'agenda d\'une équipe) se met à jour ici tout seul.`+(age>60?' Attention : dernière lecture il y a plus d\'une heure.':''):'Suivi Nexxio pas encore lu par le robot.';
+  document.getElementById('psuivi').textContent=dsuivi?`Lu dans Nexxio le ${dsuivi.toLocaleDateString('fr-FR')} à ${dsuivi.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}, relu toutes les 5 minutes, 24 h sur 24. Ce qui avance dans Nexxio (ou un RDV posé dans l\'agenda d\'une équipe) se met à jour ici tout seul.`+(age>60?' Attention : dernière lecture il y a plus d\'une heure.':''):'Suivi Nexxio pas encore lu par le robot.';
   const aF=tousFact.filter(x=>!FACT.get(x.n_nexxio));
   const tuile=(v,t,s,c)=>`<div class="kpi" style="cursor:default;--c:${c}"><span class="l">${t}</span><b>${v}</b><small>${s}</small></div>`;
   const cours=P.filter(x=>x.statut==='En cours').sort((a,b)=>(a.rdv_iso||'')<(b.rdv_iso||'')?-1:1);
@@ -1622,7 +1622,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementB
 // 13/11 (J) : même événement que le lien « Ajoutez le à votre agenda Google » de Nexxio (vu sur 5264) : « RMS BATIMENT - <n° BC> »,
 // RDV d'une heure, adresse, « Intervention n°X » (lien avec la commande pour la lecture des agendas). Il reste à choisir l'agenda.
 /* ---------- bouton « Planifier » (13/11, J : des boutons qui agissent dans Nexxio) ----------
-   Le clic écrit la demande « plan:<n> » dans les coches partagées ; le robot la lit à son passage (toutes les 10 min),
+   Le clic écrit la demande « plan:<n> » dans les coches partagées ; le robot la lit à son passage (toutes les 5 min),
    fait les gestes dans Nexxio (pilote, sous-traitant, RDV, SMS / mail, Planifier), relit, et écrit le résultat
    (D.actions). Écrans relevés sur la commande test 5274. Un clic = cette commande seulement. */
 const ANN={morning:'Matin','afternoon':'Après-midi',all_day:'Journée entière','exact schedule':'Horaire exact'};
