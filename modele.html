@@ -316,7 +316,9 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
 .imp li.jr .btn{padding:3px 10px;font-size:12px}
 /* 12/11 (J) : la fiche d'une commande s'ouvre sur tout l'écran (16 px de marge), cases plus grandes, autant de colonnes
    que la largeur permet ; filets dessinés par case pour ne plus laisser de case grise vide en bout de ligne */
-#fiche{padding:16px;align-items:stretch}
+/* vu le 16/11 (J, fiche 5276) : « stretch » arrêtait le fond de la fiche à la hauteur de l'écran, le bas (Planifier, Note du robot)
+   débordait par-dessus la liste ; la fiche suit maintenant son contenu, toute la hauteur au moins, et le voile est plus sombre */
+#fiche{padding:16px;align-items:flex-start;background:rgba(10,12,18,.8)}
 #fiche .in{max-width:none;min-height:100%;display:flex;flex-direction:column;border-radius:var(--r)}
 #fiche h3{position:sticky;top:-16px;z-index:1;background:var(--solid);font-size:22px;padding:18px 24px;border-radius:var(--r) var(--r) 0 0}
 #fiche .g{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0;background:none;border-bottom:1px solid var(--line)}
@@ -483,6 +485,7 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
 <main>
 <!-- EXPLOITATION -->
 <div id="p-exploitation">
+  <section class="card" id="manager" hidden style="margin-bottom:14px"></section>
   <section class="card journee" id="journee"></section>
   <section class="hero" id="hero"></section>
   <div class="kpis" id="kpis"></div>
@@ -520,6 +523,7 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
   <section class="card vue" data-v="fact"><h2><span>Rapport reçu : à facturer</span><span class="tag" id="nfact"></span></h2>
     <p class="sub" style="padding-bottom:10px">Le rapport du technicien est arrivé dans Nexxio : la commande peut être facturée. Cocher « Facturé » une fois fait.</p>
     <div class="seg" id="ffact" style="margin:0 0 12px;flex-wrap:wrap;height:auto"></div>
+    <div class="wrap" id="fcli" style="margin:0 0 12px"></div>
     <div class="wrap"><table><thead><tr><th>Nexxio</th><th>N° BC</th><th>Client</th><th>Commune</th><th>Statut</th><th class="num">Rapports</th><th>Rapport reçu le</th><th class="num">Restant à facturer</th><th>PDF</th><th>Facturé</th></tr></thead><tbody id="tfact"></tbody></table></div></section>
   <section class="card vue" data-v="aplan" hidden><h2><span>À planifier : RDV à prendre</span><span class="tag" id="naplan"></span></h2>
     <p class="sub" style="padding-bottom:10px">Prises en compte dans Nexxio, sans rendez-vous. La plus ancienne en premier. Locataire et travaux lus dans le BC : cliquer sur le numéro pour appeler.</p>
@@ -588,7 +592,7 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
   <div id="sv-rel" hidden>
     <div class="bar" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px">
       <select id="rl-eq"></select><span id="per-rl"></span>
-      <button class="btn" id="rl-print">Imprimer / PDF</button><button class="btn" id="rl-copy">Copier le texte</button><span class="tag" id="rl-ok"></span></div>
+      <button class="btn" id="rl-print">Imprimer / PDF</button><button class="btn" id="rl-copy">Copier le texte</button><a class="btn" id="rl-wa" target="_blank" rel="noopener" href="#" title="WhatsApp s'ouvre avec le relevé écrit : choisir le sous-traitant, relire, envoyer">Ouvrir dans WhatsApp</a><a class="btn" id="rl-mail" href="#" title="Ouvre un nouveau mail avec le relevé écrit, dans ta messagerie : ajouter le destinataire, relire, envoyer">Préparer le mail</a><span class="tag" id="rl-ok"></span></div>
     <section class="card" id="releve"><div id="rl-corps"></div></section>
     <p class="sub" style="padding:10px 4px">Une commande compte à la date où le rapport de l'équipe est arrivé dans Nexxio (travail fait en septembre, rapport envoyé en octobre : octobre). Prix = prix écrit dans l'agenda de l'équipe.</p>
   </div>
@@ -605,6 +609,10 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
       <div class="wrap"><table><thead><tr><th>Reçue</th><th>Sous-traitant</th><th>Facture</th><th class="num">Montant facture HT</th><th class="num">Prix agenda</th><th class="num">Écart</th><th>Contrôle</th></tr></thead><tbody id="tfc"></tbody></table></div></section>
     <section class="card" id="fc-det" hidden style="margin-top:18px"><h2><span id="fc-dtitre"></span><span class="tag" id="fc-dtag"></span></h2>
       <div class="wrap"><table><thead><tr><th>Commande</th><th>Trouvée par</th><th>Adresse</th><th>Rapport</th><th>Statut Nexxio</th><th class="num">Facturé</th><th class="num">Prix agenda</th><th>Remarque</th></tr></thead><tbody id="tfcd"></tbody></table></div></section>
+    <section class="card" id="rap-eq" style="margin-top:18px"><h2><span>Rapprochement par équipe</span><span class="tag" id="nrq"></span></h2>
+      <p class="sub" style="padding-bottom:10px">Pour chaque sous-traitant, commande par commande : ce qu'il a facturé, le prix écrit dans son agenda et ses rapports Nexxio. <b>Pas encore facturé</b> : rapport de l'équipe reçu depuis sa première commande facturée, et aucune facture lue pour cette commande. Cliquer une équipe pour voir les commandes à regarder.</p>
+      <div class="wrap"><table><thead><tr><th>Sous-traitant</th><th class="num">Commandes facturées</th><th class="num">Facturé HT</th><th class="num">Prix agenda</th><th class="num" title="facturé moins prix de l'agenda, sur les commandes dont le prix est dans l'agenda">Écart</th><th class="num">Pas encore facturé</th><th>À regarder</th></tr></thead><tbody id="trq"></tbody></table></div>
+      <div id="rq-det"></div></section>
   </div>
   <div id="sv-ret" hidden>
     <div class="bar" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px">
@@ -647,6 +655,15 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
   <div class="mois" id="mois"></div>
   <section class="card" style="margin-bottom:18px"><h2><span>Commandes par bailleur sur la période</span><span class="tag">lues dans Nexxio</span></h2>
     <div class="wrap"><table><thead><tr><th>Bailleur</th><th class="num">Commandes</th><th class="num">Commandé HT</th><th class="num">Panier moyen</th><th class="num">Facturé HT</th><th class="num">Payé aux SST</th><th class="num">Marge</th></tr></thead><tbody id="tcli"></tbody></table></div></section>
+  <section class="card" style="margin-bottom:18px"><h2><span>Par bailleur et par marché sur la période</span><span class="tag" id="nmar"></span></h2>
+    <p class="sub" style="padding-bottom:8px">Chaque bailleur avec ses marchés Nexxio (sinistres et lots Alliade, Carré de Soie, Porte du Sud et PAPH chez LMH…). Commandé : date de commande ; facturé : factures Nexxio de la période, avoirs déduits ; reste à facturer : aujourd'hui.</p>
+    <div class="wrap"><table><thead><tr><th>Bailleur · marché</th><th class="num">Commandes</th><th class="num">Commandé HT</th><th class="num">Panier moyen</th><th class="num">Facturé HT</th><th class="num">Reste à facturer</th><th class="num">Marge</th></tr></thead><tbody id="tmar"></tbody></table></div></section>
+  <section class="card" style="margin-bottom:18px"><h2><span>Évolution jour par jour</span><span class="tag" id="nevo"></span></h2>
+    <p class="sub" style="padding-bottom:8px">Ce qui reste à facturer, à encaisser et à planifier, relevé chaque jour par le robot : pour voir si ça baisse ou si ça s'accumule. L'écart compare aujourd'hui à la date de la colonne.</p>
+    <div class="wrap"><table><thead><tr><th>Chiffre</th><th class="num">Aujourd'hui</th><th class="num">Hier</th><th class="num">Il y a 7 jours</th><th class="num">Premier relevé</th><th>Courbe</th></tr></thead><tbody id="evo"></tbody></table></div></section>
+  <section class="card" style="margin-bottom:18px"><h2><span>À encaisser : factures envoyées, pas encore payées</span><span class="tag" id="encst"></span></h2>
+    <div class="wrap"><table><thead><tr><th>Bailleur</th><th class="num">Factures</th><th class="num">À encaisser HT</th><th class="num">Moins de 30 j</th><th class="num">30 à 60 j</th><th class="num">60 à 90 j</th><th class="num">Plus de 90 j</th><th>La plus ancienne</th></tr></thead><tbody id="tenc"></tbody></table></div>
+    <div class="tag" id="encx" style="margin-top:8px"></div><div id="encdet"></div></section>
   <div class="kpis" id="stats" style="margin-bottom:18px"></div>
   <div class="cols eq">
     <section class="card"><h2><span>BC reçus par jour</span><span class="tag" id="tjour">15 derniers jours</span></h2>
@@ -705,7 +722,7 @@ const flag=p=>({get:k=>{try{return localStorage.getItem(p+k)==='1'}catch(e){retu
 const IMP=flag('imp:'), OK=flag('ok:'), FACT=flag('fact:'), DEV=flag('dev:'), CLES=flag('cles:'), ENV=flag('env:');
 const PAY=flag('pay:');   // 13/11 (J) : facture de sous-traitant payée (bon à payer), clé = nom du fichier de la facture   // env: rapport envoyé au bailleur (12/11)
 // 12/11 (J) : aussi les commentaires (« com: ») et les tentatives d'appel au locataire (« app: »), partagés de la même façon
-const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','plan:','ext:','wa:'], CO_TXT=['com:','app:','plan:','ext:','wa:'];   // wa: WhatsApp RDV (15/11)   // plan: demande de planification (13/11)
+const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','plan:','ext:','wa:','wam:','mgr:','mnom:'], CO_TXT=['com:','app:','plan:','ext:','wa:','wam:','mgr:','mnom:'];   // mgr: question au manager (16/11)   // wam: WhatsApp ouvert à la main (15/11 soir)   // wa: WhatsApp RDV (15/11)   // plan: demande de planification (13/11)
 const NOTE={get:k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},
   set:(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k);localStorage.setItem('ts:'+k,Date.now())}catch(e){}coSave(k)}};
 // coches des autres PC, relues par le robot (D.coches) : la plus récente gagne, avant le premier affichage
@@ -729,6 +746,19 @@ const pdfA=(p,t='ouvrir')=>p?(t==='ouvrir'?`<a class="bt" href="${encodeURI(p)}"
 // relooking du 11/11 (J) : messages d'erreur Playwright / réseau traduits en français simple, n° de jours relatifs
 const humain=t=>String(t??'').replace(/(?:erreur robot\s*:\s*)?(?:commande \d+\s*:\s*)?[^;·]*?(?:Page\.\w+|Execution context|Target (?:page|closed)|Timeout \d+\s*ms|net::ERR_\w+|locator\.\w+|Navigation failed)[^;·]*/gi,
   'Nexxio a été lent ou a rechargé la page pendant la saisie');
+// 15/11 (chantier « Textes simples partout ») : résultats des boutons et pannes de connexion, qui montraient la réponse
+// brute de Nexxio, de Meta (WhatsApp) ou d'internet. Codes Meta d'après la liste officielle des erreurs de l'API WhatsApp.
+const ERRS=[[/clé WhatsApp non enregistrée/i,'Clé WhatsApp pas encore enregistrée sur le PC du bureau'],
+  [/\b401\b|OAuth|access token|session has expired/i,'La clé WhatsApp n\'est plus valable : à renouveler sur le PC du bureau'],
+  [/\b132001\b|template name does not exist|template.*(not found|does not exist)/i,'Le modèle de message n\'est pas encore validé par Meta'],
+  [/\b13300[05]\b|\b133010\b|not registered/i,'Le numéro WhatsApp de RMS BATIMENT n\'est pas encore activé chez Meta'],
+  [/\b131026\b|undeliverable/i,'Ce numéro ne reçoit pas les messages WhatsApp (pas de compte WhatsApp ?)'],
+  [/\b131056\b|\b130429\b|\b80007\b|rate limit/i,'Trop de messages d\'un coup : réessayer dans quelques minutes'],
+  [/\b131042\b|payment/i,'Problème de paiement sur le compte Meta'],
+  [/\b131030\b|not in allowed list/i,'Numéro de test : ce portable n\'est pas dans la liste autorisée par Meta'],
+  [/urlopen error|timed out|getaddrinfo|Connection (?:reset|refused|aborted)|RemoteDisconnected/i,'Pas de réponse par internet : réessayer plus tard'],
+  [/maintenance|Service Unavailable|\b50[234]\b/i,'Le site était en maintenance ou indisponible : réessayer plus tard']];
+const clairErr=t=>{const s=String(t??'');for(const [re,m] of ERRS)if(re.test(s))return m;return humain(s)};
 // 12/11 (J) : motif du robot résumé en phrases courtes pour « À faire » (le texte complet reste au clic).
 // Découpe au « ; » hors parenthèses, puis une règle par cas vu dans le journal ; ce qui n'est pas reconnu est gardé tel quel.
 const morceaux=t=>{const out=[];let d=0,cur='';for(const ch of String(t||'')){if(ch==='(')d++;if(ch===')')d=Math.max(0,d-1);if(ch===';'&&!d){out.push(cur);cur=''}else cur+=ch}out.push(cur);return out.map(s=>s.trim()).filter(Boolean)};
@@ -817,9 +847,12 @@ document.getElementById('maj').textContent=`Mis à jour le ${D.genere}${D.pc?' �
 (function(){
   const QUOI={'Extranet Alliade':'relancer CONNEXION EXTRANET.bat sur le PC du robot','Boîtes mail':'vérifier Outlook sur le PC du robot, ou relancer CONNEXION GRAPH.bat',
     'Contrôle IA':'clé API à vérifier (uv run agent_bc_sdk.py --cle) ; en attendant, aucune commande n\'est prise en compte seule'};
-  const a=Object.entries(D.connexions||{}).map(([n,x])=>`<b>${esc(n)}</b> en panne depuis le ${esc(fr((x.depuis||'').slice(0,10)))} à ${esc((x.depuis||'').slice(11,16))} (${esc(x.erreur||'')}) : ${esc(QUOI[n]||'à vérifier')}.`);
+  const a=Object.entries(D.connexions||{}).map(([n,x])=>`<b>${esc(n)}</b> en panne depuis le ${esc(fr((x.depuis||'').slice(0,10)))} à ${esc((x.depuis||'').slice(11,16))} <span title="${esc(x.erreur||'')}">(${esc(clairErr(x.erreur||''))})</span> : ${esc(QUOI[n]||'à vérifier')}.`);
   const s=D.suivi_genere?new Date(D.suivi_genere):null, now=new Date(), h=now.getHours(), j=now.getDay();
   if(s&&now-s>60*60000)a.push(`<b>Nexxio</b> pas relu depuis le ${s.toLocaleDateString('fr-FR')} à ${s.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} : connexion ou mot de passe Nexxio à vérifier sur le PC du robot.`);
+  // 16/11 (J, idée retenue) : la page en ligne restée 35 h sans rien recevoir ne se voyait que dans « État du robot »
+  const fb=(D.etat_robot||[]).find(x=>/^Page en ligne/.test(x.titre)&&x.etat==='bad');
+  if(fb)a.push(`<b>Page en ligne</b> plus alimentée (${esc(fb.detail)}) : sur téléphone, le tableau n'est plus à jour.`);
   document.getElementById('alerte-cx').innerHTML=a.join('<br>');
 })();
 
@@ -1070,8 +1103,22 @@ function planning(){
   let ff=store.get('ffact','toutes');if(!FF[ff])ff='toutes';
   document.getElementById('ffact').innerHTML=Object.entries(FF).map(([k,[t,f]])=>`<button class="${k===ff?'on':''}" data-ff="${k}">${t} <b>${tousFact.filter(x=>!FACT.get(x.n_nexxio)).filter(f).length}</b></button>`).join('');
   document.querySelectorAll('#ffact [data-ff]').forEach(b=>b.onclick=()=>{store.set('ffact',b.dataset.ff);planning()});
-  const chipSst=n=>{const l=fsst(n);return l.length?`<span class="b2"><span class="chip ok" title="${esc(l.map(v=>v.sst+(v.num?' · facture '+v.num:'')+(v.m!=null?' · '+eur(v.m):'')).join('\n'))}">Facture SST reçue${l[0].m!=null?' · '+eur(l.reduce((s,v)=>s+(+v.m||0),0)):''}</span></span>`:''};
-  const fact=tousFact.filter(x=>cherche(x)&&(voir||!FACT.get(x.n_nexxio))&&FF[ff][1](x)).sort((a,b)=>FACT.get(a.n_nexxio)-FACT.get(b.n_nexxio)||((rapDe(a.n_nexxio)||'9')<(rapDe(b.n_nexxio)||'9')?-1:1)||(b.restant||0)-(a.restant||0));
+  // 15/11 (rétrospective) : comparé au montant HT de la commande, pas au restant (commande déjà facturée en partie = fausse alerte)
+  // 15/11 (chantier « Préparation de la facturation client ») : facture du sous-traitant plus chère que ce qui reste à
+  // facturer au client = commande à perte ou restant faux dans Nexxio : à regarder avant de facturer
+  const mSst=n=>fsst(n).reduce((s,v)=>s+(+v.m||0),0);
+  const chipSst=(n,r)=>{const l=fsst(n),m=mSst(n),perte=l.length&&m>0&&r!=null&&m>r+1;return l.length?`<span class="b2"><span class="chip ${perte?'bad':'ok'}" title="${esc(l.map(v=>v.sst+(v.num?' · facture '+v.num:'')+(v.m!=null?' · '+eur(v.m):'')).join('\n'))}">${perte?'Facture SST plus chère que la commande':'Facture SST reçue'}${l[0].m!=null?' · '+eur(m):''}</span></span>`:''};
+  // 15/11 : récap par client (bailleur) de ce qui est prêt à facturer ; un clic sur un client ne montre que ses commandes
+  const cleCli=x=>{const b=String(x.client||x.bailleur||'').toUpperCase();return (CLI[b]||b).replace(/[^A-Z]/g,'')||'?'};
+  let fcli=store.get('fcli','');
+  {const G={};tousFact.filter(x=>!FACT.get(x.n_nexxio)).forEach(x=>{const k=cleCli(x),g=G[k]=G[k]||{k,x,n:0,ht:0,pr:0,prHt:0,perte:0,r0:'9'};
+      g.n++;g.ht+=+x.restant||0;if(fsst(x.n_nexxio).length){g.pr++;g.prHt+=+x.restant||0;if(mSst(x.n_nexxio)>(+(x.ht!=null?x.ht:x.restant)||0)+1)g.perte++}
+      const r=rapDe(x.n_nexxio);if(r&&r<g.r0)g.r0=r});
+    const lg=Object.values(G).sort((a,b)=>b.ht-a.ht);if(fcli&&!G[fcli])fcli='';
+    document.getElementById('fcli').innerHTML=lg.length>1?`<table><thead><tr><th>Client</th><th class="num">Commandes</th><th class="num">À facturer HT</th><th class="num" title="Rapport reçu et facture du sous-traitant reçue : tout est là pour facturer">Prêtes (facture SST reçue)</th><th>Plus vieux rapport</th></tr></thead><tbody>${lg.map(g=>{const j=g.r0<'9'?Math.round((new Date(today)-new Date(g.r0))/864e5):null;
+      return `<tr data-fcli="${esc(g.k)}" style="cursor:pointer${fcli===g.k?';background:var(--soft)':''}" title="Ne montrer que ce client (cliquer à nouveau pour tout voir)"><td>${cli(g.x)}${fcli===g.k?' <span class="chip info">filtre</span>':''}</td><td class="num">${g.n}</td><td class="num"><b>${e0(g.ht)}</b></td><td class="num">${g.pr} · ${e0(g.prHt)}${g.perte?` <span class="chip bad" title="Facture du sous-traitant plus chère que le montant HT de la commande">${g.perte} à perte ?</span>`:''}</td><td class="nw">${j!=null?`${fr(g.r0)} <span class="chip ${j>30?'bad':j>10?'warn':''}">${j} j</span>`:''}</td></tr>`}).join('')}</tbody></table>`:'';
+    document.querySelectorAll('#fcli [data-fcli]').forEach(t=>t.onclick=()=>{store.set('fcli',fcli===t.dataset.fcli?'':t.dataset.fcli);planning()})}
+  const fact=tousFact.filter(x=>cherche(x)&&(!fcli||cleCli(x)===fcli)&&(voir||!FACT.get(x.n_nexxio))&&FF[ff][1](x)).sort((a,b)=>FACT.get(a.n_nexxio)-FACT.get(b.n_nexxio)||((rapDe(a.n_nexxio)||'9')<(rapDe(b.n_nexxio)||'9')?-1:1)||(b.restant||0)-(a.restant||0));
   // J le 12/11 : « beaucoup trop de commandes » (262, dont 150 de plus d'un an jamais avancées dans Nexxio). À planifier :
   // commandes de moins de 3 mois, sans rapport reçu ni RDV dans l'agenda d'une équipe ; les plus vieilles restent dans « Qui dorment »
   const dcmd=x=>DCMD[x.n_nexxio]||(L.find(l=>l.n_nexxio===x.n_nexxio)||{}).jour||'';
@@ -1105,12 +1152,13 @@ function planning(){
   // à planifier = pris en compte sans RDV ; en cours = RDV posé (planifiée ou en cours), pas encore de rapport ;
   // à facturer = rapport reçu, pas encore marqué facturé (la même somme que la tuile « À facturer »).
   {const rest=x=>+(x.restant!=null?x.restant:x.ht)||0, som=l=>l.reduce((s,x)=>s+rest(x),0), fa=new Set(aF.map(x=>x.n_nexxio));
-    const rPlan=sansRdv.filter(x=>!fa.has(x.n_nexxio)), rCours=P.filter(x=>['Planifiée','Planifié','En cours'].includes(x.statut)&&!x.rapports&&!fa.has(x.n_nexxio));
+    // 15/11 (rétrospective) : une commande avec rapport n'est plus « à planifier » (déjà comptée à facturer, ou facturée)
+    const rPlan=sansRdv.filter(x=>!fa.has(x.n_nexxio)&&!(x.rapports>0)), rCours=P.filter(x=>['Planifiée','Planifié','En cours'].includes(x.statut)&&!x.rapports&&!fa.has(x.n_nexxio));
     const parts=[['À planifier',som(rPlan),rPlan.length,'var(--orange)',`dont ${e0(som(rPlan.filter(x=>!(dcmd(x)&&dcmd(x)<jr(90)))))} de moins de 3 mois`],
       ['Chantiers en cours',som(rCours),rCours.length,'var(--accent)',`${rCours.filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)>=today).length} RDV à venir · ${rCours.filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)<today).length} RDV passés sans rapport`],
-      ['À facturer',som(aF),aF.length,'var(--vert)','rapport reçu']], tot=parts.reduce((s,p)=>s+p[1],0)||1;
+      ['À facturer',som(aF),aF.length,'var(--vert)','rapport reçu']], tot0=parts.reduce((s,p)=>s+p[1],0), tot=tot0||1;
     document.getElementById('proul').innerHTML=`<div class="card" style="padding:12px 14px">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><b>Roulement en CA (HT, restant à facturer)</b><span class="tag">Total ${e0(tot)}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><b>Roulement en CA (HT, restant à facturer)</b><span class="tag">Total ${e0(tot0)}</span></div>
       <div style="display:flex;height:10px;border-radius:5px;overflow:hidden;margin:10px 0;background:var(--soft)">${parts.map(p=>`<span title="${p[0]} : ${e0(p[1])}" style="width:${(p[1]/tot*100).toFixed(1)}%;background:${p[3]}"></span>`).join('')}</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px">${parts.map(p=>`<div style="border-left:3px solid ${p[3]};padding-left:8px"><span class="tag">${p[0]} · ${p[2]} commande(s)</span><div style="font:700 20px/1.2 var(--titre)">${e0(p[1])}</div><small class="tag">${pct(p[1]/tot)} · ${p[4]}</small></div>`).join('')}</div></div>`}
   document.getElementById('ptiles').innerHTML=[
@@ -1128,7 +1176,7 @@ function planning(){
   document.getElementById('lvoirfact').hidden=pv!=='fact';
   const nb=document.getElementById('nb-pla');nb.hidden=!aF.length;nb.textContent=aF.length;nb.style.background='var(--vert)';
   document.getElementById('nfact').textContent=aF.length?aF.length+' commande(s) · '+e0(aF.reduce((s,x)=>s+(x.restant||0),0))+' HT':'';
-  document.getElementById('tfact').innerHTML=fact.length?fact.map(x=>`<tr class="${FACT.get(x.n_nexxio)?'traite':''}"><td><b>${esc(x.n_nexxio)}</b></td><td class="nw">${esc(x.n_bc)}</td><td>${cli(x)}</td><td>${esc(x.commune)}</td><td>${esc(x.statut)}${chipSst(x.n_nexxio)}${chipAv(x.n_nexxio)}</td><td class="num">${x.rapports}</td><td class="nw">${(r=>r?`${fr(r)}<span class="b2"><span class="chip ${(new Date(today)-new Date(r))/864e5>30?'bad':(new Date(today)-new Date(r))/864e5>10?'warn':''}">${Math.round((new Date(today)-new Date(r))/864e5)} j</span></span>`:'')(rapDe(x.n_nexxio))}</td><td class="num"><b>${eur(x.restant)}</b></td><td>${pdfA(x.pdf)}</td><td><input type="checkbox" data-fact="${esc(x.n_nexxio)}" ${FACT.get(x.n_nexxio)?'checked':''} title="Marquer facturé (mémorisé sur ce PC)"></td></tr>`).join(''):'<tr><td colspan="10" class="vide">Aucun rapport en attente de facturation.</td></tr>';
+  document.getElementById('tfact').innerHTML=fact.length?fact.map(x=>`<tr class="${FACT.get(x.n_nexxio)?'traite':''}"><td><b>${esc(x.n_nexxio)}</b></td><td class="nw">${esc(x.n_bc)}</td><td>${cli(x)}</td><td>${esc(x.commune)}</td><td>${esc(x.statut)}${chipSst(x.n_nexxio,x.ht!=null?x.ht:x.restant)}${chipAv(x.n_nexxio)}</td><td class="num">${x.rapports}</td><td class="nw">${(r=>r?`${fr(r)}<span class="b2"><span class="chip ${(new Date(today)-new Date(r))/864e5>30?'bad':(new Date(today)-new Date(r))/864e5>10?'warn':''}">${Math.round((new Date(today)-new Date(r))/864e5)} j</span></span>`:'')(rapDe(x.n_nexxio))}</td><td class="num"><b>${eur(x.restant)}</b></td><td>${pdfA(x.pdf)}</td><td><input type="checkbox" data-fact="${esc(x.n_nexxio)}" ${FACT.get(x.n_nexxio)?'checked':''} title="Marquer facturé (mémorisé sur ce PC)"></td></tr>`).join(''):'<tr><td colspan="10" class="vide">Aucun rapport en attente de facturation.</td></tr>';
   const ligneRdv=x=>`<tr><td class="nw">${x.rdv_iso&&x.rdv_iso.slice(0,10)===today?'<span class="chip info">Aujourd\'hui</span> '+esc(x.rdv_iso.slice(11)):esc(x.rdv)}</td><td><b>${esc(x.n_nexxio)}</b></td><td class="nw">${esc(x.n_bc)}</td><td>${cli(x)}</td><td>${esc(x.commune)}</td><td>${esc(x.statut)}</td><td>${esc((x.pilote||'').split(' ')[0])}${x.sst?`<span class="b2">◉ ${esc(x.sst)}</span>`:''}</td><td class="num">${eur(x.ht)}</td><td>${pdfA(x.pdf)}</td></tr>`;
   // 12/11 : filtres d'appel (J part en appeler une série : d'abord ceux jamais appelés, puis ceux à rappeler)
   const occupe=x=>{const g=LOGS[x.n_nexxio];return g&&!g.vacant&&g.nom};
@@ -1157,7 +1205,8 @@ function planning(){
     if(g.vacant)return `<span class="chip">Logement vacant</span>${g.nom?`<span class="b2">ex ${esc(g.nom.replace(/^EX\s+/i,''))}</span>`:''}${ou?`<span class="b2">${esc(ou)}</span>`:''}`;
     // 12/11 (J) : tentatives d'appel et commentaire notés dans la fiche, rappelés ici
     const ap=appels(x.n_nexxio), cm=NOTE.get('com:'+x.n_nexxio);
-    return `<b>${esc(g.nom||'?')}</b>${(g.tels||[]).map(t=>`<span class="b2"><a href="tel:${esc(String(t).replace(/\D/g,''))}" onclick="event.stopPropagation()">${esc(telF(t))}</a></span>`).join('')||'<span class="b2"><span class="chip warn">pas de téléphone</span></span>'}${ou?`<span class="b2">${esc(ou)}</span>`:''}`
+    // 15/11 soir : portable = lien « WhatsApp » qui ouvre la discussion avec une demande de créneau déjà écrite (J relit et envoie)
+    return `<b>${esc(g.nom||'?')}</b>${(g.tels||[]).map(t=>{const m=String(t).replace(/\D/g,'').replace(/^33(?=[67])/,'0');return `<span class="b2"><a href="tel:${esc(String(t).replace(/\D/g,''))}" onclick="event.stopPropagation()">${esc(telF(t))}</a>${/^0[67]\d{8}$/.test(m)?` · <a href="https://wa.me/33${m.slice(1)}?text=${encodeURIComponent(waCreneau(x))}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Ouvre WhatsApp avec une demande de créneau déjà écrite : relire et envoyer depuis la ligne pro">WhatsApp</a>`:''}</span>`}).join('')||'<span class="b2"><span class="chip warn">pas de téléphone</span></span>'}${ou?`<span class="b2">${esc(ou)}</span>`:''}`
       +(ap.length?(e=>`<span class="b2"><span class="chip ${e.rdv?'ok':e.epuise?'bad':'info'}" title="${esc(ap.map((s,i)=>{const x=appelInfo(s);return 'Appel '+(i+1)+' : '+fr(x.d.slice(0,10))+' '+x.d.slice(11,16)+(x.r?' · '+x.r:'')}).join('\n'))}">${e.rdv?'RDV pris':ap.length+'/3 appel'+(ap.length>1?'s':'')}${e.der.r&&!e.rdv?' · '+esc(e.der.r):''} · ${fr(e.der.d.slice(0,10))}</span></span>`)(etatAppels(x.n_nexxio)):'')
       +(cm?`<span class="b2" title="${esc(cm)}">« ${esc(cm.slice(0,40))}${cm.length>40?'…':''} »</span>`:'')};
   const topoL=x=>{const g=(D.logements||{})[x.n_nexxio];return g&&g.topo?esc(g.topo):note(x)};
@@ -1178,6 +1227,8 @@ function planning(){
   document.getElementById('nretard').textContent=retard.length?retard.length+' commande(s)':'';
   document.getElementById('tretard').innerHTML=rt.length?rt.map(ligneRdv).join(''):'<tr><td colspan="9" class="vide">Rien en retard.</td></tr>';
   // 12/11 : relance prête à copier par sous-traitant (J : relancer les rapports sans tout retaper ; aucun envoi automatique)
+  // 15/11 soir : + « Ouvrir dans WhatsApp » (même principe que le RDV locataire, décision de J) ; pas de numéro de
+  // sous-traitant dans les données : WhatsApp demande le contact, on relit et on envoie soi-même
   // RDV de plus de 60 jours : pas relancés (vieilles commandes jamais mises à jour dans Nexxio), seulement comptés
   const parSst={}, vieuxRdv=retard.filter(x=>(x.rdv_iso||'').slice(0,10)<jr(60)).length;
   retard.filter(x=>(x.rdv_iso||'').slice(0,10)>=jr(60)).forEach(x=>String(x.sst||'Sans sous-traitant affecté').split(', ').forEach(s=>(parSst[s]=parSst[s]||[]).push(x)));
@@ -1186,7 +1237,7 @@ function planning(){
   const rel=Object.entries(parSst).sort((a,b)=>b[1].length-a[1].length);
   document.getElementById('relances').innerHTML=rel.length?rel.map(([s,l],i)=>`<details class="det" style="margin:6px 0"><summary><b>${esc(s)}</b> · ${l.length} rapport${l.length>1?'s':''} attendu${l.length>1?'s':''} (le plus ancien : RDV du ${fr((l[0].rdv_iso||'').slice(0,10))})</summary>
     <textarea readonly rows="${Math.min(l.length+4,12)}" style="width:100%;box-sizing:border-box;margin:6px 0;font:inherit;font-size:13px" id="rel${i}">${esc(msgRel(s,l))}</textarea>
-    <button class="btn" data-copie="rel${i}">Copier le message</button></details>`).join('')+(vieuxRdv?`<p class="tag" style="margin-top:8px">${vieuxRdv} RDV de plus de 60 jours non relancés : commandes sans doute faites mais jamais mises à jour dans Nexxio, à vérifier.</p>`:''):'<div class="vide">Aucune relance à faire.</div>';
+    <button class="btn" data-copie="rel${i}">Copier le message</button> <a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(msgRel(s,l))}" title="WhatsApp s'ouvre avec le message écrit : choisir le sous-traitant dans les contacts, relire, envoyer">Ouvrir dans WhatsApp</a></details>`).join('')+(vieuxRdv?`<p class="tag" style="margin-top:8px">${vieuxRdv} RDV de plus de 60 jours non relancés : commandes sans doute faites mais jamais mises à jour dans Nexxio, à vérifier.</p>`:''):'<div class="vide">Aucune relance à faire.</div>';
   document.querySelectorAll('#relances [data-copie]').forEach(b=>b.onclick=()=>copier(document.getElementById(b.dataset.copie).value,b));
   document.getElementById('nvenir').textContent=venir.length?venir.length+' RDV':'';
   document.getElementById('tvenir').innerHTML=v.length?v.map(ligneRdv).join(''):'<tr><td colspan="9" class="vide">Aucun RDV à venir.</td></tr>';
@@ -1344,12 +1395,90 @@ function moisVue(m0,fin){
   const grp={};cmd.forEach(x=>{const g=grp[cle(x)]=grp[cle(x)]||{n:0,ht:0,fa:0,co:0,caC:0};g.n++;g.ht+=x.ht||0;if(x.cout!=null){g.co+=x.cout;g.caC+=x.ht||0}});
   fac.forEach(x=>{const g=grp[cle(x)]=grp[cle(x)]||{n:0,ht:0,fa:0,co:0,caC:0};g.fa+=x.ht||0});
   document.getElementById('tcli').innerHTML=Object.entries(grp).sort((a,b)=>b[1].ht-a[1].ht).map(([k,g])=>`<tr><td>${bai(k)}</td><td class="num">${g.n}</td><td class="num"><b>${e0(g.ht)}</b></td><td class="num">${e0(g.n?g.ht/g.n:0)}</td><td class="num">${e0(g.fa)}</td><td class="num">${g.caC?e0(g.co):''}</td><td class="num">${g.caC?e0(g.caC-g.co)+' ('+pct((g.caC-g.co)/g.caC)+')':''}</td></tr>`).join('')||'<tr><td colspan="7" class="vide">Aucune commande sur la période.</td></tr>';
+  marchesVue(cmd,m0,fin,cle);
   document.getElementById('mois').innerHTML=[
     t(e0(som(cmd,x=>x.ht)),'Commandé HT',`${cmd.length} commandes · `+delta(som(cmd,x=>x.ht),som(cmdP,x=>x.ht)),'var(--accent)'),
     t(e0(som(fac,x=>x.ht)),'Facturé HT',`${fac.length} commandes · `+delta(som(fac,x=>x.ht),som(facP,x=>x.ht)),'var(--vert)'),
     t(e0(reste),"Reste à facturer (aujourd'hui)",`dont ${e0(som(aF,x=>x.restant))} avec rapport reçu (${aF.length})`,'var(--orange)'),
     t(mg.length?e0(mgCA-mgC):'—','Marge sur le facturé de la période',mg.length?`${pct((mgCA-mgC)/mgCA)} sur ${mg.length} commandes avec prix agenda`:'prix des agendas pas encore lus','var(--accent)')].join('');
+  encours(cle);
 }
+// 15/11 (J : « plus de visuel sur les marchés, par marché et par bailleur ») : un bailleur peut avoir plusieurs marchés
+// (Alliade : sinistres et lots ; LMH : Carré de Soie, Porte du Sud, PAPH). Code marché Nexxio de chaque commande (suivi, liste
+// complète de la nuit, ou ses factures) ; facturé pris sur les factures Nexxio de la période (code marché de la facture).
+var MNOM={L2301024:'Carré de Soie',L2301029:'Porte du Sud',PAPH:'PAPH',ALHSINISTRES:'Sinistres',ALHLOT10:'Lot 10 · peinture Lyon',
+  ALHLOT77:'Lot 77 · peinture Saint-Étienne',ALHLOT85:'Lot 85 · sols Saint-Étienne',INLI1492:"IN'LI · département non lu",'2860':'Marché 2860 · sols souples',
+  INLI_LYON:"Lyon (Rhône)",INLI_GEX:"Gex (Ain, Haute-Savoie, Savoie)",INLI_GRENOBLE:"Grenoble (Isère)"};
+// 16/11 (J, idée retenue « mes réglages dans le tableau ») : J nomme lui-même un code inconnu (« 01 », « 23/0608 », « onvalh »...),
+// coche partagée « mnom:<code> » ; son nom passe avant celui de MNOM
+function mNom(m){const p=m?NOTE.get('mnom:'+m):'';return m?(p?esc(p)+' <span class="tag">'+esc(m)+'</span>':MNOM[m]?MNOM[m]+' <span class="tag">'+esc(m)+'</span>':esc(m)):'<span class="tag">marché pas encore lu</span>'}
+function marchesVue(cmd,m0,fin,cle){const el=document.getElementById('tmar');if(!el)return;
+  const S=D.sst||[], P=D.planning||[], FN=D.fnx||[], entre=d=>d&&d>=m0&&d<=fin, G={};
+  const mDe={};S.forEach(x=>{if(x.marche)mDe[x.n_nexxio]=x.marche});P.forEach(x=>{if(x.marche&&!mDe[x.n_nexxio])mDe[x.n_nexxio]=x.marche});
+  // IN'LI : le marché affiné par département (côté robot) passe avant le code INLI1492 de Nexxio
+  const mk=(n,m)=>/^INLI/.test(m||'')&&mDe[n]?mDe[n]:(m||mDe[n]||'');
+  // client pas lu (commande en création, ligne « Restant à facturer » prise pour le client) : bailleur déduit du marché
+  const BM=m=>/^ALH|^onvalh$|^HP2007$/i.test(m)?'ALLIADE':/^L23|^PAPH$|^LMH$/.test(m)?'LMH':/^INLI/.test(m)?"IN'LI":/^2860$|^23\/0608$|^glh/i.test(m)?'GLH':'';
+  const o=(b,m)=>{if(b==='Autre'&&BM(m))b=BM(m);const g=G[b]=G[b]||{t:{n:0,ht:0,fa:0,re:0,co:0,caC:0},m:{}};return [g.t,g.m[m]=g.m[m]||{n:0,ht:0,fa:0,re:0,co:0,caC:0}]};
+  cmd.forEach(x=>o(cle(x),mDe[x.n_nexxio]||'').forEach(g=>{g.n++;g.ht+=x.ht||0;if(x.cout!=null){g.co+=x.cout;g.caC+=x.ht||0}}));
+  const couvre=D.fnx_depuis&&m0>=D.fnx_depuis;
+  if(FN.length&&couvre)FN.filter(f=>entre(f.date)).forEach(f=>o(cle(f),mk(f.n_nexxio,f.marche)).forEach(g=>g.fa+=f.ht||0));
+  else S.filter(x=>entre(x.facturee)).forEach(x=>o(cle(x),mDe[x.n_nexxio]||'').forEach(g=>g.fa+=x.ht||0));
+  P.filter(x=>(x.restant||0)>0).forEach(x=>o(cle(x),mk(x.n_nexxio,x.marche)).forEach(g=>g.re+=x.restant||0));
+  const lg=(g,lab,b)=>`<tr${b?' style="background:var(--soft)"':''}><td>${lab}</td><td class="num">${g.n||''}</td><td class="num">${b?'<b>'+e0(g.ht)+'</b>':e0(g.ht)}</td><td class="num">${g.n?e0(g.ht/g.n):''}</td><td class="num">${g.fa?e0(g.fa):''}</td><td class="num">${g.re?e0(g.re):''}</td><td class="num">${g.caC?e0(g.caC-g.co)+' ('+pct((g.caC-g.co)/g.caC)+')':''}</td></tr>`;
+  const B=Object.entries(G).filter(([,g])=>g.t.n||g.t.fa||g.t.re).sort((a,b)=>(b[1].t.ht+b[1].t.fa)-(a[1].t.ht+a[1].t.fa));
+  el.innerHTML=B.map(([b,g])=>{const M=Object.entries(g.m).filter(([,x])=>x.n||x.fa||x.re).sort((a,c)=>(c[1].ht+c[1].fa)-(a[1].ht+a[1].fa));
+    return lg(g.t,bai(b)+(M.length>1?` <span class="tag">${M.length} marchés</span>`:''),1)+(M.length>1||M.some(([m])=>m)?M.map(([m,x])=>lg(x,'<span style="padding-left:18px;display:inline-block">↳ '+mNom(m)+(m&&(!MNOM[m]||NOTE.get('mnom:'+m))?` <button class="btn" data-mnom="${esc(m)}" style="padding:1px 8px;font-size:11px">${NOTE.get('mnom:'+m)?'Renommer':'Donner un nom'}</button>`:'')+'</span>')).join(''):'')}).join('')
+    ||'<tr><td colspan="7" class="vide">Aucune commande sur la période.</td></tr>';
+  el.querySelectorAll('[data-mnom]').forEach(b=>b.onclick=()=>{const m=b.dataset.mnom,v=prompt(`Nom du marché « ${m} » (laisser vide pour l'enlever)`,NOTE.get('mnom:'+m));
+    if(v===null)return;NOTE.set('mnom:'+m,v.trim().slice(0,60));marchesVue(cmd,m0,fin,cle)});
+  document.getElementById('nmar').textContent=B.reduce((s,[,g])=>s+Object.keys(g.m).filter(m=>m).length,0)+' marchés'}
+// 16/11 (J, idée retenue « évolution ») : à facturer, à encaisser, à planifier relevés chaque jour par le robot (D.evolution,
+// fichier chiffres_jour.json) : aujourd'hui, puis l'écart avec hier, il y a 7 jours et le premier relevé. Une baisse est en vert.
+function evoVue(){const el=document.getElementById('evo');if(!el)return;const E=D.evolution||[];
+  const ligne=(c,nom,quoi)=>{const V=E.filter(x=>x[c]!=null);if(!V.length)return '';const a=V[V.length-1], pas='<span class="tag">pas encore</span>',
+    il=k=>[...V].reverse().find(x=>x!==a&&x.j<=jr(k)),
+    ec=p=>{if(!p)return pas;const d=a[c]-p[c];return e0(p[c])+(d?` <span class="chip ${d>0?'warn':'ok'}">${d>0?'+':'−'} ${e0(Math.abs(d))}</span>`:'')},
+    v=V.map(x=>x[c]), mn=Math.min(...v), mx=Math.max(...v), w=120, h=28,
+    pts=v.map((y,i)=>(i?'L':'M')+(i*w/Math.max(1,v.length-1)).toFixed(1)+' '+(h-3-(mx>mn?(y-mn)/(mx-mn):.5)*(h-6)).toFixed(1)).join(' ');
+    return `<tr><td><b>${nom}</b> <span class="tag">${a[c+'_n']} ${quoi}</span></td><td class="num"><b>${e0(a[c])}</b></td><td class="num">${ec(il(1))}</td><td class="num">${ec(il(7))}</td><td class="num">${V.length>1?ec(V[0])+' <span class="tag">le '+fr(V[0].j)+'</span>':pas}</td><td>${v.length>1?`<svg viewBox="0 0 ${w} ${h}" style="width:120px;height:28px;display:block"><path d="${pts}" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`:''}</td></tr>`};
+  el.innerHTML=ligne('fact','À facturer','commandes')+ligne('enc','À encaisser','factures')+ligne('plan','À planifier','commandes')||'<tr><td colspan="6" class="vide">Pas encore de relevé.</td></tr>';
+  document.getElementById('nevo').textContent=E.length?`${E.length} jour${E.length>1?'s':''} relevé${E.length>1?'s':''}`:''}
+setTimeout(()=>{try{evoVue()}catch(e){console.error('évolution',e)}},0);
+// 15/11 (roadmap « Suivi des paiements clients ») : factures et avoirs « Envoyé » dans Nexxio (pas encore pointés « Payé »),
+// par bailleur et par ancienneté depuis la date de facture, à la date d'aujourd'hui (pas la période choisie). Pour Alliade,
+// l'Extranet dit si la facture est réglée : une facture réglée là-bas mais encore « Envoyé » dans Nexxio est à pointer.
+function encours(cle){const FN=(D.fnx||[]).filter(f=>f.etat==='Envoyé'), el=document.getElementById('tenc');if(!el)return;
+  if(!FN.length){el.innerHTML='<tr><td colspan="8" class="vide">'+((D.fnx||[]).some(f=>f.etat)?'Toutes les factures sont payées.':'État des paiements pas encore lu (le robot le lit avec les factures de Nexxio).')+'</td></tr>';return}
+  const age=f=>Math.round((new Date(today)-new Date(f.date))/864e5), tr=[30,60,90], g={};
+  FN.forEach(f=>{const k=cle(f), o=g[k]=g[k]||{n:0,ht:0,b:[0,0,0,0],old:'9'};const a=age(f), i=a<30?0:a<60?1:a<90?2:3;
+    o.n+=f.type==='avoir'?0:1;o.ht+=f.ht||0;o.b[i]+=f.ht||0;if(f.date<o.old)o.old=f.date});
+  const tot=Object.values(g).reduce((s,o)=>s+o.ht,0), v=x=>x?e0(x):'';
+  if(ENCSEL&&!g[ENCSEL])ENCSEL='';
+  el.innerHTML=Object.entries(g).sort((a,b)=>b[1].ht-a[1].ht).map(([k,o])=>`<tr data-enc="${esc(k)}" style="cursor:pointer${ENCSEL===k?';background:var(--soft)':''}" title="Voir les factures à relancer de ce bailleur"><td>${bai(k)}</td><td class="num">${o.n}</td><td class="num"><b>${e0(o.ht)}</b></td>${o.b.map((x,i)=>`<td class="num"${i===3&&x?' style="color:var(--rouge)"':''}>${v(x)}</td>`).join('')}<td class="nw">${fr(o.old)} <span class="b2">il y a ${age({date:o.old})} j</span></td></tr>`).join('');
+  document.getElementById('encst').textContent=`${e0(tot)} HT · état « Envoyé » dans Nexxio, aujourd'hui`;
+  const X=D.extranet_factures||[], par={};FN.forEach(f=>par[f.numero]=f);
+  const aPointer=X.filter(x=>/^réglée/i.test(x.reglee||'')&&par[x.ref_fournisseur]), vieux=FN.filter(f=>age(f)>=90);
+  document.getElementById('encx').innerHTML=[aPointer.length?`<b>${aPointer.length} facture${aPointer.length>1?'s':''} Alliade réglée${aPointer.length>1?'s':''} selon l'Extranet</b> mais encore « Envoyé » dans Nexxio (${e0(aPointer.reduce((s,x)=>s+(par[x.ref_fournisseur].ht||0),0))} HT) : à pointer « Payé » dans Nexxio (n° ${aPointer.map(x=>esc(x.ref_fournisseur)).join(', ')}).`:'',
+    vieux.length?`${vieux.length} facture${vieux.length>1?'s':''} de plus de 90 jours : souvent déjà payée${vieux.length>1?'s':''} mais pas pointée${vieux.length>1?'s':''} dans Nexxio ; sinon à relancer.`:'',
+    Object.keys(g).length?'Cliquer un bailleur pour la liste de ses factures à relancer.':''].filter(Boolean).join('<br>');
+  // 15/11 (chantier « Suivi des paiements clients », reste « relances par bailleur ») : clic sur un bailleur = ses factures
+  // « Envoyé » depuis 30 jours ou plus, la plus vieille en haut, avec n° de commande et de BC, et un texte à copier pour
+  // la relance que J écrit lui-même (le robot n'envoie jamais de mail). Factures réglées selon l'Extranet : à pointer, pas à relancer.
+  el.querySelectorAll('[data-enc]').forEach(t=>t.onclick=()=>{ENCSEL=ENCSEL===t.dataset.enc?'':t.dataset.enc;encours(cle)});
+  const det=document.getElementById('encdet');if(!det)return;
+  if(!ENCSEL){det.innerHTML='';return}
+  const BC={};(D.planning||[]).forEach(x=>{if(x.n_bc)BC[x.n_nexxio]=x.n_bc});L.forEach(l=>{if(l.n_bc&&!BC[l.n_nexxio])BC[l.n_nexxio]=l.n_bc});
+  (D.sst||[]).forEach(x=>{if(x.n_bc&&!BC[x.n_nexxio])BC[x.n_nexxio]=x.n_bc});
+  const regle=new Set(aPointer.map(x=>x.ref_fournisseur));
+  const R=FN.filter(f=>cle(f)===ENCSEL&&f.type!=='avoir'&&age(f)>=30&&!regle.has(f.numero)).sort((a,b)=>a.date<b.date?-1:1);
+  const txt=R.map(f=>`Facture ${f.numero} du ${fr(f.date)} · ${e0(f.ht)} HT`+(BC[f.n_nexxio]?` · BC ${BC[f.n_nexxio]}`:'')+(f.n_nexxio?` · commande ${f.n_nexxio}`:'')).join('\n');
+  det.innerHTML=`<h4 style="margin:14px 0 6px">${bai(ENCSEL)} : à relancer (envoyées depuis 30 jours ou plus) · ${R.length} facture${R.length>1?'s':''} · ${e0(R.reduce((s,f)=>s+(f.ht||0),0))} HT</h4>`+
+    (R.length?`<div class="wrap"><table><thead><tr><th>Facture</th><th>Date</th><th class="num">Âge</th><th>N° BC</th><th>Commande</th><th class="num">HT</th></tr></thead><tbody>${R.map(f=>{const a=age(f);return `<tr><td><b>${esc(f.numero)}</b></td><td class="nw">${fr(f.date)}</td><td class="num"><span class="chip ${a>=90?'bad':a>=60?'warn':''}">${a} j</span></td><td class="nw">${esc(BC[f.n_nexxio]||'')}</td><td>${esc(f.n_nexxio||'')}</td><td class="num">${eur(f.ht)}</td></tr>`}).join('')}</tbody></table></div>
+    <p class="sub" style="margin-top:8px"><button class="btn" id="enccopie">Copier la liste</button> à coller dans ta relance. Une facture de plus de 90 jours est souvent déjà payée : vérifier avant de relancer.</p>`:'<p class="sub">Rien à relancer : toutes ses factures ont moins de 30 jours.</p>');
+  const b=document.getElementById('enccopie');if(b)b.onclick=()=>{const ok=()=>{b.textContent='Copié';setTimeout(()=>b.textContent='Copier la liste',1500)};
+    try{navigator.clipboard.writeText(txt).then(ok,()=>{prompt('Copier :',txt)})}catch(e){prompt('Copier :',txt)}}}
+var ENCSEL='';
 
 /* ---------- recherche globale et fiche commande ---------- */
 const NX={};
@@ -1406,7 +1535,7 @@ const planDem=n=>{try{const v=NOTE.get('plan:'+n);return v?JSON.parse(v):null}ca
 function planEtat(n){const d=planDem(n), a=(D.actions||{})['plan:'+n], ts=+(()=>{try{return localStorage.getItem('ts:plan:'+n)}catch(e){return 0}})()||0;
   const res=a&&(!d||a.ts>=ts)?a:null;
   if(d&&!res)return `<span class="chip info">Demande envoyée</span> RDV le ${fr(d.d)} à ${esc(d.h)} (${ANN[d.a]||''})${d.sst?' · '+esc(d.sst):''}${d.sms?' · SMS au locataire':''}${d.mail?' · mail au gestionnaire':''}<span class="b2">Le robot la fait à son prochain passage (toutes les 10 minutes), puis le résultat s'affiche ici. <a href="#" id="pf-annuler">Annuler la demande</a></span>`;
-  if(res)return `<span class="chip ${res.etat==='ok'?'ok':'bad'}">${res.etat==='ok'?'Fait par le robot':'Non fait'}</span> ${esc(res.message)}<span class="b2">le ${fr((res.quand||'').slice(0,10))} à ${esc((res.quand||'').slice(11,16))}${res.par?' · demandé par '+esc(res.par):''}</span>`;
+  if(res)return `<span class="chip ${res.etat==='ok'?'ok':'bad'}">${res.etat==='ok'?'Fait par le robot':'Non fait'}</span> <span title="${esc(res.message)}">${esc(res.etat==='ok'?res.message:clairErr(res.message))}</span><span class="b2">le ${fr((res.quand||'').slice(0,10))} à ${esc((res.quand||'').slice(11,16))}${res.par?' · demandé par '+esc(res.par):''}</span>`;
   return ''}
 function planifBloc(n,pl,s){const st=(pl&&pl.statut)||'';if(!/^(Prise en compte|Planifi)/.test(st))return '';
   const g=(D.logements||{})[n]||{}, occ=!!(g.nom&&!g.vacant), act=Object.keys((s&&s.sst)||{}).filter(x=>!/lakchiri|gestion bureau/i.test(x));
@@ -1441,21 +1570,38 @@ function waApercu(n,pl){const r=String((pl&&pl.rdv_iso)||''),d=new Date(r.slice(
   const m=String(pl.adresse||'').split(' - ').map(x=>x.trim()),cp=m.findIndex(x=>/^\d{5}./.test(x)),adr=cp>=0?m.slice(0,cp+1).join(', '):'votre logement';
   const h=r.length>10&&r.slice(11,16)!=='00:00'?'à '+r.slice(11,13)+' h '+r.slice(14,16):'dans la journée';
   return `Bonjour, RMS BATIMENT, mandaté par ${cli}, interviendra dans votre logement au ${adr} le ${JRS[d.getDay()]} ${fr(r.slice(0,10))} ${h}. En cas d'empêchement, merci de nous appeler au ${SMS_TEL}. Cordialement, RMS BATIMENT`}
+// 15/11 soir : demande de créneau au locataire (commande à planifier), ouverte dans WhatsApp, envoyée par J lui-même
+function waCreneau(pl){const cli={LMH:'Lyon Métropole Habitat',GLH:'Grand Lyon Habitat',INLI:"In'li",ALLIADE:'Alliade Habitat'}[String(pl.bailleur||'').toUpperCase()]||String(pl.client||'votre bailleur');
+  const m=String(pl.adresse||'').split(' - ').map(x=>x.trim()),cp=m.findIndex(x=>/^\d{5}./.test(x)),adr=cp>=0?m.slice(0,cp+1).join(', '):'';
+  return `Bonjour, RMS BATIMENT, mandaté par ${cli}, doit intervenir dans votre logement${adr?' au '+adr:''}. Merci de nous indiquer vos disponibilités (jours et heures) en réponse à ce message, ou de nous appeler au ${SMS_TEL}. Cordialement, RMS BATIMENT`}
 function waEtat(n){const v=NOTE.get('wa:'+n), a=(D.actions||{})['wa:'+n], ts=+(()=>{try{return localStorage.getItem('ts:wa:'+n)}catch(e){return 0}})()||0;
   const res=a&&(!v||a.ts>=ts)?a:null;
   if(v&&!res)return '<span class="chip info">Demande envoyée</span> <span class="tag">le robot envoie le WhatsApp à son prochain passage</span> <a href="#" id="wa-annuler">Annuler</a>';
-  if(res)return `<span class="chip ${res.etat==='ok'?'ok':'bad'}">${res.etat==='ok'?'WhatsApp envoyé':'Non envoyé'}</span> <span class="tag">${esc(res.message||'')} · le ${fr((res.quand||'').slice(0,10))} à ${esc((res.quand||'').slice(11,16))}${res.par?' · par '+esc(res.par):''}</span>`;
+  if(res)return `<span class="chip ${res.etat==='ok'?'ok':'bad'}">${res.etat==='ok'?'WhatsApp envoyé':'Non envoyé'}</span> <span class="tag" title="${esc(res.message||'')}">${esc(res.etat==='ok'?res.message||'':clairErr(res.message))} · le ${fr((res.quand||'').slice(0,10))} à ${esc((res.quand||'').slice(11,16))}${res.par?' · par '+esc(res.par):''}</span>`;
   return ''}
+/* 15/11 soir (J : « fais le bouton ouvrir dans WhatsApp, c'est plus simple pour notre organisation ») : le compte Meta
+   (API, coexistence, modèle à valider) est mis de côté. Le bouton ouvre WhatsApp (appli ou WhatsApp Web, sur le PC ou le
+   téléphone où est ouvert le WhatsApp Business de la ligne pro) sur la discussion du locataire, message déjà écrit ;
+   J relit et appuie lui-même sur Envoyer. Le robot n'envoie rien. Le clic est noté « wam:<n> » dans les coches partagées
+   (qui, quand, quel numéro), pour que l'équipe voie que le locataire a été prévenu. L'envoi par Meta (waEtat, lierWa,
+   robot.whatsapp_demandes) reste dans le code pour plus tard. */
+function wamEtat(n){let v=null;try{v=JSON.parse(NOTE.get('wam:'+n)||'null')}catch(e){}
+  return v&&v.q?`<span class="chip ok">WhatsApp ouvert</span> <span class="tag">le ${new Date(v.q).toLocaleDateString('fr-FR')} à ${new Date(v.q).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} pour le ${esc(telAff(v.tel||''))}${v.par?' · par '+esc(v.par):''} · vérifier dans WhatsApp que le message est bien parti</span>`:''}
 function waBloc(n,pl){const r=String((pl&&pl.rdv_iso)||''), g=(D.logements||{})[n]||{};
   if(!pl||!/^Planifi/.test(pl.statut||'')||!/^\d{4}-\d\d-\d\d/.test(r)||r.slice(0,10)<today||g.vacant||!g.nom)return '';
   const mob=[...new Set((g.tels||[]).map(t=>String(t).replace(/\D/g,'').replace(/^33(?=[67])/,'0')).filter(t=>/^0[67]\d{8}$/.test(t)))];
   if(!mob.length)return '';
   return `<div class="s wa"><h4>Prévenir le locataire par WhatsApp</h4>
-    <div class="tag" style="margin-bottom:6px">${esc(waApercu(n,pl))}</div>
-    <div class="pf"><label>Portable<select id="wa-t">${mob.map(t=>`<option value="${t}">${telAff(t)}</option>`).join('')}</select></label>
-      <button class="btn" id="wa-go">${NOTE.get('wa:'+n)?'Renvoyer':'Envoyer le RDV par WhatsApp'}</button></div>
-    <div id="wa-etat" style="margin-top:8px">${waEtat(n)}</div></div>`}
+    <textarea id="wa-txt" rows="4" style="width:100%;box-sizing:border-box;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card,transparent);color:inherit">${esc(waApercu(n,pl))}</textarea>
+    <div class="pf" style="margin-top:6px"><label>Portable<select id="wa-t">${mob.map(t=>`<option value="${t}">${telAff(t)}</option>`).join('')}</select></label>
+      <a class="btn" id="wa-go" href="#" target="_blank" rel="noopener">Ouvrir dans WhatsApp</a></div>
+    <div class="tag" style="margin-top:6px">WhatsApp s'ouvre avec le message écrit : relis-le et appuie sur Envoyer. À faire depuis le téléphone ou le PC où est ouvert le WhatsApp Business de la ligne pro.</div>
+    <div id="wa-etat" style="margin-top:8px">${wamEtat(n)}</div></div>`}
 function lierWa(n){const go=document.getElementById('wa-go');if(!go)return;const et=document.getElementById('wa-etat');
+  const lien=()=>{const t=document.getElementById('wa-t').value;go.href='https://wa.me/33'+t.slice(1)+'?text='+encodeURIComponent(document.getElementById('wa-txt').value.trim());return t};
+  lien();document.getElementById('wa-t').onchange=lien;document.getElementById('wa-txt').oninput=lien;
+  go.onclick=()=>{const t=lien();NOTE.set('wam:'+n,JSON.stringify({q:Date.now(),tel:t,par:WEB?webQui():''}));setTimeout(()=>et.innerHTML=wamEtat(n),50)}}
+function lierWaMeta(n){const go=document.getElementById('wa-go');if(!go)return;const et=document.getElementById('wa-etat');
   const annul=()=>{const a=document.getElementById('wa-annuler');if(a)a.onclick=e=>{e.preventDefault();NOTE.set('wa:'+n,'');et.innerHTML=waEtat(n)||'Demande annulée.'}};annul();
   go.onclick=async()=>{const part=await coEtat().catch(()=>'off');
     if(part!=='on'){et.innerHTML='<span class="chip bad">Demande non envoyée</span> Le partage des coches n\'est pas actif sur ce PC : le robot ne verrait pas la demande.';return}
@@ -1469,7 +1615,7 @@ function lierWa(n){const go=document.getElementById('wa-go');if(!go)return;const
 function extEtat(n){const v=NOTE.get('ext:'+n), a=(D.actions||{})['ext:'+n], ts=+(()=>{try{return localStorage.getItem('ts:ext:'+n)}catch(e){return 0}})()||0;
   const res=a&&(!v||a.ts>=ts)?a:null;
   if(v&&!res)return '<span class="chip info">Demande envoyée</span> <span class="tag">le robot l\'accepte à son prochain passage</span>';
-  if(res)return `<span class="chip ${res.etat==='ok'?'ok':'bad'}">${res.etat==='ok'?'Acceptée par le robot':'Non acceptée'}</span> <span class="tag">${esc(res.message||'')}</span>`;
+  if(res)return `<span class="chip ${res.etat==='ok'?'ok':'bad'}">${res.etat==='ok'?'Acceptée par le robot':'Non acceptée'}</span> <span class="tag" title="${esc(res.message||'')}">${esc(res.etat==='ok'?res.message||'':clairErr(res.message))}</span>`;
   return ''}
 function extBouton(n){return `<span class="extv">${extEtat(n)||`<button class="btn" data-extok="${esc(n)}">Valider sur l'Extranet</button>`}</span>`}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-extok]');if(!b)return;e.stopPropagation();const n=b.dataset.extok, z=b.closest('.extv');
@@ -1643,6 +1789,11 @@ function releveVue(){
     ${lignes.length?`<tfoot><tr><td colspan="4" style="text-align:right"><b>Total HT${manq?' (hors '+manq+' prix à mettre)':''}</b></td><td class="num"><b>${eur(tot)}</b></td></tr></tfoot>`:''}</table></div>
     <p class="sub" style="padding:10px 20px 16px">${lignes.length} commande(s). Relevé établi le ${fr(today)}.</p>`;
   RELTXT=`RMS BATIMENT - Relevé des interventions ${titreM} - ${nom}\n\n`+lignes.map(l=>`${fr(l.date)}  n° ${l.n_nexxio}  ${l.bc}  ${l.adresse}  ${l.prix!=null?eur(l.prix):'prix à mettre'}`).join('\n')+`\n\nTotal HT : ${eur(tot)}${manq?' (hors '+manq+' prix à mettre)':''}\nMerci d'établir votre facture de ce montant.`;
+  // 16/11 (roadmap « Relevé mensuel des sous-traitants prêt à envoyer ») : le relevé s'ouvre déjà écrit dans WhatsApp ou
+  // dans un nouveau mail de la messagerie de J ; J choisit le destinataire, relit et envoie lui-même (le robot n'envoie rien)
+  const wa=document.getElementById('rl-wa'),ml=document.getElementById('rl-mail');
+  if(wa)wa.href='https://wa.me/?text='+encodeURIComponent(RELTXT);
+  if(ml)ml.href='mailto:?subject='+encodeURIComponent(`RMS BATIMENT - Relevé des interventions ${titreM}`)+'&body='+encodeURIComponent(RELTXT.slice(0,1800)+(RELTXT.length>1800?'\n(suite : voir le relevé joint)':''));
 }
 
 /* ---------- factures des sous-traitants (J le 11/11 : arrivent sur mlakchiri@) ---------- */
@@ -1650,13 +1801,15 @@ const FAC=(D.factures||[]).filter(f=>!f.absent);
 // sous-traitant d'une facture : celui des rapports des commandes citées, sinon le nom de l'expéditeur du mail
 // (« Khaled Khalifa » = « KHALIFA Khaled » dans Nexxio)
 const motsNom=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().split(/[^a-z]+/).filter(w=>w.length>2).sort().join(' ');
+// 16/11 (J : « Oui, même équipe ») : le rapport d'un équipier vaut pour son équipe (factures seulement)
+const eqDe=p=>(D.meme_equipe||{})[p]||p;
 const facSst=f=>{if(f.sst)return f.sst;   // table société -> sous-traitant validée par J (societes_sous_traitants.json)
-  const c={};cmdsF(f).forEach(([n])=>(RAP_N[n]||[]).forEach(r=>{c[r.par]=(c[r.par]||0)+1}));
+  const c={};cmdsF(f).forEach(([n])=>(RAP_N[n]||[]).forEach(r=>{const p=eqDe(r.par);c[p]=(c[p]||0)+1}));
   const b=Object.entries(c).sort((a,b)=>b[1]-a[1])[0];if(b)return b[0];
   const m=motsNom(f.nom);const p=m&&[...new Set(RAP.map(r=>r.par))].find(x=>motsNom(x)===m);return p||f.nom||''};
 function controleFacture(f){
   const nom=facSst(f), lignes=cmdsF(f).map(([n,via])=>{const x=NX[n]||{},s=(D.sst||[]).find(y=>y.n_nexxio===n)||{};
-    const prix=nom?prixPour(n,nom):(D.couts||{})[n], mf=(f.montants||{})[n];const rap=(RAP_N[n]||[]).filter(r=>!nom||r.par===nom).map(r=>r.date).sort()[0]||'';
+    const prix=nom?prixPour(n,nom):(D.couts||{})[n], mf=(f.montants||{})[n];const rap=(RAP_N[n]||[]).filter(r=>!nom||eqDe(r.par)===nom).map(r=>r.date).sort()[0]||'';
     const avant=FAC.filter(g=>g!==f&&(g.recu||'')<(f.recu||'')&&!(g.numero&&g.numero===f.numero)&&cmdsF(g).some(([m])=>m===n)&&facSst(g)===nom).map(g=>g.numero||g.fichier);
     const rq=[];if(!rap)rq.push('pas de rapport');if(prix==null)rq.push('prix pas dans l\'agenda');if(prix!=null&&mf!=null&&Math.abs(mf-prix)>=1)rq.push('facturé '+eur(mf)+' au lieu de '+eur(prix));if(avant.length)rq.push('déjà sur la facture '+avant.join(', '));
     return {n,via,prix,mf,rap,rq,statut:(x.pl||x.sst||{}).statut||s.statut||'',adresse:((RAP_N[n]||[])[0]||{}).adresse||s.commune||''}});
@@ -1686,7 +1839,7 @@ function facturesVue(){
     +((D.factures_dossiers||[]).length?'Dossiers lus dans la boîte : '+D.factures_dossiers.map(esc).join(' ; ')+'. ':'')
     +'On peut aussi déposer une facture (WhatsApp, papier scanné) dans <b>BC CLIENTS\\FACTURES SOUS-TRAITANTS</b>. Le robot y retrouve les commandes (n° Nexxio, n° de BC ou adresse) et compare au prix écrit dans l\'agenda et aux rapports Nexxio. Cliquer sur une facture pour le détail.';
   document.getElementById('tfc').innerHTML=r.length?r.map(x=>`<tr data-f="${esc(x.f.fichier)}" style="cursor:pointer"><td class="nw">${fr((x.f.recu||'').slice(0,10))}<span class="b2">${esc((x.f.expediteur||'déposée').split('@')[0])}</span></td>
-    <td>${esc(x.f.sst_affiche?x.f.sst_affiche+' ('+x.nom+')':(x.nom||'?'))}${x.f.societe&&x.f.societe.toLowerCase()!==String(x.nom).toLowerCase()?`<span class="b2">${esc(x.f.societe)}</span>`:''}</td><td>${x.f.sans_pdf?`<b>${esc(x.f.numero||'facture')}</b>`:`<a href="${encodeURI('FACTURES SOUS-TRAITANTS/'+x.f.fichier)}" target="_blank" onclick="event.stopPropagation()">${esc(x.f.numero||x.f.fichier)}</a>`}<span class="b2">${x.f.date?'du '+fr(x.f.date)+' · ':''}${x.f.sans_pdf?'lien dans le mail · ':''}${x.lignes.length} commande(s)</span></td>
+    <td>${esc(x.f.sst_affiche?x.f.sst_affiche+' ('+x.nom+')':(x.nom||'?'))}${x.f.societe&&x.f.societe.toLowerCase()!==String(x.nom).toLowerCase()?`<span class="b2">${esc(x.f.societe)}</span>`:''}</td><td>${x.f.sans_pdf?`<b>${esc(x.f.numero||'facture')}</b>`:`<a href="${encodeURI('FACTURES SOUS-TRAITANTS/'+x.f.fichier)}" target="_blank" onclick="event.stopPropagation()">${esc(x.f.numero||x.f.fichier)}</a>`}<span class="b2">${x.f.date?'du '+fr(x.f.date)+' · ':''}${x.f.sans_pdf?'lien dans le mail · ':''}${x.f.lignes_ia?'lignes lues par l\'IA · ':''}${x.lignes.length} commande(s)</span></td>
     <td class="num"><b>${x.f.ht!=null?eur(x.f.ht):'?'}</b></td><td class="num">${x.lignes.length?eur(x.ag):''}</td><td class="num">${x.ecart!=null?(x.lignes.some(l=>l.prix==null)?`<span class="tag" title="un prix manque dans l'agenda">${eur(x.ecart)} ?</span>`:`<b class="${Math.abs(x.ecart)>=1?'neg':''}">${eur(x.ecart)}</b>`):''}</td>
     <td>${x.pb.length?x.pb.map(p=>`<span class="chip warn">${esc(p)}</span>`).join(' '):'<span class="chip ok">Conforme</span>'}</td></tr>`).join('')
     :`<tr><td colspan="7" class="vide">${FAC.length?'Aucune facture pour ces critères.':'Aucune facture lue pour l\'instant.'}</td></tr>`;
@@ -1697,7 +1850,44 @@ function facturesVue(){
     document.getElementById('tfcd').innerHTML=x.lignes.length?x.lignes.map(l=>`<tr><td><b>${esc(l.n)}</b></td><td>${esc(l.via)}</td><td>${esc(l.adresse)}</td><td class="nw">${l.rap?fr(l.rap):'<span class="chip warn">aucun</span>'}</td><td>${esc(l.statut)}</td><td class="num">${l.mf!=null?eur(l.mf):''}</td>
       <td class="num">${l.prix!=null?eur(l.prix):'<span class="chip warn">à mettre</span>'}</td><td>${l.rq.map(esc).join(', ')}</td></tr>`).join(''):'<tr><td colspan="8" class="vide">Aucune commande reconnue dans cette facture'+(x.f.sans_pdf?' (facture en lien dans le mail : seul le total est connu)':'')+' : à vérifier à la main.</td></tr>'}
   store.set('fc',{eq:se.value,et});
-  bapVue(L,eq,P);
+  bapVue(L,eq,P);rapprochementVue(L,eq,P);
+}
+// 15/11 (chantier « écarts par équipe ») : chaque sous-traitant, commande par commande : facturé / prix de son agenda /
+// ses rapports. Une facture reçue 2 fois ne compte qu'une fois. Le détail ne montre que les commandes à regarder.
+let RQSEL='';
+function rapprochementVue(L,eq,P){
+  const G={};
+  L.filter(x=>x.nom&&!x.pb.some(p=>/même facture reçue 2 fois/.test(p))).forEach(x=>{const g=(G[x.nom]=G[x.nom]||{c:{},d0:''});
+    x.lignes.forEach(l=>{const c=(g.c[l.n]=g.c[l.n]||{n:l.n,mf:0,sansM:false,fact:[],prix:l.prix,rap:l.rap,dansP:false});
+      if(l.mf!=null)c.mf+=l.mf;else c.sansM=true;c.fact.push(x.f.numero||x.f.fichier);
+      if(dansP((x.f.date||x.f.recu||'').slice(0,10),P))c.dansP=true;if(l.rap&&(!g.d0||l.rap<g.d0))g.d0=l.rap})});
+  // commandes facturées par 2 sous-traitants différents
+  const parN={};Object.entries(G).forEach(([nom,g])=>Object.keys(g.c).forEach(n=>{(parN[n]=parN[n]||[]).push(nom)}));
+  const R=Object.entries(G).filter(([nom])=>!eq||nom===eq).map(([nom,g])=>{
+    const C=Object.values(g.c).filter(c=>c.dansP), voir=[];
+    C.forEach(c=>{const ap=[];
+      // plusieurs équipes sur une commande, c'est normal : on ne le signale que si cette équipe n'a pas fait de rapport
+      if(!c.rap){const a=[...new Set((RAP_N[c.n]||[]).map(r=>eqDe(r.par)))].filter(p=>p!==nom), o=parN[c.n].filter(p=>p!==nom);
+        ap.push((a.length?'rapport fait par '+a.join(', '):'aucun rapport de cette équipe')+(o.length?' ; aussi facturée par '+o.join(', '):''))}
+      if(c.prix==null)ap.push('prix pas dans l\'agenda');else if(!c.sansM&&Math.abs(c.mf-c.prix)>=1)ap.push('facturé '+eur(c.mf)+' au lieu de '+eur(c.prix));
+      if(ap.length)voir.push({...c,ap})});
+    // rapports de l'équipe depuis sa 1re commande facturée, sans facture lue
+    const prem={};RAP.filter(r=>eqDe(r.par)===nom).forEach(r=>{if(!prem[r.n_nexxio]||r.date<prem[r.n_nexxio])prem[r.n_nexxio]=r.date});
+    const nf=g.d0?Object.entries(prem).filter(([n,d])=>d>=g.d0&&!g.c[n]&&!(parN[n]||[]).length&&dansP(d,P)).map(([n,d])=>({n,rap:d,prix:prixPour(n,nom)})):[];
+    const avecP=C.filter(c=>!c.sansM&&c.prix!=null);
+    return {nom,C,voir,nf,fact:C.reduce((t,c)=>t+c.mf,0),ag:avecP.reduce((t,c)=>t+c.prix,0),ecart:Math.round(avecP.reduce((t,c)=>t+c.mf-c.prix,0)*100)/100}})
+    .filter(x=>x.C.length||x.nf.length).sort((a,b)=>b.voir.length-a.voir.length||b.fact-a.fact);
+  document.getElementById('nrq').textContent=R.length?R.reduce((t,x)=>t+x.voir.length,0)+' commande(s) à regarder':'';
+  const nfS=l=>l.reduce((t,c)=>t+(c.prix||0),0);
+  document.getElementById('trq').innerHTML=R.length?R.map(x=>`<tr data-rq="${esc(x.nom)}" style="cursor:pointer"><td><b>${esc(x.nom)}</b></td><td class="num">${x.C.length}</td><td class="num">${eur(x.fact)}</td><td class="num">${eur(x.ag)}</td>
+    <td class="num"><b class="${Math.abs(x.ecart)>=1?'neg':''}">${eur(x.ecart)}</b></td><td class="num">${x.nf.length?`${x.nf.length}<span class="b2">${e0(nfS(x.nf))}${x.nf.some(c=>c.prix==null)?' + prix à mettre':''}</span>`:''}</td>
+    <td>${x.voir.length?`<span class="chip warn">${x.voir.length} commande(s)</span>`:'<span class="chip ok">Tout concorde</span>'}</td></tr>`).join('')
+    :`<tr><td colspan="7" class="vide">${FAC.length?'Aucune facture de sous-traitant pour ces critères.':'Aucune facture lue pour l\'instant.'}</td></tr>`;
+  const x=R.find(y=>y.nom===RQSEL);
+  document.getElementById('rq-det').innerHTML=x?`<h3 style="margin:16px 0 8px;font-size:15px">${esc(x.nom)}</h3>
+    ${x.voir.length?`<div class="wrap"><table><thead><tr><th>Commande</th><th>Facture(s)</th><th class="num">Facturé</th><th class="num">Prix agenda</th><th>Rapport de l'équipe</th><th>À regarder</th></tr></thead><tbody>${x.voir.map(c=>`<tr><td><b>${esc(c.n)}</b></td><td>${c.fact.map(esc).join(', ')}</td><td class="num">${c.sansM?'?':eur(c.mf)}</td><td class="num">${c.prix!=null?eur(c.prix):''}</td><td class="nw">${c.rap?fr(c.rap):''}</td><td>${c.ap.map(a=>`<span class="chip warn">${esc(a)}</span>`).join(' ')}</td></tr>`).join('')}</tbody></table></div>`:'<p class="sub">Les commandes facturées concordent avec l\'agenda et les rapports.</p>'}
+    ${x.nf.length?`<h4 style="margin:14px 0 6px">Rapport reçu, pas encore facturé (${x.nf.length})</h4><div class="wrap"><table><thead><tr><th>Commande</th><th>Rapport du</th><th class="num">Prix agenda</th></tr></thead><tbody>${x.nf.sort((a,b)=>a.rap<b.rap?-1:1).map(c=>`<tr><td><b>${esc(c.n)}</b></td><td class="nw">${fr(c.rap)}</td><td class="num">${c.prix!=null?eur(c.prix):'<span class="chip warn">à mettre</span>'}</td></tr>`).join('')}</tbody></table></div>`:''}`:'';
+  document.querySelectorAll('#trq tr[data-rq]').forEach(tr=>tr.onclick=()=>{RQSEL=RQSEL===tr.dataset.rq?'':tr.dataset.rq;facturesVue()});
 }
 // 13/11 (J) : bon à payer par sous-traitant. Une facture reçue 2 fois (même n°, même montant) ne compte qu'une fois.
 function bapVue(L,eq,P){
@@ -1835,7 +2025,7 @@ function sstVue(){
     tuile(sans?sans.c.length:0,'Sans affectation',sans?'Planifiées ou plus, sans sous-traitant · cliquer':'Tout ce qui est planifié est affecté','var(--orange)',sans?SANS:'')].join('');
   const nb=r=>r.length;
   {const avec=C.filter(x=>x.cout!=null), ca=avec.reduce((s,x)=>s+(x.ht||0),0), co=avec.reduce((s,x)=>s+x.cout,0), sansPrix=C.filter(x=>x.cout==null&&clos(x)).length;
-   document.getElementById('smarge').innerHTML=D.agenda_genere?`Marge sur la période : <b>${e0(ca-co)}</b> (${ca?pct((ca-co)/ca):'—'}) sur ${avec.length} commandes dont le prix payé est dans l'agenda${avec.some(x=>x.cout_facture)?' ou, à défaut, sur la facture du sous-traitant ('+avec.filter(x=>x.cout_facture).length+')':''} (CA ${e0(ca)}, payé ${e0(co)}). ${sansPrix?`<span class="chip warn">${sansPrix} commandes terminées sans prix dans l'agenda</span>`:''}`
+   document.getElementById('smarge').innerHTML=D.agenda_genere?`Marge sur la période : <b>${e0(ca-co)}</b> (${ca?pct((ca-co)/ca):'—'}) sur ${avec.length} commandes dont le prix payé est dans l'agenda${avec.some(x=>x.cout_facture)?' ou, à défaut, sur la facture du sous-traitant ('+avec.filter(x=>x.cout_facture).length+')':''} (CA ${e0(ca)}, payé ${e0(co)}${avec.some(x=>x.cout_plombelec)?', dont PLOMBELEC sur le PAPH '+e0(avec.reduce((s,x)=>s+(x.cout_plombelec||0),0)):''}). ${sansPrix?`<span class="chip warn">${sansPrix} commandes terminées sans prix dans l'agenda</span>`:''}`
      :'Coût et marge : en attente des adresses iCal des agendas (fichier ROBOT BC\\agendas.txt). Le prix payé est lu dans l\'événement de l\'agenda de l\'équipe (« 50 € »).'}
   document.getElementById('nsst').textContent=actifs.length?actifs.length+' sous-traitant(s) · '+e0(caTot)+' HT':'';
   document.getElementById('tsst').innerHTML=T.length?T.map(p=>{const s=!libre(p);return `<tr class="${ssel===p.nom?'on':''}" data-s="${esc(p.nom)}" style="cursor:pointer">
@@ -2023,7 +2213,8 @@ function journee(){
   const vusR=new Set(), l2=raps.filter(r=>!vusR.has(r.n_nexxio)&&vusR.add(r.n_nexxio)).map(r=>{const x=NXP[r.n_nexxio]||NXC[r.n_nexxio]||{};
     return `<li data-fiche="${esc(r.n_nexxio)}"><label onclick="event.stopPropagation()"><input type="checkbox" data-env="${esc(r.n_nexxio)}"> envoyé</label> <b>${esc(r.n_nexxio)}</b> ${bai(x.client||x.bailleur||'')} ${esc(x.commune||'')} · rapport de ${esc(r.par||'?')} du ${fr(r.date)}</li>`});
   // 3. factures : commandes avec rapport, pas encore facturées ; celles dont la facture du sous-traitant est reçue d'abord
-  const aF=P.filter(x=>x.rapports>0&&(x.restant||0)>0&&!FACT.get(x.n_nexxio)), pretes=aF.filter(x=>fsst(x.n_nexxio).length);
+  // 16/11 (J, idée retenue) : les prêtes (rapport et facture du sous-traitant reçus) classées par montant, la plus grosse en haut
+  const aF=P.filter(x=>x.rapports>0&&(x.restant||0)>0&&!FACT.get(x.n_nexxio)), pretes=aF.filter(x=>fsst(x.n_nexxio).length).sort((a,b)=>(b.restant||0)-(a.restant||0));
   const nouv=aF.filter(x=>RAP.some(r=>r.n_nexxio===x.n_nexxio&&(r.date||'')>=debut));
   const l3=[...nouv,...pretes.filter(x=>!nouv.includes(x))].map(x=>li(x.n_nexxio,`${esc(x.commune||'')} · ${eur(x.restant)}${fsst(x.n_nexxio).length?' · facture SST reçue':''}${nouv.includes(x)?' · rapport reçu '+nomJ:''}`));
   // 4. relances : RDV passés sans rapport (60 derniers jours) ; RDV pris au téléphone pas encore dans Nexxio
@@ -2037,7 +2228,7 @@ function journee(){
   document.getElementById('journee').innerHTML=`<h2><span>Ma journée</span><span class="tag">depuis ${nomJ} ${fr(debut)}</span></h2>
     ${etape(recues.length+enCrea.length,'Commandes à planifier',`${occ.length} locataire(s) à appeler · ${vac.length} logement(s) vacant(s), clés à récupérer${enCrea.length?` · ${enCrea.length} encore à prendre en compte`:''}`,l1,'Voir À planifier','aplan')}
     ${etape(l2.length,'Rapports à envoyer au bailleur','Arrivés depuis la veille : cocher « envoyé » une fois transmis (Extranet ou mail)',l2,'Voir les rapports','fact')}
-    ${etape(aF.length,'Factures à faire',`${nouv.length} nouveau(x) rapport(s) · ${pretes.length} avec la facture du sous-traitant reçue · ${e0(aF.reduce((s,x)=>s+(x.restant||0),0))} HT en tout`,l3,'Voir À facturer','fact')}
+    ${etape(aF.length,'Factures à faire',`${nouv.length} nouveau(x) rapport(s) · ${pretes.length} prête(s) à facturer (facture du sous-traitant reçue)${pretes.length?' pour '+e0(pretes.reduce((s,x)=>s+(x.restant||0),0))+' HT':''} · ${e0(aF.reduce((s,x)=>s+(x.restant||0),0))} HT en tout`,l3,'Voir À facturer','fact')}
     ${etape(ret.length+rdvnx.length,'Relances',`${ret.length} rapport(s) attendu(s) après RDV${rdvnx.length?` · ${rdvnx.length} RDV pris à mettre dans Nexxio`:''}`,rdvnx.map(x=>li(x.n_nexxio,`${esc(x.commune||'')} · RDV pris au téléphone : à mettre dans Nexxio`)),'Voir les relances','retard')}
     ${etape(bloc.length,'BC bloqués','À reprendre ou commande Extranet en attente de ton accord',bloc.map(l=>li(l.n_nexxio||l.n_bc,`${esc(l.bailleur||'')} ${esc(l.n_bc)} · ${esc(l.etat)}`)),'Voir À faire','faire')}
     ${etape(al.length,'Alertes du robot et des données',al.length?'Tâche en retard, erreur ou écart : le détail est dans l\'onglet Chiffres':`Les tâches du robot sont à l\'heure, aucun écart${suiv?` · ${suiv} point(s) à surveiller dans « Santé des données »`:''}`,al.map(x=>`<li style="cursor:default"><b>${esc(x.titre)}</b> · ${esc(x.detail)}</li>`),'Voir l\'état du robot','etat')}`;
@@ -2050,4 +2241,68 @@ function journee(){
     pv=g;store.set('pv',g);if(g==='fact')store.set('ffact','toutes');onglet('planning');planning();window.scrollTo(0,0);telListe()});
 }
 try{journee()}catch(e){console.error('Ma journée',e)}
+/* ---------- Compte rendu du manager (16/11, J : « je veux que tu deviennes comme un manager et t'auras plusieurs agents
+   sous toi ») : écrit une fois par jour par manager.py sur le PC du robot. Une ligne par agent (ce qu'il a fait, ce qui
+   bloque), puis ce qui attend J. Lecture seule : rien ne part d'ici. */
+// 16/11 (palier « il propose, tu cliques ») : commande restée « En création » que le manager a laissée à J sans qu'elle soit
+// rouge, ou que l'agent de saisie a refusée : J peut la lui redemander d'un clic (coche « mgr:finir:<n> », un clic = cette
+// commande). Le robot la revérifie comme les autres et ne la prend en compte que si tout est conforme.
+function mgrFinir(m,e,d){
+  if(!(e.proposer||(e.decision==='demander'&&d.etat==='fait'&&!/^Prise en compte/.test(d.resultat||''))))return '';
+  const k='mgr:finir:'+e.n, cl=(m.clics||{})[e.n], ts=+(()=>{try{return localStorage.getItem('ts:'+k)}catch(x){return 0}})()||0;
+  if(NOTE.get(k)&&(!cl||cl.heure<ts))return '<div class="sub" style="padding:0"><span class="chip info">Redemandée</span> l\'agent de saisie la revérifie au prochain passage du robot</div>';
+  return `<div class="sub" style="padding:0">${cl?`<b>Agent de saisie, à ta demande :</b> ${esc(cl.resultat||'')} `:''}<button class="btn" data-mgrfinir="${esc(e.n)}" title="L'agent de saisie relit la commande dans Nexxio, refait le contrôle IA et ne la prend en compte que si tout est conforme">Lui redemander</button></div>`}
+function managerVue(){const m=D.manager, el=document.getElementById('manager');if(!el||!m||!m.agents)return;
+  const ic={ok:'✓',warn:'!',bad:'✕'}, vieux=m.jour&&m.jour<today;
+  el.hidden=false;
+  // 16/11 (J : « le compte rendu manager occupe trop de place quand t'arrives sur le dashboard, il faut que ce soit épuré ») :
+  // replié par défaut sur une ligne (état de chaque agent + nombre de choses qui attendent J) ; le détail s'ouvre d'un clic
+  const ouvert=(()=>{try{return localStorage.getItem('mgr-ouvert')==='1'}catch(x){return false}})();
+  const nJ=(m.pour_j||[]).length, tg=n=>`<button class="btn" id="mgr-tg" style="padding:4px 10px;font-size:12.5px">${n?'Replier':'Voir le détail'}</button>`;
+  el.style.padding=ouvert?'':'0';
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 16px${ouvert?';border-bottom:1px solid var(--line)':''}">
+      <b style="font-size:14px">Manager</b>
+      ${m.agents.map(a=>`<span class="chip ${a.etat}" title="${esc((a.nom||a.cle)+' : '+(a.fait||''))}">${ic[a.etat]||'!'} ${esc((a.nom||a.cle).split(' ')[0])}</span>`).join('')}
+      <span class="tag">${nJ?`<b>${nJ} chose${nJ>1?'s':''} t'attend${nJ>1?'ent':''}</b>`:'rien ne t\'attend'}${vieux?' · <span class="chip warn">pas encore fait aujourd\'hui</span>':''}</span>
+      <span style="margin-left:auto">${tg(ouvert)}</span></div>
+    <div id="mgr-detail"${ouvert?'':' hidden'}>
+    <div class="tag" style="padding:8px 16px 0">${fr(m.jour)} à ${esc((m.genere||'').slice(11,16))}${m.par==='orchestre'?' · après enquête':m.par==='ia'?'':' · sans IA'}</div>
+    <p style="margin:6px 16px 10px;font-size:14px">${esc(m.resume||'')}</p>
+    ${m.agents.map(a=>`<div class="it" style="padding:8px 16px;border-top:1px solid var(--line)"><div class="t"><span class="chip ${a.etat}">${ic[a.etat]||'!'}</span> <b>${esc(a.nom||a.cle)}</b> <span class="tag">${esc(a.fait||'')}</span></div>${a.bloque?`<div class="sub" style="margin-top:4px;padding:0">${esc(a.bloque)}</div>`:''}</div>`).join('')}
+    ${(m.enquete||[]).length?`<details class="det" style="margin:0;padding:8px 16px;border-top:1px solid var(--line)"><summary><b>Échanges avec l'agent de saisie</b> <span class="tag">${m.enquete.length} commande(s) restée(s) « En création »</span></summary>${m.enquete.map(e=>{const d=(m.demandes||{})[e.n]||{};
+      return `<div style="margin:8px 0;font-size:13px"><b>${esc(e.n)}</b> ${bai(e.bailleur)} <span class="tag">saisie le ${fr(e.jour)}</span>
+        <div class="sub" style="padding:0"><b>Manager :</b> pourquoi n'est-elle pas prise en compte ?</div>
+        <div class="sub" style="padding:0"><b>Agent de saisie :</b> ${esc(e.pourquoi)}</div>
+        <div class="sub" style="padding:0"><b>Manager :</b> ${e.decision==='demander'?'revérifie-la et prends-la en compte si tout est conforme.':'je la laisse à J ('+esc(e.raison)+').'}</div>
+        ${e.decision==='demander'?`<div class="sub" style="padding:0"><b>Agent de saisie :</b> ${d.etat==='fait'?esc(d.resultat||''):'<span class="chip info">demande en attente du prochain passage du robot</span>'}</div>`:''}
+        ${mgrFinir(m,e,d)}</div>`}).join('')}
+      ${(b=>b.n?`<div class="tag">Bilan des demandes à l'agent de saisie : ${b.ok} prise(s) en compte sur ${b.n}.</div>`:'')(Object.values(m.demandes||{}).reduce((b,x)=>{if(x.etat==='fait'){b.n++;if(/^Prise en compte/.test(x.resultat||''))b.ok++}return b},{n:0,ok:0}))}</details>`:''}
+    ${(m.discussions||[]).length?`<details class="det" style="margin:0;padding:8px 16px;border-top:1px solid var(--line)"><summary><b>Discussions du manager avec ses agents</b> <span class="tag">${m.discussions.length} question(s) posée(s) pendant son enquête</span></summary>${m.discussions.map(x=>`<div style="margin:8px 0;font-size:13px">
+        <div class="sub" style="padding:0"><b>Manager, à l'agent ${esc(x.nom||x.agent)} :</b> ${esc(x.question||'')}</div>
+        <div class="sub" style="padding:0;white-space:pre-wrap"><b>Agent ${esc(x.nom||x.agent)} :</b> ${esc(x.reponse||'')}${x.lectures?` <span class="tag">(${x.lectures} vérification${x.lectures>1?'s':''})</span>`:''}</div></div>`).join('')}</details>`:''}
+    ${(D.renfort||[]).length?`<details class="det" style="margin:0;padding:8px 16px;border-top:1px solid var(--line)"><summary><b>Renfort de l'agent IA</b> <span class="tag">${D.renfort.length} PDF que le robot n'a pas su lire, sur 7 jours</span></summary>${D.renfort.map(r=>`<div style="margin:8px 0;font-size:13px"><b>${esc(r.n_bc||r.pdf)}</b> <span class="tag">${fr((r.quand||'').slice(0,10))}</span> ${r.etat==='fait'?`<span class="chip ${r.couleur==='vert'?'ok':r.couleur==='orange'?'warn':r.couleur==='rouge'?'bad':''}">${r.couleur==='aucun'?'pas un BC':r.couleur==='rouge'?'non saisi':'saisi, à vérifier'}</span>`:'<span class="chip info">en attente de l\'agent</span>'}
+        <div class="sub" style="padding:0"><b>Robot :</b> ${esc(r.raison||'')}</div>
+        ${r.etat==='fait'?`<div class="sub" style="padding:0"><b>Agent IA :</b> ${esc(r.resultat||'')}</div>`:''}</div>`).join('')}
+      <div class="tag">L'agent IA crée la commande sans la prendre en compte : elle reste « En création » pour que tu la vérifies.</div></details>`:''}
+    ${(m.ordres||[]).length?`<details class="det" style="margin:0;padding:8px 16px;border-top:1px solid var(--line)"><summary><b>Ordres donnés aux agents</b> <span class="tag">${m.ordres.length} sur 7 jours</span></summary>${m.ordres.slice().reverse().map(o=>`<div style="margin:8px 0;font-size:13px"><b>${o.type==='relire_ia'?'Agent de saisie : refaire le contrôle IA de la commande '+esc(o.cible):o.type==='atelier'?'Atelier : corriger le robot pour le BC '+esc(o.cible):esc(o.type+' '+o.cible)}</b> <span class="tag">${fr((o.quand||'').slice(0,10))}</span>
+        <div class="sub" style="padding:0"><b>Pourquoi :</b> ${esc(o.raison||'')}</div>
+        <div class="sub" style="padding:0"><b>Réponse :</b> ${o.etat==='fait'?esc(o.resultat||''):'<span class="chip info">en attente du prochain passage du robot</span>'}</div></div>`).join('')}</details>`:''}
+    ${(m.pour_j||[]).length?`<div style="padding:10px 16px;border-top:1px solid var(--line)"><b>Ce qui t'attend</b><ol style="margin:6px 0 0;padding-left:20px;font-size:13.5px">${m.pour_j.map(x=>`<li style="margin:3px 0">${esc(x)}</li>`).join('')}</ol></div>`:'<div class="tag" style="padding:10px 16px;border-top:1px solid var(--line)">Rien ne t\'attend aujourd\'hui.</div>'}
+    <div style="padding:10px 16px;border-top:1px solid var(--line)"><b>Poser une question au manager</b>
+      <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap"><input id="mgr-q" maxlength="300" placeholder="Ex. : où en est la commande 5273 ?" style="flex:1;min-width:180px;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit"><button class="btn" id="mgr-go">Demander</button></div>
+      <div id="mgr-et" class="tag" style="margin-top:6px"></div>
+      ${(m.questions||[]).map(q=>`<div style="margin:10px 0 0;font-size:13px"><b>${esc(q.question)}</b> <span class="tag">${fr((q.quand||'').slice(0,10))} à ${esc((q.quand||'').slice(11,16))}</span><div class="sub" style="padding:0;white-space:pre-wrap">${esc(q.reponse||'')}</div></div>`).join('')}</div></div>`;
+  document.getElementById('mgr-tg').onclick=()=>{try{localStorage.setItem('mgr-ouvert',ouvert?'0':'1')}catch(x){}managerVue()};
+  // question : écrite dans les coches partagées (« mgr:q »), le manager y répond au passage suivant du robot (lecture seule)
+  el.querySelectorAll('[data-mgrfinir]').forEach(b=>b.onclick=async()=>{const n=b.dataset.mgrfinir, part=await coEtat().catch(()=>'off');
+    if(part!=='on'){b.insertAdjacentHTML('afterend',' <span class="chip bad">Non envoyée</span> le partage des coches n\'est pas actif sur ce PC');return}
+    if(!confirm(`Redemander à l'agent de saisie de finir la commande ${n} ?\n\nIl la relit dans Nexxio, refait le contrôle IA et ne la prend en compte que si tout est conforme.`))return;
+    NOTE.set('mgr:finir:'+n,JSON.stringify({q:Date.now(),par:WEB?webQui():''}));managerVue();document.querySelectorAll('#manager details').forEach((x,i)=>{if(!i)x.open=true})});
+  const go=document.getElementById('mgr-go'), et=document.getElementById('mgr-et'), att=()=>{let v=null;try{v=JSON.parse(NOTE.get('mgr:q')||'null')}catch(e){}
+    if(v&&v.txt&&!(m.questions||[]).some(q=>q.question===v.txt))et.innerHTML='<span class="chip info">Question envoyée</span> « '+esc(v.txt)+' » : réponse au prochain passage du robot (15 minutes au plus)'};att();
+  if(go)go.onclick=async()=>{const t=document.getElementById('mgr-q').value.trim().replace(/\s+/g,' ');if(t.length<5)return;
+    const part=await coEtat().catch(()=>'off');
+    if(part!=='on'){et.innerHTML='<span class="chip bad">Question non envoyée</span> Le partage des coches n\'est pas actif sur ce PC : le robot ne la verrait pas.';return}
+    NOTE.set('mgr:q',JSON.stringify({q:Date.now(),txt:t,par:WEB?webQui():''}));document.getElementById('mgr-q').value='';att()}}
+try{managerVue()}catch(e){console.error('Manager',e)}
 </script></body></html>
