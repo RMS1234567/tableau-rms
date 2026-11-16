@@ -470,6 +470,29 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
  #tdort td:nth-child(1){grid-area:j}#tdort td:nth-child(6){grid-area:st;font-size:12.5px;color:var(--muted)}
  #tdort td:nth-child(7){grid-area:pq;font-size:12.5px}#tdort td.vide{grid-area:auto;grid-column:1/-1}
 }
+
+/* 16/11 (J : « au niveau de l'ergo du site », cases cochées) : accueil plus court, planning moins chargé, chiffres d'abord,
+   bandeau des coches discret, en-tête plus petit, cartes repliées sur téléphone, même espacement partout */
+#hero .chiffres{display:none}                       /* en double avec Ma journée (à reprendre, à imprimer, à facturer, devis) */
+.entete{margin:0 4px 12px!important}.entete h1{font-size:20px!important;letter-spacing:-.2px!important}.entete p{margin:2px 0 0;font-size:12.5px}
+.btn.partage.off,.btn.partage.pause{border-color:var(--orange);color:var(--orange)}
+main section.card,main .hero,#proul{margin-bottom:14px!important}
+#proul .card{padding:10px 14px!important}#proul .card>div:last-child{display:flex!important;flex-wrap:wrap;gap:2px 22px}
+#proul .card>div:last-child>div>div{display:inline;font-size:15px!important;margin-left:6px}#proul .card>div:last-child small{display:none}
+@media (min-width:701px){#ptiles{flex-wrap:nowrap!important;gap:8px}#ptiles .kpi.grand,#ptiles .kpi.petit{flex:1 1 0;min-width:0;padding:10px 12px}
+ #ptiles .kpi.grand b,#ptiles .kpi.petit b{font-size:22px;margin:2px 0 0}
+ #ptiles .kpi .l,#ptiles .kpi small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#ptiles .kpi .l{font-size:12px}#ptiles .kpi small{font-size:11px}}
+.repli>h2{cursor:pointer}.repli>h2 .pli{margin-left:6px}
+.frise{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:12px 18px;border-bottom:1px solid var(--line)}
+.frise div{font-size:11.5px;color:var(--muted);text-align:center;position:relative;padding-top:20px}
+.frise div::before{content:'';position:absolute;top:4px;left:50%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;background:var(--line);z-index:1}
+.frise div::after{content:'';position:absolute;top:9px;left:50%;width:calc(100% + 4px);height:2px;background:var(--line)}
+.frise div:last-child::after{display:none}.frise .ok{color:var(--ink)}.frise .ok::before{background:var(--vert)}.frise .ok::after{background:var(--vert)}
+.frise .ici{color:var(--orange);font-weight:650}.frise .ici::before{background:var(--orange)}.frise b{display:block;font-weight:600;font-size:12px}
+#haut{position:fixed;right:16px;bottom:96px;z-index:45;border-radius:50%;width:44px;height:44px;padding:0;font-size:18px;box-shadow:var(--sh)}
+@media (max-width:700px){section.card.ferme>:not(h2){display:none!important}section.card.ferme>h2{margin-bottom:0}section.card.pliable>h2{cursor:pointer}
+ section.card.pliable>h2>span:first-child::after{content:' ▾';color:var(--faint)}section.card.ferme>h2>span:first-child::after{content:' ▸'}
+ .frise{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:10px;padding:10px 16px}.frise div:nth-child(4)::after{display:none}}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -481,7 +504,7 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
 <div class="contenu">
 <div class="entete"><div><h1 id="bonjour">Bonjour</h1><p id="resume"></p></div><div class="gsearch"><input type="search" id="gq" placeholder="Rechercher partout : n° Nexxio, BC, adresse, locataire, équipe…" autocomplete="off"><div id="gres" hidden></div></div><button class="theme" id="theme" title="Clair, sombre ou automatique"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span></span></button></div>
 <div id="alerte"></div><div id="alerte-cx" class="alerte-cx"></div><div id="alerte-co" class="alerte-co"></div>
-<div id="fiche" hidden><div class="in" id="fichein"></div></div>
+<div id="fiche" hidden><div class="in" id="fichein"></div></div><button class="btn" id="haut" hidden title="Haut de page">↑</button>
 <main>
 <!-- EXPLOITATION -->
 <div id="p-exploitation">
@@ -992,6 +1015,9 @@ document.getElementById('toutimp').onclick=()=>{if(confirm('Marquer tous les BC 
 })();
 
 /* blocages */
+// 16/11 (J, « accueil plus court ») : plus de 100 BC résolus sur 30 jours ; les BC en cours et les 10 derniers résolus, le reste sur clic
+setTimeout(()=>{const B=[...document.querySelectorAll('#bloc>details.bl')],lim=B.filter(d=>d.open).length+10;if(B.length<=lim)return;B.slice(lim).forEach(d=>d.hidden=true);
+  const bt=document.createElement('button');bt.className='btn voirplus';bt.textContent=`Voir les ${B.length-lim} autres`;bt.onclick=()=>{B.forEach(d=>d.hidden=false);bt.remove()};document.getElementById('bloc').after(bt)},0);
 (function(){
   const b=L.filter(l=>l.histoire&&l.histoire.length&&l.jour>=jr(30)).sort((x,y)=>(y.jour+(y.heure||''))>(x.jour+(x.heure||''))?1:-1);
   const resolu=l=>l.n_nexxio&&l.risque!=='rouge'&&!String(l.statut).startsWith('A reprendre');
@@ -1372,7 +1398,12 @@ setTimeout(function(){[['sante','sante-l','nsante'],['etat_robot','etat-l','neta
   const ic={ok:'✓',warn:'!',bad:'✕'},cl={ok:'ok',warn:'warn',bad:'bad'};
   const nb=S.filter(x=>x.etat!=='ok').length;document.getElementById(idn).textContent=nb?nb+' point(s) à voir':'tout est bon';
   el.innerHTML=S.map(x=>`<div class="it" style="padding:8px 16px;border-top:1px solid var(--line)"><div class="t"><span class="chip ${cl[x.etat]}">${ic[x.etat]}</span> <b>${esc(x.titre)}</b> <span class="tag">${esc(x.detail)}</span></div>${x.exemples&&x.exemples.length&&x.etat!=='ok'?`<div class="sub" style="margin-top:4px">${x.exemples.map(n=>NX[n]?`<b class="lien-fiche" data-fiche="${esc(n)}" style="cursor:pointer;text-decoration:underline">${esc(n)}</b>`:esc(n)).join(' · ')}</div>`:''}</div>`).join('')||'<p class="vide" style="padding:14px">Pas encore de contrôle.</p>';
-  el.querySelectorAll('[data-fiche]').forEach(b=>b.onclick=()=>fiche(b.dataset.fiche))})},0);
+  el.querySelectorAll('[data-fiche]').forEach(b=>b.onclick=()=>fiche(b.dataset.fiche));
+  // 16/11 (J, « chiffres d'abord ») : en bas de l'onglet, repliés sur leur titre (ouverts seuls s'il y a un point rouge)
+  const sec=el.closest('section'),h=sec.querySelector('h2');sec.classList.add('repli');document.getElementById('p-chiffres').append(sec);
+  if(sec._ouv==null)sec._ouv=S.some(x=>x.etat==='bad');el.hidden=!sec._ouv;
+  h.insertAdjacentHTML('beforeend','<span class="tag pli"></span>');const pl=h.querySelector('.pli');pl.textContent=sec._ouv?'▾ replier':'▸ voir';
+  h.onclick=()=>{sec._ouv=!sec._ouv;el.hidden=!sec._ouv;pl.textContent=sec._ouv?'▾ replier':'▸ voir'}})},0);
 function moisVue(m0,fin){
   const S=D.sst||[], P=D.planning||[];
   const nb=Math.round((new Date(fin)-new Date(m0))/864e5)+1, dec=(d,k)=>{const x=new Date(d);x.setDate(x.getDate()-k);return x.toISOString().slice(0,10)};
@@ -1509,10 +1540,20 @@ function chercherTout(q){q=plat(q).trim();if(q.length<2)return [];const mots=q.s
     else if(e.key==='Enter'&&R[sel])ouvrir(R[sel]);else if(e.key==='Escape'){box.hidden=true;i.blur()}};
   document.addEventListener('keydown',e=>{if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){e.preventDefault();i.focus()}});
 })();
+// 16/11 (J, « fiche en frise ») : l'histoire de la commande d'un coup d'œil, de la réception du BC au paiement ;
+// l'étape en orange est celle où elle attend
+function frise(n,s,b,pl){const F=(D.fnx||[]).filter(f=>f.n_nexxio===n&&f.type==='facture').sort((x,y)=>x.date<y.date?-1:1),
+    R=RAP.filter(r=>r.n_nexxio===n).map(r=>r.date||'').filter(Boolean).sort(), sst=FACT_SST[n]||[];
+  const E=[['BC reçu',b.jour||s.date],['Saisi',s.date||(n?b.jour:'')],['RDV',(pl.rdv_iso||'').slice(0,10)],['Rapport',R[0]||(pl.rapports>0?'ok':'')],
+    ['Facture SST',sst.length?'ok':''],['Facturé',F.length?F[0].date:s.facturee],['Payé',F.length&&F.every(f=>f.etat==='Payé')?'ok':'']];
+  // une étape sautée avant la dernière faite (facturée sans RDV noté) n'est pas « en attente » : l'orange va sur la suivante
+  const der=E.reduce((k,[,d],i)=>d?i:k,-1);
+  return `<div class="frise">${E.map(([t,d],i)=>{const ok=!!d, ici=!ok&&i===der+1;
+    return `<div class="${ok?'ok':ici?'ici':''}"><b>${t}</b>${ok&&/^\d{4}-/.test(d)?fr(d):ok?'✓':ici?'en attente':i<der?'—':''}</div>`}).join('')}</div>`}
 function fiche(n){const o=NX[n];if(!o)return;const pl=o.pl||{},s=o.sst||{},b=o.bc||{},dvx=o.dv||{},x=Object.assign({},dvx,b,s,pl);
   const cout=D.couts&&D.couts[n]!=null?D.couts[n]:null, ht=x.ht!=null&&x.ht!==''?+x.ht:null;
   const c=(l,v)=>v||v===0?`<div><small>${l}</small>${v}</div>`:'';
-  document.getElementById('fichein').innerHTML=`<h3><span>${o.dv&&!o.pl&&!o.sst?'Devis':'Commande'} ${esc(n)} ${bai(x.client||x.bailleur)}</span><button class="btn" id="ffermer">Fermer</button></h3>
+  document.getElementById('fichein').innerHTML=`<h3><span>${o.dv&&!o.pl&&!o.sst?'Devis':'Commande'} ${esc(n)} ${bai(x.client||x.bailleur)}</span><button class="btn" id="ffermer">Fermer</button></h3>${o.pl||o.sst||o.bc?frise(n,s,b,pl):''}
     <div class="g">${c('N° BC',esc(x.n_bc||x.n_devis))}${c('Statut',esc(x.statut))}${c('Commune',esc(x.commune))}
     ${c('Montant HT',ht!=null?eur(ht):'')}${c('Payé au sous-traitant',cout!=null?eur(cout):'')}${c('Marge',cout!=null&&ht!=null?`<b class="${ht-cout<0?'neg':''}">${eur(ht-cout)}</b> (${pct((ht-cout)/ht)})`:'')}
     ${c('Commandée le',fr(s.date||b.jour))}${c('RDV',esc(pl.rdv))}${c('Rapports',pl.rapports!=null?pl.rapports:'')}
@@ -2177,13 +2218,9 @@ async function coBandeau(){const el=document.getElementById('alerte-co');if(!el)
     document.getElementById('co-sortir').onclick=()=>FB.sortir();return}
   if(WEB){el.className='alerte-co on';el.innerHTML=`<span>✓ Connecté (${esc(webQui())}) · coches partagées${coAutres?' avec '+coAutres+' autre(s) navigateur(s)':''} · relues ${coLu?'à '+new Date(coLu).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'dans un instant'}</span><button class="btn" onclick="location.reload()">Actualiser les données</button>`;return}
   if(!('showDirectoryPicker' in window)){el.className='alerte-co off';el.innerHTML='<span>Les coches de ce navigateur ne sont pas partagées : ouvrir le tableau avec <b>Edge</b> ou <b>Chrome</b> sur ordinateur pour les partager.</span>';return}
-  const e=await coEtat().catch(()=>'off');el.className='alerte-co '+e;
-  // 13/11 : sur téléphone le partage par dossier n'existe pas, le grand bandeau orange prenait un quart d'écran pour rien
-  if(e!=='on'&&TEL()){el.className='alerte-co off';el.innerHTML='<span>Coches non partagées sur ce téléphone : elles restent sur cet appareil.</span>';return}
-  el.innerHTML=e==='on'?`<span>✓ Coches partagées avec les autres PC${coAutres?' ('+coAutres+' autre'+(coAutres>1?'s':'')+')':''} · relues ${coLu?'à '+new Date(coLu).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'au prochain passage'}</span>`
-    :e==='pause'?'<span><b>Partage des coches en pause sur ce PC</b> : le navigateur redemande la permission à chaque ouverture du tableau.</span><button class="btn" id="co-go">Réactiver (1 clic)</button>'
-    :'<span><b>Tes coches ne sont pas partagées</b> (facturé, envoyé, payé, appels, commentaires) : les autres PC ne les voient pas.</span><button class="btn" id="co-go">Activer le partage</button>';
-  const b=document.getElementById('co-go');if(b)b.onclick=coActiver}
+  // 16/11 (J, « bandeau des coches discret ») : il occupait le haut de chaque onglet ; l'état reste sur le bouton du menu
+  // (orange tant que le partage n'est pas actif, « Coches partagées ✓ » sinon)
+  el.className='alerte-co';el.innerHTML=''}
 if(FB){coBouton();coBandeau();FB.ecouter(coFB,e=>coBouton(e));
   FB.meta(m=>{if(m.v&&m.v!==FB.v)recharger()})}      // nouvelles données du robot : rechargé dès que la page est libre
 else if(WEB){coBouton();coLire().catch(e=>coBandeau());setInterval(()=>coLire().catch(()=>{}),30000)}
@@ -2245,7 +2282,7 @@ function journee(){
   J0.querySelectorAll('[data-env]').forEach(c=>c.onchange=()=>{ENV.set(c.dataset.env,c.checked);setTimeout(journee,250)});
   J0.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const g=b.dataset.go;
     if(g==='faire'){document.getElementById('faire').scrollIntoView({behavior:'smooth'});return}
-    if(g==='etat'){onglet('chiffres');document.getElementById('etatrobot').scrollIntoView();return}
+    if(g==='etat'){onglet('chiffres');const er=document.getElementById('etatrobot');er._ouv=true;document.getElementById('etat-l').hidden=false;er.scrollIntoView();return}
     pv=g;store.set('pv',g);if(g==='fact')store.set('ffact','toutes');onglet('planning');planning();window.scrollTo(0,0);telListe()});
 }
 try{journee()}catch(e){console.error('Ma journée',e)}
@@ -2313,4 +2350,11 @@ function managerVue(){const m=D.manager, el=document.getElementById('manager');i
     if(part!=='on'){et.innerHTML='<span class="chip bad">Question non envoyée</span> Le partage des coches n\'est pas actif sur ce PC : le robot ne la verrait pas.';return}
     NOTE.set('mgr:q',JSON.stringify({q:Date.now(),txt:t,par:WEB?webQui():''}));document.getElementById('mgr-q').value='';att()}}
 try{managerVue()}catch(e){console.error('Manager',e)}
+// 16/11 (J, « téléphone : cartes repliées ») : sur téléphone, les cartes de l'accueil et de Chiffres s'ouvrent d'un toucher
+// (Ma journée reste ouverte) ; bouton « haut de page » quand on est descendu
+setTimeout(()=>{if(TEL())document.querySelectorAll('#p-exploitation section.card:not(#journee),#p-chiffres section.card:not(.repli)').forEach(sc=>{
+  const h=sc.querySelector(':scope>h2');if(!h)return;sc.classList.add('pliable','ferme');
+  h.addEventListener('click',e=>{if(e.target.closest('button,input,select,a,label'))return;sc.classList.toggle('ferme')})});
+  const ht=document.getElementById('haut');ht.onclick=()=>scrollTo({top:0,behavior:'smooth'});
+  addEventListener('scroll',()=>{ht.hidden=!(TEL()&&scrollY>900)},{passive:true})},60);
 </script></body></html>
