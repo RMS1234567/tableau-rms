@@ -475,7 +475,7 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
 <aside class="side">
   <div class="brand"><div class="logo">RMS</div><div><b>RMS BATIMENT</b><small>Bons de commande</small></div></div>
   <div class="rub">Menu</div>
-  <nav class="tabs"><button class="on" data-t="exploitation"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Exploitation<span class="nb" id="nb-exp" hidden></span></button><button data-t="planning"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg><span>Planning<span class="lab-long"> et facturation</span></span><span class="nb" id="nb-pla" hidden></span></button><button data-t="devis"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>Devis<span class="nb" id="nb-dev" hidden></span></button><button data-t="sst"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14c2.6.1 4.1 1.8 4.5 4.5"/></svg><span><span class="l-d">Sous-traitants</span><span class="l-m">Équipes</span></span></button><button data-t="chiffres"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Chiffres</button></nav>
+  <nav class="tabs"><button class="on" data-t="exploitation"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Exploitation<span class="nb" id="nb-exp" hidden></span></button><button data-t="planning"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg><span>Planning<span class="lab-long"> et facturation</span></span><span class="nb" id="nb-pla" hidden></span></button><button data-t="devis"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>Devis<span class="nb" id="nb-dev" hidden></span></button><button data-t="sst"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14c2.6.1 4.1 1.8 4.5 4.5"/></svg><span><span class="l-d">Sous-traitants</span><span class="l-m">Équipes</span></span></button><button data-t="chiffres"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Chiffres</button><button data-t="manager"><svg viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21c.7-4.2 3.4-6.5 7-6.5s6.3 2.3 7 6.5M12 14.5l-1.2 3 1.2 2.5 1.2-2.5z"/></svg>Manager<span class="nb" id="nb-mgr" hidden></span></button></nav>
   <div class="pied"><span class="etat-robot" id="robot"><i></i><span></span></span><button class="btn partage" id="partage" hidden></button><small id="maj"></small></div>
 </aside>
 <div class="contenu">
@@ -485,7 +485,6 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
 <main>
 <!-- EXPLOITATION -->
 <div id="p-exploitation">
-  <section class="card" id="manager" hidden style="margin-bottom:14px"></section>
   <section class="card journee" id="journee"></section>
   <section class="hero" id="hero"></section>
   <div class="kpis" id="kpis"></div>
@@ -645,6 +644,9 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
 </div>
 </div>
 <!-- CHIFFRES -->
+<!-- 16/11 (J : « le manager faut que tu le mettes autre part ») : son propre onglet -->
+<div id="p-manager" hidden><p class="sub" style="margin:0 4px 12px">Compte rendu du jour du manager : ce que chaque agent a fait, ce qui bloque, ce qui t'attend. Tu peux aussi lui poser une question.</p>
+  <section class="card" id="manager" hidden style="margin-bottom:14px"></section></div>
 <div id="p-chiffres" hidden>
   <section class="card" id="etatrobot" style="margin-bottom:14px"><h2><span>État du robot</span><span class="tag" id="netat"></span></h2><div id="etat-l"></div></section>
   <section class="card" id="sante" style="margin-bottom:14px"><h2><span>Santé des données</span><span class="tag" id="nsante"></span></h2><div id="sante-l"></div></section>
@@ -2069,7 +2071,7 @@ function telPage(tb){const lim=tb._lim||PAGE,rows=[...tb.rows],n=rows.length,on=
   b.onclick=()=>{tb._lim=lim+PAGE*2;telPage(tb)};tb.closest('.wrap').after(b)}
 document.querySelectorAll('.wrap tbody[id]').forEach(tb=>{new MutationObserver(()=>telPage(tb)).observe(tb,{childList:true});telPage(tb)});
 matchMedia('(max-width:700px)').addEventListener('change',()=>document.querySelectorAll('.wrap tbody[id]').forEach(telPage));
-const onglet=t=>{['exploitation','planning','devis','sst','chiffres'].forEach(k=>document.getElementById('p-'+k).hidden=t!==k);
+const onglet=t=>{['exploitation','planning','devis','sst','chiffres','manager'].forEach(k=>document.getElementById('p-'+k).hidden=t!==k);
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));store.set('onglet',t)};
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{onglet(b.dataset.t);window.scrollTo(0,0)});
 
@@ -2201,7 +2203,10 @@ function journee(){
   const P=D.planning||[], NXP={};P.forEach(x=>NXP[x.n_nexxio]=x);
   const LG=D.logements||{}, fsst=n=>{try{return FACT_SST[n]||[]}catch(e){return []}};
   const li=(n,t)=>{const x=NXP[n]||NXC[n]||{};return `<li data-fiche="${esc(n)}"><b>${esc(n)}</b> ${bai(x.client||x.bailleur||'')} ${t}</li>`};
-  const etape=(n,titre,sous,liste,bouton,go)=>`<div class="etape"><div class="et-t"><b class="n ${n?'':'ok-et'}">${n||'✓'}</b><div><b>${titre}</b><div class="tag">${sous}</div></div>${bouton&&n?`<button class="btn" data-go="${go}">${bouton}</button>`:''}</div>${n&&liste.length?`<ul>${liste.slice(0,6).join('')}${liste.length>6?`<li class="tag">… et ${liste.length-6} autre(s)</li>`:''}</ul>`:''}</div>`;
+  // 16/11 (J : « Ma journée pas assez épurée ») : une étape à zéro disparaît ; chaque étape tient sur une ligne, ses commandes
+  // se déplient d'un clic sur l'étape (gardé ouvert quand la carte se redessine)
+  const OUV=journee.ouv=journee.ouv||new Set();
+  const etape=(n,titre,sous,liste,bouton,go)=>!n?'':`<div class="etape"><div class="et-t"${liste.length?` data-pli="${esc(titre)}" style="cursor:pointer"`:''}><b class="n">${n}</b><div><b>${titre}</b>${liste.length?` <span class="tag pli">${OUV.has(titre)?'▾ replier':'▸ voir'}</span>`:''}<div class="tag">${sous}</div></div>${bouton?`<button class="btn" data-go="${go}">${bouton}</button>`:''}</div>${liste.length?`<ul${OUV.has(titre)?'':' hidden'}>${liste.slice(0,6).join('')}${liste.length>6?`<li class="tag">… et ${liste.length-6} autre(s)</li>`:''}</ul>`:''}</div>`;
   // 1. commandes reçues depuis la veille, prises en compte, sans RDV
   const recues=[...new Set(L.filter(l=>l.n_nexxio&&l.jour>=debut).map(l=>l.n_nexxio))].map(n=>NXP[n]).filter(x=>x&&x.statut==='Prise en compte'&&!x.rdv);
   const occ=recues.filter(x=>!(LG[x.n_nexxio]||{}).vacant), vac=recues.filter(x=>(LG[x.n_nexxio]||{}).vacant);
@@ -2233,6 +2238,9 @@ function journee(){
     ${etape(bloc.length,'BC bloqués','À reprendre ou commande Extranet en attente de ton accord',bloc.map(l=>li(l.n_nexxio||l.n_bc,`${esc(l.bailleur||'')} ${esc(l.n_bc)} · ${esc(l.etat)}`)),'Voir À faire','faire')}
     ${etape(al.length,'Alertes du robot et des données',al.length?'Tâche en retard, erreur ou écart : le détail est dans l\'onglet Chiffres':`Les tâches du robot sont à l\'heure, aucun écart${suiv?` · ${suiv} point(s) à surveiller dans « Santé des données »`:''}`,al.map(x=>`<li style="cursor:default"><b>${esc(x.titre)}</b> · ${esc(x.detail)}</li>`),'Voir l\'état du robot','etat')}`;
   const J0=document.getElementById('journee');
+  if(!J0.querySelector('.etape'))J0.insertAdjacentHTML('beforeend','<p class="sub" style="padding:12px 0 4px">Rien ne t’attend : commandes planifiées, rapports envoyés, factures faites, robot à l’heure.</p>');
+  J0.querySelectorAll('[data-pli]').forEach(h=>h.onclick=e=>{if(e.target.closest('button'))return;const u=h.parentNode.querySelector('ul'),k=h.dataset.pli;u.hidden=!u.hidden;
+    u.hidden?OUV.delete(k):OUV.add(k);h.querySelector('.pli').textContent=u.hidden?'▸ voir':'▾ replier'});
   J0.querySelectorAll('[data-fiche]').forEach(e=>e.onclick=()=>{if(NX[e.dataset.fiche])fiche(e.dataset.fiche)});
   J0.querySelectorAll('[data-env]').forEach(c=>c.onchange=()=>{ENV.set(c.dataset.env,c.checked);setTimeout(journee,250)});
   J0.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const g=b.dataset.go;
@@ -2257,8 +2265,8 @@ function managerVue(){const m=D.manager, el=document.getElementById('manager');i
   el.hidden=false;
   // 16/11 (J : « le compte rendu manager occupe trop de place quand t'arrives sur le dashboard, il faut que ce soit épuré ») :
   // replié par défaut sur une ligne (état de chaque agent + nombre de choses qui attendent J) ; le détail s'ouvre d'un clic
-  const ouvert=(()=>{try{return localStorage.getItem('mgr-ouvert')==='1'}catch(x){return false}})();
-  const nJ=(m.pour_j||[]).length, tg=n=>`<button class="btn" id="mgr-tg" style="padding:4px 10px;font-size:12.5px">${n?'Replier':'Voir le détail'}</button>`;
+  // 16/11 : dans son propre onglet, toujours ouvert ; le chiffre de l'onglet = ce qui attend J
+  const ouvert=true, nJ=(m.pour_j||[]).length, tg=n=>'', nb=document.getElementById('nb-mgr');if(nb){nb.hidden=!nJ;nb.textContent=nJ}
   el.style.padding=ouvert?'':'0';
   el.innerHTML=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 16px${ouvert?';border-bottom:1px solid var(--line)':''}">
       <b style="font-size:14px">Manager</b>
@@ -2292,7 +2300,7 @@ function managerVue(){const m=D.manager, el=document.getElementById('manager');i
       <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap"><input id="mgr-q" maxlength="300" placeholder="Ex. : où en est la commande 5273 ?" style="flex:1;min-width:180px;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit"><button class="btn" id="mgr-go">Demander</button></div>
       <div id="mgr-et" class="tag" style="margin-top:6px"></div>
       ${(m.questions||[]).map(q=>`<div style="margin:10px 0 0;font-size:13px"><b>${esc(q.question)}</b> <span class="tag">${fr((q.quand||'').slice(0,10))} à ${esc((q.quand||'').slice(11,16))}</span><div class="sub" style="padding:0;white-space:pre-wrap">${esc(q.reponse||'')}</div></div>`).join('')}</div></div>`;
-  document.getElementById('mgr-tg').onclick=()=>{try{localStorage.setItem('mgr-ouvert',ouvert?'0':'1')}catch(x){}managerVue()};
+  const tgb=document.getElementById('mgr-tg');if(tgb)tgb.onclick=()=>{try{localStorage.setItem('mgr-ouvert',ouvert?'0':'1')}catch(x){}managerVue()};
   // question : écrite dans les coches partagées (« mgr:q »), le manager y répond au passage suivant du robot (lecture seule)
   el.querySelectorAll('[data-mgrfinir]').forEach(b=>b.onclick=async()=>{const n=b.dataset.mgrfinir, part=await coEtat().catch(()=>'off');
     if(part!=='on'){b.insertAdjacentHTML('afterend',' <span class="chip bad">Non envoyée</span> le partage des coches n\'est pas actif sur ce PC');return}
