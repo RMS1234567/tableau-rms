@@ -1837,7 +1837,12 @@ const ASSO=(()=>{const c={};const ajoute=(nom,n)=>{Object.keys(EQAG[n]||{}).forE
   RAP.forEach(r=>ajoute(r.par,r.n_nexxio));(D.sst||[]).forEach(x=>Object.keys(x.sst||{}).forEach(nom=>ajoute(nom,x.n_nexxio)));
   const best={};Object.entries(c).forEach(([k,v])=>{const [nom,e]=k.split('|');if(!best[nom]||v>best[nom][1])best[nom]=[e,v]});
   return Object.fromEntries(Object.entries(best).map(([k,v])=>[k,v[0]]))})();
-const prixPour=(n,nom)=>{const c=CEQ[n];if(!c)return null;const e=ASSO[nom];if(e&&c[e]!=null)return c[e];const ks=Object.keys(c);return ks.length===1&&Object.keys(EQAG[n]||{}).length===1?c[ks[0]]:null};
+// 16/11 (contrôle des données) : sans prix dans l'agenda de son équipe, on prenait le prix de la seule équipe de la
+// commande, même si c'était l'agenda d'un autre sous-traitant (3029 et 3270 comptés dans 2 relevés, 4589 ALI ZARAI au prix
+// de l'agenda de Mohamed ZARAI, NUANCE FACADE comparée au prix d'un autre). Ce repli ne sert plus que si cette équipe
+// d'agenda n'appartient à personne d'autre ; sinon le prix reste « à mettre ».
+const EQ_DE={};Object.entries(ASSO).forEach(([nom,e])=>{(EQ_DE[e]=EQ_DE[e]||[]).push(nom)});
+const prixPour=(n,nom)=>{const c=CEQ[n];if(!c)return null;const e=ASSO[nom];if(e&&c[e]!=null)return c[e];const ks=Object.keys(c);return ks.length===1&&Object.keys(EQAG[n]||{}).length===1&&(EQ_DE[ks[0]]||[]).every(x=>x===nom)?c[ks[0]]:null};
 // J le 11/11 : pour rattraper les prix de l'agenda, le montant que le sous-traitant a facturé pour la commande
 // une facture ne peut pas porter une commande créée après sa réception (n° lu par erreur dans une adresse, un tél...)
 const cmdsF=f=>(f.commandes||[]).filter(([n])=>!(DCMD[n]&&f.recu&&String(DCMD[n]).slice(0,10)>f.recu.slice(0,10)));
@@ -1852,7 +1857,10 @@ function prixVue(){
   const base=document.getElementById('pm-base').value, P=PER_PM.get();
   const dBase=x=>base==='rap'?x._rap:base==='fac'?(x.facturee||''):base==='rdv'?x._rdv.slice(0,10):(x.date||'');
   const S=(D.sst||[]).filter(x=>!/annul/i.test(x.statut||''));
-  const rows=S.filter(x=>(Object.keys(x.sst||{}).length||EQAG[x.n_nexxio])&&!(D.couts&&D.couts[x.n_nexxio]!=null)&&premierRap(x.n_nexxio)).map(x=>({...x,_eq:[...new Set([...Object.keys(EQAG[x.n_nexxio]||{}),...Object.keys(x.sst||{}).filter(nom=>!Object.keys(EQAG[x.n_nexxio]||{}).includes(ASSO[nom]))])],_rap:premierRap(x.n_nexxio),_rdv:Object.values(EQAG[x.n_nexxio]||{}).sort()[0]||''}));
+  // 16/11 (contrôle des données) : une commande était cachée dès qu'UNE équipe avait son prix (12 commandes) ; elle reste
+  // listée tant qu'un sous-traitant qui a fait un rapport n'a pas le sien (« _manq »)
+  const sansPrix=n=>[...new Set((RAP_N[n]||[]).map(r=>r.par))].filter(p=>prixPour(n,p)==null);
+  const rows=S.filter(x=>(Object.keys(x.sst||{}).length||EQAG[x.n_nexxio])&&(!(D.couts&&D.couts[x.n_nexxio]!=null)||sansPrix(x.n_nexxio).length)&&premierRap(x.n_nexxio)).map(x=>({...x,_manq:D.couts&&D.couts[x.n_nexxio]!=null?sansPrix(x.n_nexxio):[],_eq:[...new Set([...Object.keys(EQAG[x.n_nexxio]||{}),...Object.keys(x.sst||{}).filter(nom=>!Object.keys(EQAG[x.n_nexxio]||{}).includes(ASSO[nom]))])],_rap:premierRap(x.n_nexxio),_rdv:Object.values(EQAG[x.n_nexxio]||{}).sort()[0]||''}));
   const eqs=[...new Set(rows.flatMap(x=>x._eq))].sort((a,b)=>a.localeCompare(b,'fr'));
   const sel=document.getElementById('pm-eq');if(sel.options.length!==eqs.length+1){sel.innerHTML='<option value="">Toutes les équipes</option>'+eqs.map(e=>`<option>${esc(e)}</option>`).join('');sel.value=eqSel}
   const r=rows.filter(x=>(!eqSel||x._eq.includes(eqSel))&&(etat!=='fac'||facturee(x))&&dansP(dBase(x),P)&&(!q||[x.n_nexxio,x.n_bc,x.commune,x.client,x._eq.join(' ')].join(' ').toLowerCase().includes(q)))
@@ -1860,7 +1868,7 @@ function prixVue(){
   document.getElementById('nprixm').textContent=rows.length||'';
   document.getElementById('npm').textContent=r.length+' commande(s) · '+r.filter(facturee).length+' facturée(s) · '+e0(r.reduce((s,x)=>s+(x.ht||0),0))+' HT';
   document.getElementById('tpm').innerHTML=r.length?r.map(x=>`<tr><td class="nw"><b>${esc(x.n_nexxio)}</b> · ${fr(x.date)}<span class="b2">${esc(x.n_bc)}</span></td><td>${bai(x.client)}<span class="b2">${esc(x.commune)}</span></td><td>${esc(x.statut)}${x.facturee?`<span class="b2">le ${fr(x.facturee)}</span>`:''}</td>
-    <td>${x._eq.map(esc).join('<br>')||'<span class="tag">—</span>'}</td><td class="nw">${fr(x._rdv)}</td><td class="nw">${x._rap?`<span class="chip warn">${fr(x._rap)}</span>`:''}</td><td class="num nw">${(FACT_SST[x.n_nexxio]||[]).map(v=>`<div title="${esc(v.sst)}"><b>${v.m!=null?eur(v.m):'facturée'}</b><span class="b2">fact. ${esc(v.num||'?')}</span></div>`).join('')}</td><td class="num">${eur(x.ht)}</td></tr>`).join('')
+    <td>${x._eq.map(esc).join('<br>')||'<span class="tag">—</span>'}${x._manq.length?`<span class="b2">prix manquant pour ${x._manq.map(esc).join(', ')}</span>`:''}</td><td class="nw">${fr(x._rdv)}</td><td class="nw">${x._rap?`<span class="chip warn">${fr(x._rap)}</span>`:''}</td><td class="num nw">${(FACT_SST[x.n_nexxio]||[]).map(v=>`<div title="${esc(v.sst)}"><b>${v.m!=null?eur(v.m):'facturée'}</b><span class="b2">fact. ${esc(v.num||'?')}</span></div>`).join('')}</td><td class="num">${eur(x.ht)}</td></tr>`).join('')
     :'<tr><td colspan="8" class="vide">Toutes les commandes finies de la période ont leur prix dans l\'agenda.</td></tr>';
   store.set('pm',{eq:eqSel,etat,base});
 }
@@ -1898,13 +1906,15 @@ const FAC=(D.factures||[]).filter(f=>!f.absent);
 const motsNom=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().split(/[^a-z]+/).filter(w=>w.length>2).sort().join(' ');
 // 16/11 (J : « Oui, même équipe ») : le rapport d'un équipier vaut pour son équipe (factures seulement)
 const eqDe=p=>(D.meme_equipe||{})[p]||p;
+// prix de l'agenda pour une facture : celui du sous-traitant, sinon celui d'un nom de la même équipe (agenda de Hamid ZARAI)
+const prixEq=(n,nom)=>{let p=prixPour(n,nom);if(p==null)for(const a of Object.keys(D.meme_equipe||{}))if(eqDe(a)===nom&&(p=prixPour(n,a))!=null)break;return p};
 const facSst=f=>{if(f.sst)return f.sst;   // table société -> sous-traitant validée par J (societes_sous_traitants.json)
   const c={};cmdsF(f).forEach(([n])=>(RAP_N[n]||[]).forEach(r=>{const p=eqDe(r.par);c[p]=(c[p]||0)+1}));
   const b=Object.entries(c).sort((a,b)=>b[1]-a[1])[0];if(b)return b[0];
   const m=motsNom(f.nom);const p=m&&[...new Set(RAP.map(r=>r.par))].find(x=>motsNom(x)===m);return p||f.nom||''};
 function controleFacture(f){
   const nom=facSst(f), lignes=cmdsF(f).map(([n,via])=>{const x=NX[n]||{},s=(D.sst||[]).find(y=>y.n_nexxio===n)||{};
-    const prix=nom?prixPour(n,nom):(D.couts||{})[n], mf=(f.montants||{})[n];const rap=(RAP_N[n]||[]).filter(r=>!nom||eqDe(r.par)===nom).map(r=>r.date).sort()[0]||'';
+    const prix=nom?prixEq(n,nom):(D.couts||{})[n], mf=(f.montants||{})[n];const rap=(RAP_N[n]||[]).filter(r=>!nom||eqDe(r.par)===nom).map(r=>r.date).sort()[0]||'';
     const avant=FAC.filter(g=>g!==f&&(g.recu||'')<(f.recu||'')&&!(g.numero&&g.numero===f.numero)&&cmdsF(g).some(([m])=>m===n)&&facSst(g)===nom).map(g=>g.numero||g.fichier);
     const rq=[];if(!rap)rq.push('pas de rapport');if(prix==null)rq.push('prix pas dans l\'agenda');if(prix!=null&&mf!=null&&Math.abs(mf-prix)>=1)rq.push('facturé '+eur(mf)+' au lieu de '+eur(prix));if(avant.length)rq.push('déjà sur la facture '+avant.join(', '));
     return {n,via,prix,mf,rap,rq,statut:(x.pl||x.sst||{}).statut||s.statut||'',adresse:((RAP_N[n]||[])[0]||{}).adresse||s.commune||''}});
@@ -1915,6 +1925,9 @@ function controleFacture(f){
   const pb=[];if(f.erreur||f.illisible)pb.push('PDF illisible');
   // même n° et même montant : la même facture envoyée 2 fois (2 mails), pas une double facturation
   const dbf=f.numero&&FAC.find(g=>g!==f&&g.numero===f.numero&&facSst(g)===nom&&((g.recu||'')<(f.recu||'')||(g.recu===f.recu&&g.fichier<f.fichier)));
+  // 16/11 (contrôle des données) : facture rééditée (Khalifa 00020, 3 210 € puis 3 070 €) : l'ancienne version ne compte plus
+  const rempl=f.numero&&FAC.find(g=>g!==f&&g.numero===f.numero&&facSst(g)===nom&&g.ht!==f.ht&&(g.recu||'')>(f.recu||''));
+  if(rempl)pb.push('remplacée par la version du '+fr((rempl.recu||'').slice(0,10)));
   if(dbf)pb.push(dbf.ht===f.ht?'même facture reçue 2 fois (le '+fr((dbf.recu||'').slice(0,10))+')':'facture n° '+f.numero+' déjà reçue avec un autre montant');
   const lgE=lignes.filter(l=>l.rq.some(r=>/^facturé/.test(r))).length;if(lgE)pb.push(lgE+' ligne(s) à un autre prix');if(f.ht==null&&!f.erreur)pb.push('montant non trouvé');if(!lignes.length&&!f.erreur)pb.push(f.sans_pdf?'facture en lien : détail à ouvrir dans le mail':'aucune commande reconnue');if(horsL>=1)pb.push(eur(horsL)+' sur des lignes non reconnues');
   const sr=lignes.filter(l=>!l.rap).length, sp=lignes.filter(l=>l.prix==null).length, dbl=lignes.filter(l=>l.rq.some(r=>/déjà/.test(r))).length;
@@ -1952,7 +1965,7 @@ function facturesVue(){
 let RQSEL='';
 function rapprochementVue(L,eq,P){
   const G={};
-  L.filter(x=>x.nom&&!x.pb.some(p=>/même facture reçue 2 fois/.test(p))).forEach(x=>{const g=(G[x.nom]=G[x.nom]||{c:{},d0:''});
+  L.filter(x=>x.nom&&!x.pb.some(p=>/même facture reçue 2 fois|^remplacée par/.test(p))).forEach(x=>{const g=(G[x.nom]=G[x.nom]||{c:{},d0:''});
     x.lignes.forEach(l=>{const c=(g.c[l.n]=g.c[l.n]||{n:l.n,mf:0,sansM:false,fact:[],prix:l.prix,rap:l.rap,dansP:false});
       if(l.mf!=null)c.mf+=l.mf;else c.sansM=true;c.fact.push(x.f.numero||x.f.fichier);
       if(dansP((x.f.date||x.f.recu||'').slice(0,10),P))c.dansP=true;if(l.rap&&(!g.d0||l.rap<g.d0))g.d0=l.rap})});
@@ -1968,7 +1981,7 @@ function rapprochementVue(L,eq,P){
       if(ap.length)voir.push({...c,ap})});
     // rapports de l'équipe depuis sa 1re commande facturée, sans facture lue
     const prem={};RAP.filter(r=>eqDe(r.par)===nom).forEach(r=>{if(!prem[r.n_nexxio]||r.date<prem[r.n_nexxio])prem[r.n_nexxio]=r.date});
-    const nf=g.d0?Object.entries(prem).filter(([n,d])=>d>=g.d0&&!g.c[n]&&!(parN[n]||[]).length&&dansP(d,P)).map(([n,d])=>({n,rap:d,prix:prixPour(n,nom)})):[];
+    const nf=g.d0?Object.entries(prem).filter(([n,d])=>d>=g.d0&&!g.c[n]&&!(parN[n]||[]).length&&dansP(d,P)).map(([n,d])=>({n,rap:d,prix:prixEq(n,nom)})):[];
     const avecP=C.filter(c=>!c.sansM&&c.prix!=null);
     return {nom,C,voir,nf,fact:C.reduce((t,c)=>t+c.mf,0),ag:avecP.reduce((t,c)=>t+c.prix,0),ecart:Math.round(avecP.reduce((t,c)=>t+c.mf-c.prix,0)*100)/100}})
     .filter(x=>x.C.length||x.nf.length).sort((a,b)=>b.voir.length-a.voir.length||b.fact-a.fact);
