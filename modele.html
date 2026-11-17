@@ -614,6 +614,24 @@ html[data-style="verre"][data-theme="dark"] .card,html[data-style="verre"][data-
 .journee .etape.niv0 .n{color:var(--rouge)}
 .journee .jres{margin:0;padding:12px 18px;font-size:14px;background:var(--soft);border-bottom:1px solid var(--line)}
 .journee ul li.plus[hidden]{display:none}
+/* 17/11 (J : « des transitions fluides mais agréables à l'oeil ») : entrée douce des onglets, de la fiche et des panneaux, survol des cartes ;
+   rien ne bouge au rechargement d'une liste (seul l'affichage d'un bloc anime), et tout s'arrête si l'appareil demande moins de mouvement. */
+html{scroll-behavior:smooth}
+@keyframes entree{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fondu{from{opacity:0}to{opacity:1}}
+@keyframes monte{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes glisse{from{opacity:.4;transform:translateX(28px)}to{opacity:1;transform:none}}
+main>div[id^="p-"]:not([hidden]),.contenu>div[id^="p-"]:not([hidden]){animation:entree .3s cubic-bezier(.2,.7,.2,1)}
+#fiche:not([hidden]){animation:fondu .18s ease-out}
+#fiche:not([hidden]) .in{animation:monte .26s cubic-bezier(.2,.7,.2,1)}
+.panneau:not([hidden]){animation:glisse .26s cubic-bezier(.2,.7,.2,1)}
+#gres:not([hidden]){animation:entree .18s ease-out}
+.card,.kpi,.tache,.hero{transition:transform .2s cubic-bezier(.2,.7,.2,1),border-color .2s,background-color .2s,box-shadow .2s}
+.kpi:hover{transform:translateY(-2px)}
+.btn,.bt,.seg button,.tabs button,.chip,.pill{transition:background-color .15s,border-color .15s,color .15s,transform .12s}
+.journee .etape{transition:background-color .15s}.journee .etape:hover{background:color-mix(in srgb,var(--accent) 4%,transparent)}
+.journee ul li{transition:color .15s,padding-left .15s}.journee ul li:hover{padding-left:4px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style></head><body>
 <div class="app">
 <aside class="side">
