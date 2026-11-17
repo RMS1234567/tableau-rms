@@ -576,6 +576,26 @@ main th{background:color-mix(in srgb,var(--ton) 6%,var(--card))!important;color:
   box-shadow:inset 4px 0 0 var(--t-sst);background:color-mix(in srgb,var(--t-sst) 10%,var(--card))}
 .sv-desc{margin:0 4px 12px;color:var(--muted);font-size:13px}
 .sv-somm{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}.sv-somm .btn{font-size:12.5px}
+/* 17/11 (J : « moderniser le dashboard, plus agréable à l'oeil » ; piste B « cartes douces » choisie sur maquette) :
+   fond bleuté très clair, cartes blanches très arrondies sans gros cadre, cases de chiffres teintées de leur couleur,
+   pastilles plus rondes. Que des variables et des habillages : aucune logique. Clair et sombre. */
+:root[data-theme="light"]{--bg:#f3f4f9;--fond:#f3f4f9;--card:#ffffff;--solid:#ffffff;--line:#e6e8f0;--edge:#e6e8f0;--soft:#f3f4f9;--r:18px;
+  --accent:#3659d1;--accent2:#3659d1;--accent-bg:#e6edfb;--vert-bg:#e3f4ea;--orange-bg:#fdf0dc;--rouge-bg:#fde8e8;--gris-bg:#eceef4}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]):not([data-theme="light"]){--bg:#f3f4f9;--fond:#f3f4f9;--card:#ffffff;--solid:#ffffff;--line:#e6e8f0;--edge:#e6e8f0;--soft:#f3f4f9;--r:18px;
+  --accent:#3659d1;--accent2:#3659d1;--accent-bg:#e6edfb;--vert-bg:#e3f4ea;--orange-bg:#fdf0dc;--rouge-bg:#fde8e8;--gris-bg:#eceef4}}
+:root[data-theme="dark"]{--bg:#12131a;--fond:#12131a;--card:#1a1c26;--solid:#20222e;--line:#2a2d3b;--edge:#2a2d3b;--soft:#222432;--r:18px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]):not([data-theme="dark"]){--bg:#12131a;--fond:#12131a;--card:#1a1c26;--solid:#20222e;--line:#2a2d3b;--edge:#2a2d3b;--soft:#222432;--r:18px}}
+.card,.hero,.side{border-radius:18px;border-color:var(--line)}
+.card>h2{padding-top:16px}
+.kpi{border-radius:18px;border-color:transparent;background:color-mix(in srgb,var(--c,var(--accent)) 9%,var(--card))}
+.kpi b{font-size:30px;font-weight:650}
+.kpi.on{border-color:var(--c,var(--accent))}
+.btn,.bt,select,input[type=search],input[type=text],input[type=date]{border-radius:12px}
+.pill,.chip,.tag,.mini{border-radius:999px}
+.tache,.etape{border-radius:0}
+.journee .etape{border-top-color:var(--line);padding-left:18px;padding-right:18px}
+tbody tr:hover td{background:color-mix(in srgb,var(--accent) 5%,var(--card))}
+.seg{border-radius:14px}
 </style></head><body>
 <div class="app">
 <aside class="side">
