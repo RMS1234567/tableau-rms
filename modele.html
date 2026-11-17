@@ -750,7 +750,8 @@ main th{background:color-mix(in srgb,var(--ton) 6%,var(--card))!important;color:
 <!-- CHIFFRES -->
 <!-- 16/11 (J : « le manager faut que tu le mettes autre part ») : son propre onglet -->
 <div id="p-manager" hidden><p class="sub" style="margin:0 4px 12px">Compte rendu du jour du manager : ce que chaque agent a fait, ce qui bloque, ce qui t'attend. Tu peux aussi lui poser une question.</p>
-  <section class="card" id="manager" hidden style="margin-bottom:14px"></section></div>
+  <section class="card" id="manager" hidden style="margin-bottom:14px"></section>
+  <section class="card" id="corrauto" hidden style="margin-bottom:14px"></section></div>
 <div id="p-chiffres" hidden>
   <section class="card" id="etatrobot" style="margin-bottom:14px"><h2><span>État du robot</span><span class="tag" id="netat"></span></h2><div id="etat-l"></div></section>
   <section class="card" id="sante" style="margin-bottom:14px"><h2><span>Santé des données</span><span class="tag" id="nsante"></span></h2><div id="sante-l"></div></section>
@@ -827,9 +828,10 @@ const st=Object.assign({p:'mois',b:'',r:'',q:'',k:'jour',asc:false,kpi:''},store
 const flag=p=>({get:k=>{try{return localStorage.getItem(p+k)==='1'}catch(e){return false}},set:(k,v)=>{try{v?localStorage.setItem(p+k,'1'):localStorage.removeItem(p+k);localStorage.setItem('ts:'+p+k,Date.now())}catch(e){}coSave(p+k)}});
 const IMP=flag('imp:'), OK=flag('ok:'), FACT=flag('fact:'), DEV=flag('dev:'), CLES=flag('cles:'), ENV=flag('env:');
 const RELB=(D.relances||[]).map(r=>Object.assign({id:'relb:'+(r.jour||'')+'|'+(r.n_bc||'')+'|'+(r.heure||'')},r));   // 17/11 : relances des bailleurs, case « traité » = ENV
+const PROP=flag('prop:'), PROPS=D.propositions||{};   // 17/11 : « Appliquer » une correction proposée par le robot : coche partagée prop:<n°>, l'heure du clic doit dépasser cree_ms
 const PAY=flag('pay:');   // 13/11 (J) : facture de sous-traitant payée (bon à payer), clé = nom du fichier de la facture   // env: rapport envoyé au bailleur (12/11)
 // 12/11 (J) : aussi les commentaires (« com: ») et les tentatives d'appel au locataire (« app: »), partagés de la même façon
-const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','plan:','ext:','wa:','wam:','mgr:','mnom:'], CO_TXT=['com:','app:','plan:','ext:','wa:','wam:','mgr:','mnom:'];   // mgr: question au manager (16/11)   // wam: WhatsApp ouvert à la main (15/11 soir)   // wa: WhatsApp RDV (15/11)   // plan: demande de planification (13/11)
+const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','plan:','ext:','wa:','wam:','mgr:','mnom:','prop:'], CO_TXT=['com:','app:','plan:','ext:','wa:','wam:','mgr:','mnom:'];   // mgr: question au manager (16/11)   // wam: WhatsApp ouvert à la main (15/11 soir)   // wa: WhatsApp RDV (15/11)   // plan: demande de planification (13/11)
 const NOTE={get:k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},
   set:(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k);localStorage.setItem('ts:'+k,Date.now())}catch(e){}coSave(k)}};
 // coches des autres PC, relues par le robot (D.coches) : la plus récente gagne, avant le premier affichage
@@ -1669,10 +1671,11 @@ function fiche(n){const o=NX[n];if(!o)return;const pl=o.pl||{},s=o.sst||{},b=o.b
     ${(o.ag||[]).length?`<div class="s"><h4>Agenda</h4>${o.ag.sort((a,b)=>a.debut<b.debut?-1:1).map(e=>`<div>${fr(e.debut.slice(0,10))} ${esc(e.debut.slice(11,16))} · <b>${esc(e.equipe)}</b>${e.prix?' · '+eur(e.prix):''}<span class="b2">${esc(e.lieu)}${e.note?' · '+esc(e.note):''}</span></div>`).join('')}</div>`:''}
     ${rdvLoc(n,pl)}
     ${factBloc(n,pl)}
+    ${propBloc(n)}
     ${planifBloc(n,pl,s)}${waBloc(n,pl)}
     ${b.motif?`<div class="s"><h4>Note du robot</h4>${esc(b.motif)}</div>`:''}${b.n_bc&&(['rouge','orange'].includes(b.risque)||/reprendre/i.test(b.statut||''))?blocBC(b.n_bc):''}
     <div class="s">${b.pdf?pdfA(b.pdf,'Voir le BC (PDF)')+' · ':''}<a href="https://rmsbatiment.app.nexxio.fr/main/item?order_number=${encodeURIComponent(n)}" target="_blank">Ouvrir dans Nexxio</a>${agendaUrl(n,pl,x)?` · <a class="btn" href="${esc(agendaUrl(n,pl,x))}" target="_blank" title="Ouvre Google Agenda avec l'événement rempli comme le bouton de Nexxio : choisir l'agenda du sous-traitant puis Enregistrer">Ajouter à l'agenda</a>`:''}</div>`;
-  lierRdvLoc(n);lierFact(n);lierPlanif(n);lierWa(n);lierBlocBC();
+  lierRdvLoc(n);lierFact(n);lierProp(n);lierPlanif(n);lierWa(n);lierBlocBC();
   const f=document.getElementById('fiche');f.hidden=false;document.getElementById('ffermer').onclick=()=>f.hidden=true;f.onclick=e=>{if(e.target===f)f.hidden=true}}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('fiche').hidden=true});
 // 13/11 (J) : même événement que le lien « Ajoutez le à votre agenda Google » de Nexxio (vu sur 5264) : « RMS BATIMENT - <n° BC> »,
@@ -2400,6 +2403,26 @@ else coBandeau();
 /* 17/11 (J : « une section Relance où il y a les commandes relancées par les bailleurs, et enlever les relances des BC saisis »,
    exemple G33521 Alliade) : le robot écrit une ligne de journal « Relance » ; ici : date, bailleur, BC, commande Nexxio liée avec son
    statut, résumé, case « traité » partagée. Le compteur est aussi dans Ma journée. */
+/* 17/11 : correction proposée par le robot (commande planifiée ou avec sous-traitant, libellé, vacant) : J l'applique d'un clic ;
+   le robot ne la fait que si l'heure du clic est plus récente que cree_ms, et une seule fois. */
+const propTs=n=>+(()=>{try{return localStorage.getItem('ts:prop:'+n)}catch(e){return 0}})()||0;
+function propBloc(n){const p=PROPS[n];if(!p)return '';
+  const clic=PROP.get(n)&&propTs(n)>(+p.cree_ms||0);
+  let etat='';
+  if(p.etat==='appliquée')etat=`<span class="chip ok">Appliquée</span> ${p.fait_le?fr(String(p.fait_le).slice(0,10)):''} ${esc(p.resultat||'')}`;
+  else if(p.etat==='échec')etat=`<span class="chip bad">Échec</span> ${esc(p.resultat||'')}`;
+  else if(clic)etat='<span class="chip info">Demande envoyée</span> le robot l’applique à son prochain passage';
+  else etat=`<span class="chip warn">À valider</span> <button class="btn prim" id="prop-go">Appliquer</button>`;
+  return `<div class="s" id="propb"><h4>Correction proposée par le robot</h4><div><b>${esc((Array.isArray(p.quoi)?p.quoi.join(', '):p.quoi)||'')}</b> : ${esc(p.detail||'')}</div>
+    ${p.pourquoi?`<span class="b2">Pourquoi : ${esc(p.pourquoi)}</span>`:''}<div style="margin-top:8px">${etat}</div></div>`}
+function lierProp(n){const b=document.getElementById('prop-go');if(!b)return;b.onclick=()=>{
+  if(!confirm('Appliquer cette correction dans Nexxio sur la commande '+n+' ? '+(PROPS[n].detail||'')))return;
+  PROP.set(n,true);fiche(n);journee()}}
+function corrAuto(){const el=document.getElementById('corrauto');if(!el)return;const C=D.corrections_auto||[];if(!C.length){el.hidden=true;return}
+  el.hidden=false;el.innerHTML=`<h2><span>Corrections faites seul par le robot</span><span class="tag">${C.length} dernière(s)</span></h2>
+    <p class="sub">Le robot corrige seul les commandes qui dérivent (sans te déranger). Rien à faire : c'est pour regarder.</p>
+    <div class="wrap"><table><thead><tr><th>Quand</th><th>Commande</th><th>BC</th><th>Correction</th><th>Résultat</th></tr></thead><tbody>${C.map(c=>`<tr><td>${esc(String(c.quand||'').slice(0,16).replace('T',' '))}</td><td>${c.n_nexxio?`<a href="#" data-fiche="${esc(c.n_nexxio)}">${esc(c.n_nexxio)}</a>`:''}</td><td>${esc(c.n_bc||'')}</td><td>${esc(Array.isArray(c.quoi)?c.quoi.join(', '):c.quoi||'')}</td><td>${esc(c.resultat||'')}</td></tr>`).join('')}</tbody></table></div>`;
+  el.querySelectorAll('[data-fiche]').forEach(a=>a.onclick=e=>{e.preventDefault();fiche(a.dataset.fiche)})}
 function relancesBailleurs(){const sec=document.getElementById('relb');if(!sec)return;const R=RELB.filter(r=>(r.jour||'')>=jr(60));
   if(!R.length){sec.hidden=true;return}
   const att=R.filter(r=>!ENV.get(r.id)), fait=R.filter(r=>ENV.get(r.id)).sort((a,b)=>(b.jour||'')>(a.jour||'')?1:-1).slice(0,5);
@@ -2447,11 +2470,13 @@ function journee(){
   // 7. 17/11 (roadmap « Relevé mensuel des sous-traitants prêt à envoyer ») : du 1er au 10 du mois, une ligne par équipe qui a
   // des rapports le mois dernier : à envoyer (bouton vers le relevé du mois dernier), case « envoyé » partagée comme les rapports
   const ymPrec=(()=>{let y=+today.slice(0,4),m=+today.slice(5,7)-1;if(m<1){m=12;y--}return y+'-'+String(m).padStart(2,'0')})();
+  const propA=Object.keys(PROPS).filter(n=>PROPS[n].etat==='à valider'&&!(PROP.get(n)&&propTs(n)>(+PROPS[n].cree_ms||0)));
   const relA=RELB.filter(r=>(r.jour||'')>=jr(60)&&!ENV.get(r.id));
   const rel=[];if(+today.slice(8)<=10){const prem={};RAP.forEach(r=>{const k=r.par+'|'+r.n_nexxio;if(!prem[k]||r.date<prem[k].date)prem[k]=r});
     const par={};Object.values(prem).filter(r=>(r.date||'').slice(0,7)===ymPrec).forEach(r=>{par[r.par]=(par[r.par]||0)+1});
     Object.keys(par).sort((a,b)=>a.localeCompare(b,'fr')).forEach(n=>{if(!ENV.get('rel:'+ymPrec+':'+n))rel.push(`<li style="cursor:default"><label><input type="checkbox" data-env="${esc('rel:'+ymPrec+':'+n)}"> envoyé</label> <b>${esc(n)}</b> · ${par[n]} commande(s) de ${esc(nomMois(ymPrec))}</li>`)})}
   document.getElementById('journee').innerHTML=`<h2><span>Ma journée</span><span class="tag">depuis ${nomJ} ${fr(debut)}</span></h2>
+    ${etape(propA.length,'Corrections à valider','Le robot propose une correction sur une commande déjà planifiée ou avec un sous-traitant : ouvrir la fiche et cliquer « Appliquer »',propA.map(n=>li(n,`${esc(PROPS[n].n_bc||'')} · ${esc(String(PROPS[n].detail||'').slice(0,90))}`)),'','')}
     ${etape(relA.length,'Relances des bailleurs','Un bailleur a relancé une commande : répondre, puis cocher « traité » dans la section Relances des bailleurs, plus haut',relA.map(r=>li(r.n_nexxio||r.n_bc,`${esc(r.n_bc)} · ${esc(String(r.motif||'').slice(0,90))}`)),'','')}
     ${etape(rel.length,'Relevés du mois à envoyer',`Début de mois : le relevé du mois de ${nomMois(ymPrec)} de chaque sous-traitant, pour qu'il établisse sa facture ; cocher « envoyé » une fois fait`,rel,'Voir les relevés','rel')}
     ${etape(recues.length+enCrea.length,'Commandes à planifier',`${occ.length} locataire(s) à appeler · ${vac.length} logement(s) vacant(s), clés à récupérer${enCrea.length?` · ${enCrea.length} encore à prendre en compte`:''}`,l1,'Voir À planifier','aplan')}
@@ -2474,6 +2499,7 @@ function journee(){
 }
 try{journee()}catch(e){console.error('Ma journée',e)}
 try{relancesBailleurs()}catch(e){console.error('Relances',e)}
+try{corrAuto()}catch(e){console.error('Corrections auto',e)}
 /* ---------- Compte rendu du manager (16/11, J : « je veux que tu deviennes comme un manager et t'auras plusieurs agents
    sous toi ») : écrit une fois par jour par manager.py sur le PC du robot. Une ligne par agent (ce qu'il a fait, ce qui
    bloque), puis ce qui attend J. Lecture seule : rien ne part d'ici. */
