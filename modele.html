@@ -314,6 +314,20 @@ h1,h2,.tache .tt{text-wrap:balance}.sub,.it .m,.tache .ts,.motif .c,#fiche .s,.h
 .hero .tend{color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
 .imp li.jr{background:var(--soft);padding-top:7px;padding-bottom:7px;font-size:12.5px;font-weight:600;color:var(--muted)}.imp li.jr span{flex:1}
 .imp li.jr .btn{padding:3px 10px;font-size:12px}
+/* 17/11 (charte, suite) : champs de saisie des fiches et des panneaux au même style que les listes (coins 10, liseré accent au clic),
+   petits boutons des listes un peu plus aérés, appui visible */
+#fiche textarea,#fiche input:not([type=checkbox]):not([type=radio]),#fiche select,.panneau textarea,.panneau input:not([type=checkbox]):not([type=radio]),.panneau select{border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;padding:7px 11px}
+#fiche textarea:focus,#fiche input:focus,#fiche select:focus,.panneau textarea:focus,.panneau input:focus,.panneau select:focus{outline:2px solid var(--accent-bg);border-color:var(--accent)}
+.btn:active{transform:scale(.97)}
+.liste .btn,.wrap td .btn,.imp .btn{padding:4px 11px;font-size:12px;border-radius:9px}
+/* 17/11 (J : « l'ergo des onglets, notamment sous-traitants, n'a pas été faite » : trop d'infos d'un coup, trop de défilement, navigation
+   entre vues) : textes d'aide sur une ligne (clic = tout lire), cartes secondaires de Sous-traitants repliées, choix de la vue collé en haut */
+p.sub.aide{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer;padding-bottom:10px!important}p.sub.aide.lu{display:block;overflow:visible}
+p.sub.aide::before{content:'▸ ';color:var(--accent);font-weight:700}p.sub.aide.lu::before{content:'▾ '}
+#p-sst section.card.pliable>h2{cursor:pointer}
+#p-sst section.card.pliable>h2>span:first-child::after{content:' ▾';color:var(--faint)}#p-sst section.card.ferme>h2>span:first-child::after{content:' ▸'}
+#p-sst section.card.ferme>:not(h2){display:none!important}#p-sst section.card.ferme>h2{margin-bottom:0}
+#svue{position:sticky;top:8px;z-index:30;box-shadow:var(--sh)}
 /* 12/11 (J) : la fiche d'une commande s'ouvre sur tout l'écran (16 px de marge), cases plus grandes, autant de colonnes
    que la largeur permet ; filets dessinés par case pour ne plus laisser de case grise vide en bout de ligne */
 /* vu le 16/11 (J, fiche 5276) : « stretch » arrêtait le fond de la fiche à la hauteur de l'écran, le bas (Planifier, Note du robot)
@@ -545,6 +559,20 @@ main th{background:color-mix(in srgb,var(--ton) 6%,var(--card))!important;color:
 .journee .etape:nth-of-type(6n+4) b.n{--ton:var(--t-devis)}.journee .etape:nth-of-type(6n+5) b.n{--ton:var(--t-manager)}.journee .etape:nth-of-type(6n) b.n{--ton:var(--t-chiffres)}
 #ptitre{background:linear-gradient(90deg,color-mix(in srgb,var(--ton) 22%,var(--card)),color-mix(in srgb,var(--ton) 5%,var(--card)) 75%)!important}
 .hero{background:linear-gradient(120deg,color-mix(in srgb,var(--ton) 9%,var(--card)),var(--card) 60%)!important}
+
+/* 17/11 (J : « dans sous-traitant c'est pas hyper clair, quand je clique ça me renvoie tout en bas, après je dois remonter ») :
+   le détail d'un sous-traitant, d'une facture ou d'une équipe s'ouvre dans un panneau sur le côté (plein écran sur téléphone) ;
+   on le ferme et on retrouve la liste à la même place */
+.panneau:not([hidden]){position:fixed!important;top:0;right:0;bottom:0;width:min(780px,100vw);margin:0!important;z-index:70;overflow:auto;
+  border-radius:0!important;border:0!important;border-left:1px solid var(--line)!important;box-shadow:-14px 0 40px rgba(0,0,0,.28)!important;background:var(--card)}
+.panneau>h2,.panneau>.pf-bar{position:sticky;top:0;z-index:3}
+.panneau .pf{margin-left:8px;flex:none}
+#rq-det.panneau{padding:0 16px 16px}#rq-det .pf-bar{display:flex;justify-content:flex-end;padding:10px 0;background:var(--card);border-bottom:1px solid var(--line);margin:0 -16px 0;padding-right:16px}
+#voile-p{position:fixed;inset:0;z-index:69;background:rgba(10,12,18,.5)}
+.panneau>h2{font-size:15px;margin:0;padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;
+  box-shadow:inset 4px 0 0 var(--t-sst);background:color-mix(in srgb,var(--t-sst) 10%,var(--card))}
+.sv-desc{margin:0 4px 12px;color:var(--muted);font-size:13px}
+.sv-somm{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}.sv-somm .btn{font-size:12.5px}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -570,6 +598,7 @@ main th{background:color-mix(in srgb,var(--ton) 6%,var(--card))!important;color:
     <section class="card imp"><h2><span>À imprimer</span><button class="btn" id="toutimp">Tout marquer imprimé</button></h2>
       <p class="sub">BC des 14 derniers jours. Cocher une fois imprimé (mémorisé sur ce PC).</p><ul class="liste" id="imp"></ul></section>
   </div>
+  <section class="card" id="relb" hidden style="margin-bottom:18px"></section>
   <section class="card" id="commandes" style="margin-bottom:18px">
     <h2><span>Commandes</span><span class="tag" id="total"></span></h2>
     <div class="bar">
@@ -797,6 +826,7 @@ const st=Object.assign({p:'mois',b:'',r:'',q:'',k:'jour',asc:false,kpi:''},store
 // 12/11 (J) : chaque coche garde son heure (« ts: ») pour être partagée entre les PC (voir « coches partagées » plus bas)
 const flag=p=>({get:k=>{try{return localStorage.getItem(p+k)==='1'}catch(e){return false}},set:(k,v)=>{try{v?localStorage.setItem(p+k,'1'):localStorage.removeItem(p+k);localStorage.setItem('ts:'+p+k,Date.now())}catch(e){}coSave(p+k)}});
 const IMP=flag('imp:'), OK=flag('ok:'), FACT=flag('fact:'), DEV=flag('dev:'), CLES=flag('cles:'), ENV=flag('env:');
+const RELB=(D.relances||[]).map(r=>Object.assign({id:'relb:'+(r.jour||'')+'|'+(r.n_bc||'')+'|'+(r.heure||'')},r));   // 17/11 : relances des bailleurs, case « traité » = ENV
 const PAY=flag('pay:');   // 13/11 (J) : facture de sous-traitant payée (bon à payer), clé = nom du fichier de la facture   // env: rapport envoyé au bailleur (12/11)
 // 12/11 (J) : aussi les commentaires (« com: ») et les tentatives d'appel au locataire (« app: »), partagés de la même façon
 const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','plan:','ext:','wa:','wam:','mgr:','mnom:'], CO_TXT=['com:','app:','plan:','ext:','wa:','wam:','mgr:','mnom:'];   // mgr: question au manager (16/11)   // wam: WhatsApp ouvert à la main (15/11 soir)   // wa: WhatsApp RDV (15/11)   // plan: demande de planification (13/11)
@@ -1062,7 +1092,8 @@ document.getElementById('toutimp').onclick=()=>{if(confirm('Marquer tous les BC 
     <div class="ts">${[esc(l.commune),l.ht?eur(l.ht)+' HT':'','reçu '+ilya(l.jour)].filter(Boolean).join(' · ')}</div>
     <div class="tr">${r.includes('accepter')?'<span class="chip warn">À accepter sur l\'Extranet</span>':''}${r.includes('reprendre')?'<span class="chip bad">À reprendre</span>':''}${r.includes('prendre')?'<span class="chip warn">À prendre en compte</span>':''}${r.includes('delai')?`<span class="chip bad">Délai dépassé le ${fr(l.fin)}</span>`:''}${r.includes('pdf')?'<span class="chip">PDF à joindre</span>':''}${r.includes('rdvnx')?'<span class="chip warn">RDV pris : à mettre dans Nexxio</span>':''}${/RDV à prendre/i.test(l.motif)?'<span class="chip info">RDV à prendre</span>':''}</div>
     ${resume(l.motif)?`<div class="tm" title="Cliquer pour lire le détail du robot" data-court="${esc(resume(l.motif))}" data-long="${esc(humain(l.motif))}">${esc(resume(l.motif))}</div>`:''}</div>
-    <div class="ta">${r.includes('accepter')&&/^[A-Za-z]\d{5}$/.test(l.n_bc||'')?extBouton(l.n_bc):''}${l.pdf?`<a class="bt p" href="${encodeURI(l.pdf)}" target="_blank">Voir le BC</a>`:''}${l.n_nexxio?`<a class="bt" href="${NXURL(l.n_nexxio)}" target="_blank">Nexxio ↗</a>`:''}</div></div>`}).join(''):'<div class="vide">Rien en attente. Tout est à jour.</div>';
+    <div class="ta">${l.n_bc?`<button class="bt" data-blocbc="${esc(l.n_bc)}">Expliquer au manager</button>`:''}${r.includes('accepter')&&/^[A-Za-z]\d{5}$/.test(l.n_bc||'')?extBouton(l.n_bc):''}${l.pdf?`<a class="bt p" href="${encodeURI(l.pdf)}" target="_blank">Voir le BC</a>`:''}${l.n_nexxio?`<a class="bt" href="${NXURL(l.n_nexxio)}" target="_blank">Nexxio ↗</a>`:''}</div></div>`}).join(''):'<div class="vide">Rien en attente. Tout est à jour.</div>';
+  document.querySelectorAll('#faire [data-blocbc]').forEach(b=>b.onclick=()=>ficheBC(b.dataset.blocbc));
   document.querySelectorAll('#faire .tm').forEach(x=>x.onclick=()=>{const o=x.classList.toggle('open');x.textContent=o?x.dataset.long:(x.dataset.court||x.dataset.long)});
 })();
 
@@ -1205,7 +1236,8 @@ function planning(){
   const sansRdv=P.filter(x=>x.statut==='Prise en compte'&&!x.rdv);
   const aplan=sansRdv.filter(x=>!x.rapports&&!AG_N[x.n_nexxio]&&!(dcmd(x)&&dcmd(x)<jr(90))).sort((a,b)=>a.n_nexxio-b.n_nexxio);
   const vieilles=sansRdv.filter(x=>dcmd(x)&&dcmd(x)<jr(90)).length;
-  const retard=P.filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)<today&&!x.rapports&&['Planifiée','Planifié','En cours'].includes(x.statut)).sort((a,b)=>a.rdv_iso<b.rdv_iso?-1:1);
+  // J le 17/11 : « RDV passés sans rapport » ne compte que les RDV de plus de 3 jours (47 commandes dont 14 vrais manques)
+  const retard=P.filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)<jr(3)&&!x.rapports&&['Planifiée','Planifié','En cours'].includes(x.statut)).sort((a,b)=>a.rdv_iso<b.rdv_iso?-1:1);
   const venir=P.filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)>=today).sort((a,b)=>a.rdv_iso<b.rdv_iso?-1:1);
   const dsuivi=D.suivi_genere?new Date(D.suivi_genere):null, age=dsuivi?Math.round((new Date()-dsuivi)/60000):null;
   document.getElementById('psuivi').textContent=dsuivi?`Lu dans Nexxio le ${dsuivi.toLocaleDateString('fr-FR')} à ${dsuivi.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}, relu toutes les 5 minutes, 24 h sur 24. Ce qui avance dans Nexxio (ou un RDV posé dans l\'agenda d\'une équipe) se met à jour ici tout seul.`+(age>60?' Attention : dernière lecture il y a plus d\'une heure.':''):'Suivi Nexxio pas encore lu par le robot.';
@@ -1602,6 +1634,29 @@ function frise(n,s,b,pl){const F=(D.fnx||[]).filter(f=>f.n_nexxio===n&&f.type===
   const der=E.reduce((k,[,d],i)=>d?i:k,-1);
   return `<div class="frise">${E.map(([t,d],i)=>{const ok=!!d, ici=!ok&&i===der+1;
     return `<div class="${ok?'ok':ici?'ici':''}"><b>${t}</b>${ok&&/^\d{4}-/.test(d)?fr(d):ok?'✓':ici?'en attente':i<der?'—':''}</div>`}).join('')}</div>`}
+// 17/11 (J, relayé par l'agent Saisie et le manager : « un bouton où j'écris la raison d'un blocage, qui remonte au
+// manager ») : coche partagée « mgr:bc:<n° BC> » = {q, txt, par}. Le manager la lit au passage suivant du robot, vérifie
+// avec ses outils de lecture, répond (D.manager.blocages) et peut donner un ordre de son catalogue fermé (jamais de
+// suppression ni d'annulation). Un BC non saisi n'a pas de fiche : ficheBC ouvre une petite fiche à part.
+function blocBC(nbc){const r=((D.manager||{}).blocages||{})[nbc];let v=null;try{v=JSON.parse(NOTE.get('mgr:bc:'+nbc)||'null')}catch(e){}
+  const att=v&&v.txt&&(!r||r.texte!==v.txt), ORD={preciser:o=>'retenir le devis '+o.devis,relire_ia:()=>'refaire le contrôle IA',atelier:()=>'lancer l’agent correcteur'};
+  return `<div class="s" id="bcexp" data-bc="${esc(nbc)}"><h4>Expliquer le blocage au manager</h4>
+    ${r?`<div style="margin:0 0 10px;font-size:13px"><div><b>Tu as écrit</b> <span class="tag">${fr((r.quand||'').slice(0,10))} à ${esc((r.quand||'').slice(11,16))}</span> : « ${esc(r.texte)} »</div>
+      <div style="margin-top:4px;white-space:pre-wrap"><b>Le manager :</b> ${esc(r.reponse||'')}</div>${(r.ordres||[]).length?`<div class="tag" style="margin-top:4px">Ordre donné : ${r.ordres.map(o=>esc((ORD[o.type]||(()=>o.type))(o))).join(', ')}</div>`:''}</div>`:''}
+    <textarea id="bcexp-t" rows="3" maxlength="600" placeholder="Ex. : le bon devis est le D2610000271, erreur du gestionnaire" style="width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--solid);color:var(--ink)"></textarea>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap"><button class="btn prim" id="bcexp-go">Envoyer au manager</button>
+      <span class="tag" id="bcexp-et">${att?'<span class="chip info">Envoyée</span> « '+esc(v.txt)+' » : réponse au prochain passage du robot (quelques minutes)':'Le manager vérifie, te répond ici et fait faire ce qu’il faut (jamais de suppression ni d’annulation).'}</span></div></div>`}
+function lierBlocBC(){const g=document.getElementById('bcexp-go');if(!g)return;const nbc=document.getElementById('bcexp').dataset.bc;
+  g.onclick=async()=>{const t=document.getElementById('bcexp-t').value.trim().replace(/\s+/g,' '),et=document.getElementById('bcexp-et');
+    if(t.length<5){et.textContent='Écris au moins quelques mots.';return}
+    const part=await coEtat().catch(()=>'off');
+    if(part!=='on'){et.innerHTML='<span class="chip bad">Non envoyée</span> Le partage des coches n’est pas actif sur ce PC : le robot ne la verrait pas.';return}
+    NOTE.set('mgr:bc:'+nbc,JSON.stringify({q:Date.now(),txt:t,par:WEB?webQui():''}));document.getElementById('bcexp-t').value='';
+    et.innerHTML='<span class="chip info">Envoyée</span> « '+esc(t)+' » : réponse au prochain passage du robot (quelques minutes)'}}
+function ficheBC(nbc){const l=[...L].reverse().find(x=>x.n_bc===nbc)||{};if(l.n_nexxio&&NX[l.n_nexxio]){fiche(l.n_nexxio);if(document.getElementById('bcexp'))return}
+  document.getElementById('fichein').innerHTML=`<h3><span>BC ${esc(nbc)} ${bai(l.bailleur||'')}</span><button class="btn" id="ffermer">Fermer</button></h3>
+    ${l.motif?`<div class="s"><h4>Note du robot</h4>${esc(l.motif)}</div>`:''}${blocBC(nbc)}`;
+  lierBlocBC();const f=document.getElementById('fiche');f.hidden=false;document.getElementById('ffermer').onclick=()=>f.hidden=true;f.onclick=e=>{if(e.target===f)f.hidden=true}}
 function fiche(n){const o=NX[n];if(!o)return;const pl=o.pl||{},s=o.sst||{},b=o.bc||{},dvx=o.dv||{},x=Object.assign({},dvx,b,s,pl);
   const cout=D.couts&&D.couts[n]!=null?D.couts[n]:null, ht=x.ht!=null&&x.ht!==''?+x.ht:null;
   const c=(l,v)=>v||v===0?`<div><small>${l}</small>${v}</div>`:'';
@@ -1613,10 +1668,11 @@ function fiche(n){const o=NX[n];if(!o)return;const pl=o.pl||{},s=o.sst||{},b=o.b
     ${c('Sous-traitant(s)',s.sst&&Object.keys(s.sst).length?Object.entries(s.sst).map(([k,v])=>esc(k)+' · '+eur(v)).join('<br>'):'')}${c('Délai du BC',fr(b.fin))}${c('Contrôle robot',b.risque?pill(b.risque):'')}</div>
     ${(o.ag||[]).length?`<div class="s"><h4>Agenda</h4>${o.ag.sort((a,b)=>a.debut<b.debut?-1:1).map(e=>`<div>${fr(e.debut.slice(0,10))} ${esc(e.debut.slice(11,16))} · <b>${esc(e.equipe)}</b>${e.prix?' · '+eur(e.prix):''}<span class="b2">${esc(e.lieu)}${e.note?' · '+esc(e.note):''}</span></div>`).join('')}</div>`:''}
     ${rdvLoc(n,pl)}
+    ${factBloc(n,pl)}
     ${planifBloc(n,pl,s)}${waBloc(n,pl)}
-    ${b.motif?`<div class="s"><h4>Note du robot</h4>${esc(b.motif)}</div>`:''}
+    ${b.motif?`<div class="s"><h4>Note du robot</h4>${esc(b.motif)}</div>`:''}${b.n_bc&&(['rouge','orange'].includes(b.risque)||/reprendre/i.test(b.statut||''))?blocBC(b.n_bc):''}
     <div class="s">${b.pdf?pdfA(b.pdf,'Voir le BC (PDF)')+' · ':''}<a href="https://rmsbatiment.app.nexxio.fr/main/item?order_number=${encodeURIComponent(n)}" target="_blank">Ouvrir dans Nexxio</a>${agendaUrl(n,pl,x)?` · <a class="btn" href="${esc(agendaUrl(n,pl,x))}" target="_blank" title="Ouvre Google Agenda avec l'événement rempli comme le bouton de Nexxio : choisir l'agenda du sous-traitant puis Enregistrer">Ajouter à l'agenda</a>`:''}</div>`;
-  lierRdvLoc(n);lierPlanif(n);lierWa(n);
+  lierRdvLoc(n);lierFact(n);lierPlanif(n);lierWa(n);lierBlocBC();
   const f=document.getElementById('fiche');f.hidden=false;document.getElementById('ffermer').onclick=()=>f.hidden=true;f.onclick=e=>{if(e.target===f)f.hidden=true}}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('fiche').hidden=true});
 // 13/11 (J) : même événement que le lien « Ajoutez le à votre agenda Google » de Nexxio (vu sur 5264) : « RMS BATIMENT - <n° BC> »,
@@ -1632,6 +1688,24 @@ function planEtat(n){const d=planDem(n), a=(D.actions||{})['plan:'+n], ts=+(()=>
   if(d&&!res)return `<span class="chip info">Demande envoyée</span> RDV le ${fr(d.d)} à ${esc(d.h)} (${ANN[d.a]||''})${d.sst?' · '+esc(d.sst):''}${d.sms?' · SMS au locataire':''}${d.mail?' · mail au gestionnaire':''}<span class="b2">Le robot la fait à son prochain passage (toutes les 10 minutes), puis le résultat s'affiche ici. <a href="#" id="pf-annuler">Annuler la demande</a></span>`;
   if(res)return `<span class="chip ${res.etat==='ok'?'ok':'bad'}">${res.etat==='ok'?'Fait par le robot':'Non fait'}</span> <span title="${esc(res.message)}">${esc(res.etat==='ok'?res.message:clairErr(res.message))}</span><span class="b2">le ${fr((res.quand||'').slice(0,10))} à ${esc((res.quand||'').slice(11,16))}${res.par?' · demandé par '+esc(res.par):''}</span>`;
   return ''}
+/* 17/11 (chantier « Préparation de la facturation client ») : pour une commande « rapport reçu, à facturer », la fiche montre les lignes
+   du BC (code, libellé, quantité, unité, prix unitaire, montant), le total HT, l'écart avec le restant à facturer de Nexxio et un bouton
+   « Copier pour Nexxio ». Aucune facture n'est créée par le robot : J colle et valide lui-même dans Nexxio. Jamais de prix dans un libellé. */
+function factTexte(n){const g=(D.logements||{})[n]||{};const L=g.lignes||[];
+  return L.map(l=>[l.code,l.libelle,l.qte,l.unite,l.pu].map(v=>v==null?'':String(v).replace('.',',')).join('\t')).join('\n')}
+function factBloc(n,pl){if(!pl||!((+pl.rapports||0)>0)||!((+pl.restant||0)>0))return '';
+  const g=(D.logements||{})[n]||{}, L=g.lignes||[];
+  if(!L.length)return `<div class="s"><h4>Préparer la facture</h4><span class="b2">Lignes du BC non lues (BC absent ou format inconnu) : à reprendre dans Nexxio.</span></div>`;
+  const tot=L.reduce((t,l)=>t+(+l.montant||0),0), ec=tot-(+pl.restant||0), ok=Math.abs(ec)<1;
+  return `<div class="s" id="factb"><h4>Préparer la facture</h4>
+    <div class="wrap"><table><thead><tr><th>Code</th><th>Libellé</th><th class="num">Qté</th><th>Unité</th><th class="num">Prix unitaire</th><th class="num">Montant HT</th></tr></thead><tbody>${L.map(l=>`<tr><td>${esc(l.code)}</td><td>${esc(l.libelle)}</td><td class="num">${l.qte==null?'':esc(String(l.qte).replace('.',','))}</td><td>${esc(l.unite)}</td><td class="num">${l.pu==null?'':eur(l.pu)}</td><td class="num">${l.montant==null?'':eur(l.montant)}</td></tr>`).join('')}</tbody></table></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><b>Total HT du BC : ${eur(tot)}</b><span>Restant à facturer (Nexxio) : ${eur(pl.restant)}</span>
+      <span class="chip ${ok?'ok':'warn'}">${ok?'Pas d’écart':'Écart '+(ec>0?'+':'')+eur(ec)}</span>
+      <button class="btn prim" id="fact-copie">Copier pour Nexxio</button></div>
+    <span class="b2">${ok?'Les lignes du BC correspondent au restant à facturer.':'Les lignes du BC ne font pas le restant à facturer : une partie est peut-être déjà facturée, ou le restant est faux dans Nexxio. Regarde avant de facturer.'} Le texte copié : code, libellé, quantité, unité, prix unitaire, séparés par des tabulations. Rien n’est créé par le robot : tu colles et tu valides dans Nexxio.</span></div>`}
+function lierFact(n){const b=document.getElementById('fact-copie');if(!b)return;b.onclick=()=>{const t=factTexte(n);
+  const fin=()=>{b.textContent='Copié';setTimeout(()=>b.textContent='Copier pour Nexxio',2000)};
+  try{navigator.clipboard.writeText(t).then(fin,()=>{prompt('Copier :',t)})}catch(e){prompt('Copier :',t)}}}
 function planifBloc(n,pl,s){const st=(pl&&pl.statut)||'';if(!/^(Prise en compte|Planifi)/.test(st))return '';
   const g=(D.logements||{})[n]||{}, occ=!!(g.nom&&!g.vacant), act=Object.keys((s&&s.sst)||{}).filter(x=>!/lakchiri|gestion bureau/i.test(x));
   const noms=[...new Set((D.sst||[]).flatMap(x=>Object.keys(x.sst||{})))].filter(x=>!/lakchiri|gestion bureau/i.test(x)).sort((a,b)=>a.localeCompare(b,'fr'));
@@ -1895,8 +1969,12 @@ function releveVue(){
   // 16/11 (roadmap « Relevé mensuel des sous-traitants prêt à envoyer ») : le relevé s'ouvre déjà écrit dans WhatsApp ou
   // dans un nouveau mail de la messagerie de J ; J choisit le destinataire, relit et envoie lui-même (le robot n'envoie rien)
   const wa=document.getElementById('rl-wa'),ml=document.getElementById('rl-mail');
-  if(wa)wa.href='https://wa.me/?text='+encodeURIComponent(RELTXT);
-  if(ml)ml.href='mailto:?subject='+encodeURIComponent(`RMS BATIMENT - Relevé des interventions ${titreM}`)+'&body='+encodeURIComponent(RELTXT.slice(0,1800)+(RELTXT.length>1800?'\n(suite : voir le relevé joint)':''));
+  // 17/11 : destinataire prérempli quand le n° ou le mail du sous-traitant est connu (lu sur ses factures ou réglé par J) ; jamais envoyé d'ici
+  const ct=(D.contacts_sst||{})[nom]||{}, tw=String(ct.tel||'').replace(/\D/g,'').replace(/^0/,'33');
+  if(wa){wa.href='https://wa.me/'+tw+'?text='+encodeURIComponent(RELTXT);wa.title=tw?'WhatsApp s\'ouvre sur le '+ct.tel+' (lu sur ses factures) avec le relevé écrit : relire, envoyer':'WhatsApp s\'ouvre avec le relevé écrit : choisir le sous-traitant, relire, envoyer'}
+  if(ml){ml.title=ct.mail?'Nouveau mail pour '+ct.mail+' (lu sur ses factures) avec le relevé écrit : relire, envoyer':'Ouvre un nouveau mail avec le relevé écrit : ajouter le destinataire, relire, envoyer'}
+  document.getElementById('rl-ok').insertAdjacentHTML('beforeend',(ct.tel||ct.mail)?` <span class="tag">Destinataire : ${esc([ct.tel,ct.mail].filter(Boolean).join(' · '))}</span>`:' <span class="tag">Destinataire inconnu : à choisir dans WhatsApp ou le mail</span>');
+  if(ml)ml.href='mailto:'+encodeURIComponent(ct.mail||'').replace(/%40/g,'@')+'?subject='+encodeURIComponent(`RMS BATIMENT - Relevé des interventions ${titreM}`)+'&body='+encodeURIComponent(RELTXT.slice(0,1800)+(RELTXT.length>1800?'\n(suite : voir le relevé joint)':''));
 }
 
 /* ---------- factures des sous-traitants (J le 11/11 : arrivent sur mlakchiri@) ---------- */
@@ -1951,7 +2029,7 @@ function facturesVue(){
     <td class="num"><b>${x.f.ht!=null?eur(x.f.ht):'?'}</b></td><td class="num">${x.lignes.length?eur(x.ag):''}</td><td class="num">${x.ecart!=null?(x.lignes.some(l=>l.prix==null)?`<span class="tag" title="un prix manque dans l'agenda">${eur(x.ecart)} ?</span>`:`<b class="${Math.abs(x.ecart)>=1?'neg':''}">${eur(x.ecart)}</b>`):''}</td>
     <td>${x.pb.length?x.pb.map(p=>`<span class="chip warn">${esc(p)}</span>`).join(' '):'<span class="chip ok">Conforme</span>'}</td></tr>`).join('')
     :`<tr><td colspan="7" class="vide">${FAC.length?'Aucune facture pour ces critères.':'Aucune facture lue pour l\'instant.'}</td></tr>`;
-  document.querySelectorAll('#tfc tr[data-f]').forEach(tr=>tr.onclick=()=>{FSEL=FSEL===tr.dataset.f?'':tr.dataset.f;facturesVue();if(FSEL)document.getElementById('fc-det').scrollIntoView({behavior:'smooth',block:'start'})});
+  document.querySelectorAll('#tfc tr[data-f]').forEach(tr=>tr.onclick=()=>{FSEL=FSEL===tr.dataset.f?'':tr.dataset.f;facturesVue()});
   const x=L.find(y=>y.f.fichier===FSEL);document.getElementById('fc-det').hidden=!x;
   if(x){document.getElementById('fc-dtitre').textContent='Facture '+(x.f.numero||x.f.fichier)+(x.nom?' · '+x.nom:'');
     document.getElementById('fc-dtag').textContent=(x.f.ht!=null?eur(x.f.ht)+' HT':'')+(x.f.ttc!=null?' · '+eur(x.f.ttc)+' TTC':'');
@@ -1975,7 +2053,8 @@ function rapprochementVue(L,eq,P){
     const C=Object.values(g.c).filter(c=>c.dansP), voir=[];
     C.forEach(c=>{const ap=[];
       // plusieurs équipes sur une commande, c'est normal : on ne le signale que si cette équipe n'a pas fait de rapport
-      if(!c.rap){const a=[...new Set((RAP_N[c.n]||[]).map(r=>eqDe(r.par)))].filter(p=>p!==nom), o=parN[c.n].filter(p=>p!==nom);
+      // J le 17/11 : NUANCE FACADE facture en plus de l'équipe du rapport (8 commandes) : « c'est normal, deux travaux », pas signalé
+      if(!c.rap&&!/nuance/i.test(nom)){const a=[...new Set((RAP_N[c.n]||[]).map(r=>eqDe(r.par)))].filter(p=>p!==nom), o=parN[c.n].filter(p=>p!==nom);
         ap.push((a.length?'rapport fait par '+a.join(', '):'aucun rapport de cette équipe')+(o.length?' ; aussi facturée par '+o.join(', '):''))}
       if(c.prix==null)ap.push('prix pas dans l\'agenda');else if(!c.sansM&&Math.abs(c.mf-c.prix)>=1)ap.push('facturé '+eur(c.mf)+' au lieu de '+eur(c.prix));
       if(ap.length)voir.push({...c,ap})});
@@ -2018,7 +2097,7 @@ function bapVue(L,eq,P){
   const BT={};S.forEach(([nom,l])=>BT[nom]=txt(nom,ok(l)));
   document.querySelectorAll('#bap-corps [data-bapc]').forEach(b=>b.onclick=e=>{e.stopPropagation();copier(BT[b.dataset.bapc],b)});
   document.querySelectorAll('#bap-corps input[data-pay]').forEach(c=>{c.onclick=e=>e.stopPropagation();c.onchange=()=>{PAY.set(c.dataset.pay,c.checked);setTimeout(facturesVue,200)}});
-  document.querySelectorAll('#bap-corps tr[data-f]').forEach(tr=>tr.onclick=()=>{FSEL=tr.dataset.f;facturesVue();document.getElementById('fc-det').scrollIntoView({behavior:'smooth',block:'start'})});
+  document.querySelectorAll('#bap-corps tr[data-f]').forEach(tr=>tr.onclick=()=>{FSEL=tr.dataset.f;facturesVue()});
 }
 document.getElementById('bap-ok').onclick=()=>{const d=document.getElementById('bap-av').value,m=document.getElementById('bap-msg');if(!d){m.textContent='Choisir une date';return}
   const l=FAC.filter(f=>(f.recu||'').slice(0,10)<d&&!PAY.get(f.fichier));l.forEach(f=>PAY.set(f.fichier,true));m.textContent=l.length+' facture(s) marquée(s) payée(s)';facturesVue()};
@@ -2089,7 +2168,20 @@ function coherenceVue(){
   document.getElementById('tch').innerHTML=r.length?r.map(x=>{const c=(NX[x.n]||{}).pl||(NX[x.n]||{}).sst||{};return `<tr><td class="nw"><b>${esc(x.n)}</b><span class="b2">${esc(c.n_bc||'')}</span></td><td>${bai(c.client||c.bailleur||'')}<span class="b2">${esc(c.commune||'')}</span></td>
     <td><span class="chip warn">${esc(TYPES_ECART[x.type])}</span></td><td>${esc(x.ag)}</td><td>${esc(x.nx)}</td></tr>`}).join(''):'<tr><td colspan="5" class="vide">Agenda et Nexxio sont d\'accord sur cette période.</td></tr>';
 }
-function svues(){['par','prix','rel','fac','ret','coh'].forEach(v=>document.getElementById('sv-'+v).hidden=v!==svue);document.querySelectorAll('#svue button').forEach(b=>b.classList.toggle('on',b.dataset.v===svue));store.set('svue',svue);
+// 17/11 (J, « pas hyper clair ») : une phrase sous les boutons dit à quoi sert la vue choisie ; la vue Factures (3 longues
+// parties) a un petit sommaire pour y sauter sans faire défiler
+const SVD={par:'Chaque sous-traitant : commandes, CA, ce qu’on lui a payé et la marge. Clique sur un nom pour voir ses commandes.',
+  prix:'Commandes terminées dont le prix payé au sous-traitant manque dans l’agenda : la marge ne peut pas être calculée.',
+  rel:'Le relevé du mois par sous-traitant, à imprimer, copier, ou ouvrir dans WhatsApp ou un mail.',
+  fac:'Les factures reçues des sous-traitants, comparées aux prix de l’agenda : ce qui est bon à payer et ce qui est à regarder. Clique sur une ligne pour le détail.',
+  ret:'Rendez-vous passés sans rapport dans Nexxio, par équipe : la relance est prête à copier.',
+  coh:'Différences entre les rendez-vous de l’agenda des équipes et ceux de Nexxio.'};
+function svDesc(){let d=document.getElementById('svdesc');if(!d){d=document.createElement('p');d.id='svdesc';d.className='sv-desc';document.getElementById('svue').after(d)}
+  d.textContent=SVD[svue]||'';
+  const f=document.getElementById('sv-fac');if(f&&!document.getElementById('svsomm')){const t=document.getElementById('tfc'),L=[['bap','Bon à payer'],[t&&t.closest('section'),'Factures reçues'],['rap-eq','Rapprochement par équipe']];
+    const n=document.createElement('div');n.id='svsomm';n.className='sv-somm';n.innerHTML='<span class="tag" style="align-self:center">Aller à :</span>'+L.map((x,k)=>`<button class="btn" data-k="${k}">${x[1]}</button>`).join('');
+    f.querySelector('.bar').after(n);n.querySelectorAll('button').forEach(b=>b.onclick=()=>{const x=L[+b.dataset.k][0],e=typeof x==='string'?document.getElementById(x):x;if(e)e.scrollIntoView({behavior:'smooth',block:'start'})})}}
+function svues(){['par','prix','rel','fac','ret','coh'].forEach(v=>document.getElementById('sv-'+v).hidden=v!==svue);document.querySelectorAll('#svue button').forEach(b=>b.classList.toggle('on',b.dataset.v===svue));store.set('svue',svue);try{svDesc()}catch(e){}
   prixVue();facturesVue();retardVue();coherenceVue();if(svue==='rel')releveVue()}   // toutes pour les compteurs des boutons
 document.querySelectorAll('#svue button').forEach(b=>b.onclick=()=>{svue=b.dataset.v;svues()});
 const PER_FC=choixPeriode('per-fc','tout',()=>facturesVue()), PER_RT=choixPeriode('per-rt','tout',()=>retardVue()), PER_CH=choixPeriode('per-ch','tout',()=>coherenceVue());
@@ -2149,7 +2241,7 @@ function sstVue(){
     document.getElementById('tsdet').innerHTML=r.map(x=>`<tr><td class="nw" title="${esc(x.n_bc)}"><b>${esc(x.n_nexxio)}</b> · ${fr(x.date)}<span class="b2">${esc(x.n_bc)}</span></td><td>${bai(x.client)}<span class="b2">${esc(x.commune)}</span></td><td>${esc(x.statut)}</td>
       <td class="num"><b>${eur(ssel===SANS||ssel===ATT?x.ht:x.sst[ssel])}</b>${ssel!==SANS&&ssel!==ATT&&Object.keys(x.sst).length>1?`<span class="b2">avec ${esc(Object.keys(x.sst).filter(k=>k!==ssel).join(', '))}</span>`:''}</td><td class="num">${x.cout!=null?eur(x.cout*(ssel===SANS||ssel===ATT||!Object.keys(x.sst).length?1:(x.sst[ssel]||0)/Object.values(x.sst).reduce((a,b)=>a+b,0))):clos(x)?'<span class="chip warn">prix à mettre</span>':''}</td>
       <td class="num">${x.cout!=null?(()=>{const k=ssel===SANS||ssel===ATT?1:(x.sst[ssel]||0)/Object.values(x.sst).reduce((a,b)=>a+b,0),part=ssel===SANS||ssel===ATT?x.ht:x.sst[ssel],m=part-x.cout*k;return `<b class="${m<0?'neg':''}">${eur(m)}</b>`})():''}</td><td class="num">${eur(x.ht)}</td></tr>`).join('')}
-  const choisir=k=>{ssel=ssel===k?'':k;store.set('ssel',ssel);sstVue();if(ssel)document.getElementById('sdet').scrollIntoView({behavior:'smooth',block:'start'})};
+  const choisir=k=>{ssel=ssel===k?'':k;store.set('ssel',ssel);sstVue()};
   document.querySelectorAll('#tsst tr[data-s],#stiles .kpi[data-s]').forEach(e=>e.onclick=()=>choisir(e.dataset.s));
   const lus=S.map(x=>x.lu).filter(Boolean).sort(), dl=lus.length?new Date(lus[lus.length-1]):null;
   document.getElementById('ssuivi').textContent=S.length?`${S.length} commandes lues dans Nexxio${dl?', dernière lecture le '+dl.toLocaleDateString('fr-FR')+' à '+dl.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):''}. Date d'une commande : date de commande de l'historique Nexxio.`:'';
@@ -2305,6 +2397,20 @@ else coBandeau();
    En arrivant le matin, dans l'ordre : commandes reçues depuis la veille à planifier (appeler ou clés), rapports arrivés
    depuis la veille à envoyer au bailleur, factures à faire, relances, blocages. « Veille » = dernier jour ouvré (lundi :
    depuis vendredi). Chaque ligne ouvre la fiche ; chaque étape a un bouton vers la liste complète. */
+/* 17/11 (J : « une section Relance où il y a les commandes relancées par les bailleurs, et enlever les relances des BC saisis »,
+   exemple G33521 Alliade) : le robot écrit une ligne de journal « Relance » ; ici : date, bailleur, BC, commande Nexxio liée avec son
+   statut, résumé, case « traité » partagée. Le compteur est aussi dans Ma journée. */
+function relancesBailleurs(){const sec=document.getElementById('relb');if(!sec)return;const R=RELB.filter(r=>(r.jour||'')>=jr(60));
+  if(!R.length){sec.hidden=true;return}
+  const att=R.filter(r=>!ENV.get(r.id)), fait=R.filter(r=>ENV.get(r.id)).sort((a,b)=>(b.jour||'')>(a.jour||'')?1:-1).slice(0,5);
+  const stat=n=>n?esc(((NX[n]||{}).pl||{}).statut||((NX[n]||{}).dv||{}).statut||''):'';
+  const lig=r=>`<tr${ENV.get(r.id)?' style="opacity:.55"':''}><td><label><input type="checkbox" data-relb="${esc(r.id)}"${ENV.get(r.id)?' checked':''}> traité</label></td><td>${fr(r.jour)}${r.heure?' '+esc(r.heure):''}</td><td>${bai(r.bailleur)}</td><td>${esc(r.n_bc)}</td>
+    <td>${r.n_nexxio?`<a href="#" data-fiche="${esc(r.n_nexxio)}">${esc(r.n_nexxio)}</a> <span class="tag">${stat(r.n_nexxio)}</span>`:'<span class="tag">pas de commande Nexxio connue</span>'}</td><td>${esc(r.motif)}</td></tr>`;
+  sec.hidden=false;sec.innerHTML=`<h2><span>Relances des bailleurs</span><span class="tag">${att.length?att.length+' à traiter':'toutes traitées'}</span></h2>
+    <p class="sub">Mails où un bailleur relance une commande déjà passée (ce ne sont pas des BC). Cocher « traité » une fois la réponse donnée ou le point réglé.</p>
+    <div class="wrap"><table><thead><tr><th></th><th>Reçue</th><th>Bailleur</th><th>BC</th><th>Commande Nexxio</th><th>Résumé</th></tr></thead><tbody>${[...att,...fait].map(lig).join('')}</tbody></table></div>`;
+  sec.querySelectorAll('[data-relb]').forEach(c=>c.onchange=()=>{ENV.set(c.dataset.relb,c.checked);relancesBailleurs();journee()});
+  sec.querySelectorAll('[data-fiche]').forEach(a=>a.onclick=e=>{e.preventDefault();fiche(a.dataset.fiche)})}
 function journee(){
   const d=new Date(today+'T12:00:00'), recul=d.getDay()===1?3:d.getDay()===0?2:1;
   const debut=jr(recul), nomJ=new Date(debut+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long'});
@@ -2331,14 +2437,23 @@ function journee(){
   const nouv=aF.filter(x=>RAP.some(r=>r.n_nexxio===x.n_nexxio&&(r.date||'')>=debut));
   const l3=[...nouv,...pretes.filter(x=>!nouv.includes(x))].map(x=>li(x.n_nexxio,`${esc(x.commune||'')} · ${eur(x.restant)}${fsst(x.n_nexxio).length?' · facture SST reçue':''}${nouv.includes(x)?' · rapport reçu '+nomJ:''}`));
   // 4. relances : RDV passés sans rapport (60 derniers jours) ; RDV pris au téléphone pas encore dans Nexxio
-  const ret=P.filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)<today&&x.rdv_iso.slice(0,10)>=jr(60)&&!x.rapports&&['Planifiée','Planifié','En cours'].includes(x.statut));
+  const ret=P.filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)<jr(3)&&x.rdv_iso.slice(0,10)>=jr(60)&&!x.rapports&&['Planifiée','Planifié','En cours'].includes(x.statut));
   const rdvnx=P.filter(x=>etatAppels(x.n_nexxio).rdv&&!x.rdv);
   // 5. blocages : BC à reprendre, commandes Extranet en attente d'accord
   const bloc=L.filter(l=>(l.etat==='À reprendre'||l.etat==='Accord de J attendu')&&l.jour>=jr(30)&&!FAIT(l));
   // 6. alertes (14/11, roadmap : accueil « à faire, alertes, chiffres ») : tâche du robot en retard, erreur du jour, test ou
   // contrôle en échec, écart de données en rouge ; le détail reste dans l'onglet Chiffres
   const al=[...(D.etat_robot||[]).filter(x=>x.etat!=='ok'),...(D.sante||[]).filter(x=>x.etat==='bad')], suiv=(D.sante||[]).filter(x=>x.etat==='warn').length;
+  // 7. 17/11 (roadmap « Relevé mensuel des sous-traitants prêt à envoyer ») : du 1er au 10 du mois, une ligne par équipe qui a
+  // des rapports le mois dernier : à envoyer (bouton vers le relevé du mois dernier), case « envoyé » partagée comme les rapports
+  const ymPrec=(()=>{let y=+today.slice(0,4),m=+today.slice(5,7)-1;if(m<1){m=12;y--}return y+'-'+String(m).padStart(2,'0')})();
+  const relA=RELB.filter(r=>(r.jour||'')>=jr(60)&&!ENV.get(r.id));
+  const rel=[];if(+today.slice(8)<=10){const prem={};RAP.forEach(r=>{const k=r.par+'|'+r.n_nexxio;if(!prem[k]||r.date<prem[k].date)prem[k]=r});
+    const par={};Object.values(prem).filter(r=>(r.date||'').slice(0,7)===ymPrec).forEach(r=>{par[r.par]=(par[r.par]||0)+1});
+    Object.keys(par).sort((a,b)=>a.localeCompare(b,'fr')).forEach(n=>{if(!ENV.get('rel:'+ymPrec+':'+n))rel.push(`<li style="cursor:default"><label><input type="checkbox" data-env="${esc('rel:'+ymPrec+':'+n)}"> envoyé</label> <b>${esc(n)}</b> · ${par[n]} commande(s) de ${esc(nomMois(ymPrec))}</li>`)})}
   document.getElementById('journee').innerHTML=`<h2><span>Ma journée</span><span class="tag">depuis ${nomJ} ${fr(debut)}</span></h2>
+    ${etape(relA.length,'Relances des bailleurs','Un bailleur a relancé une commande : répondre, puis cocher « traité » dans la section Relances des bailleurs, plus haut',relA.map(r=>li(r.n_nexxio||r.n_bc,`${esc(r.n_bc)} · ${esc(String(r.motif||'').slice(0,90))}`)),'','')}
+    ${etape(rel.length,'Relevés du mois à envoyer',`Début de mois : le relevé du mois de ${nomMois(ymPrec)} de chaque sous-traitant, pour qu'il établisse sa facture ; cocher « envoyé » une fois fait`,rel,'Voir les relevés','rel')}
     ${etape(recues.length+enCrea.length,'Commandes à planifier',`${occ.length} locataire(s) à appeler · ${vac.length} logement(s) vacant(s), clés à récupérer${enCrea.length?` · ${enCrea.length} encore à prendre en compte`:''}`,l1,'Voir À planifier','aplan')}
     ${etape(l2.length,'Rapports à envoyer au bailleur','Arrivés depuis la veille : cocher « envoyé » une fois transmis (Extranet ou mail)',l2,'Voir les rapports','fact')}
     ${etape(aF.length,'Factures à faire',`${nouv.length} nouveau(x) rapport(s) · ${pretes.length} prête(s) à facturer (facture du sous-traitant reçue)${pretes.length?' pour '+e0(pretes.reduce((s,x)=>s+(x.restant||0),0))+' HT':''} · ${e0(aF.reduce((s,x)=>s+(x.restant||0),0))} HT en tout`,l3,'Voir À facturer','fact')}
@@ -2353,10 +2468,12 @@ function journee(){
   J0.querySelectorAll('[data-env]').forEach(c=>c.onchange=()=>{ENV.set(c.dataset.env,c.checked);setTimeout(journee,250)});
   J0.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const g=b.dataset.go;
     if(g==='faire'){document.getElementById('faire').scrollIntoView({behavior:'smooth'});return}
+    if(g==='rel'){onglet('sst');svue='rel';svues();window.scrollTo(0,0);return}
     if(g==='etat'){onglet('chiffres');const er=document.getElementById('etatrobot');er._ouv=true;document.getElementById('etat-l').hidden=false;er.scrollIntoView();return}
     pv=g;store.set('pv',g);if(g==='fact')store.set('ffact','toutes');onglet('planning');planning();window.scrollTo(0,0);telListe()});
 }
 try{journee()}catch(e){console.error('Ma journée',e)}
+try{relancesBailleurs()}catch(e){console.error('Relances',e)}
 /* ---------- Compte rendu du manager (16/11, J : « je veux que tu deviennes comme un manager et t'auras plusieurs agents
    sous toi ») : écrit une fois par jour par manager.py sur le PC du robot. Une ligne par agent (ce qu'il a fait, ce qui
    bloque), puis ce qui attend J. Lecture seule : rien ne part d'ici. */
@@ -2403,6 +2520,7 @@ function managerVue(){const m=D.manager, el=document.getElementById('manager');i
     ${(m.ordres||[]).length?`<details class="det" style="margin:0;padding:8px 16px;border-top:1px solid var(--line)"><summary><b>Ordres donnés aux agents</b> <span class="tag">${m.ordres.length} sur 7 jours</span></summary>${m.ordres.slice().reverse().map(o=>`<div style="margin:8px 0;font-size:13px"><b>${o.type==='relire_ia'?'Agent de saisie : refaire le contrôle IA de la commande '+esc(o.cible):o.type==='atelier'?'Atelier : corriger le robot pour le BC '+esc(o.cible):esc(o.type+' '+o.cible)}</b> <span class="tag">${fr((o.quand||'').slice(0,10))}</span>
         <div class="sub" style="padding:0"><b>Pourquoi :</b> ${esc(o.raison||'')}</div>
         <div class="sub" style="padding:0"><b>Réponse :</b> ${o.etat==='fait'?esc(o.resultat||''):'<span class="chip info">en attente du prochain passage du robot</span>'}</div></div>`).join('')}</details>`:''}
+    ${Object.keys(m.blocages||{}).length?`<details class="det" style="margin:0;padding:8px 16px;border-top:1px solid var(--line)"><summary><b>Tes explications de blocage</b> <span class="tag">${Object.keys(m.blocages).length} BC</span></summary>${Object.entries(m.blocages).sort((a,b)=>(b[1].quand||'')>(a[1].quand||'')?1:-1).map(([bc,x])=>`<div style="margin:8px 0;font-size:13px"><b>${esc(bc)}</b> <span class="tag">${fr((x.quand||'').slice(0,10))}</span><div class="sub" style="padding:0"><b>Toi :</b> ${esc(x.texte||'')}</div><div class="sub" style="padding:0;white-space:pre-wrap"><b>Manager :</b> ${esc(x.reponse||'')}</div></div>`).join('')}</details>`:''}
     ${(m.pour_j||[]).length?`<div style="padding:10px 16px;border-top:1px solid var(--line)"><b>Ce qui t'attend</b><ol style="margin:6px 0 0;padding-left:20px;font-size:13.5px">${m.pour_j.map(x=>`<li style="margin:3px 0">${esc(x)}</li>`).join('')}</ol></div>`:'<div class="tag" style="padding:10px 16px;border-top:1px solid var(--line)">Rien ne t\'attend aujourd\'hui.</div>'}
     <div style="padding:10px 16px;border-top:1px solid var(--line)"><b>Poser une question au manager</b>
       <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap"><input id="mgr-q" maxlength="300" placeholder="Ex. : où en est la commande 5273 ?" style="flex:1;min-width:180px;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit"><button class="btn" id="mgr-go">Demander</button></div>
@@ -2421,6 +2539,21 @@ function managerVue(){const m=D.manager, el=document.getElementById('manager');i
     if(part!=='on'){et.innerHTML='<span class="chip bad">Question non envoyée</span> Le partage des coches n\'est pas actif sur ce PC : le robot ne la verrait pas.';return}
     NOTE.set('mgr:q',JSON.stringify({q:Date.now(),txt:t,par:WEB?webQui():''}));document.getElementById('mgr-q').value='';att()}}
 try{managerVue()}catch(e){console.error('Manager',e)}
+// 17/11 (J) : détails de l'onglet Sous-traitants dans un panneau (voir le style .panneau)
+(function(){const F={sdet:()=>{ssel='';store.set('ssel','');sstVue()},'fc-det':()=>{FSEL='';facturesVue()},'rq-det':()=>{RQSEL='';facturesVue()}};
+  let v=document.getElementById('voile-p');if(!v){v=document.createElement('div');v.id='voile-p';v.hidden=true;document.body.append(v)}
+  const fermer=()=>Object.keys(F).forEach(id=>{const e=document.getElementById(id);if(e&&!e.hidden)F[id]()});
+  // rangés à côté de la fiche commande : dans la liste, un cadre parent décalait le panneau (vu le 17/11)
+  const sync=()=>{let ouv=false;Object.keys(F).forEach(id=>{const e=document.getElementById(id);if(!e)return;e.classList.add('panneau');
+      if(e.parentNode!==document.getElementById('fiche').parentNode)document.getElementById('fiche').before(e);
+      if(id==='rq-det'){const plein=!!e.querySelector('h3,table');if(e.hidden===plein)e.hidden=!plein;
+        if(plein&&!e.querySelector('.pf-bar'))e.insertAdjacentHTML('afterbegin','<div class="pf-bar"><button class="btn pf">Fermer</button></div>')}
+      else{const h=e.querySelector(':scope>h2');if(h&&!h.querySelector('.pf'))h.insertAdjacentHTML('beforeend','<button class="btn pf">Fermer</button>')}
+      const b=e.querySelector('.pf');if(b)b.onclick=ev=>{ev.stopPropagation();F[id]()};if(!e.hidden&&e.getClientRects().length)ouv=true});
+    v.hidden=!ouv;document.documentElement.style.overflow=ouv?'hidden':''};
+  v.onclick=fermer;addEventListener('keydown',e=>{if(e.key==='Escape'&&!v.hidden&&document.getElementById('fiche').hidden)fermer()});
+  Object.keys(F).forEach(id=>{const e=document.getElementById(id);if(e)new MutationObserver(sync).observe(e,{attributes:true,attributeFilter:['hidden'],childList:true})});
+  document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',fermer));sync()})();
 // 16/11 (J, « téléphone : cartes repliées ») : sur téléphone, les cartes de l'accueil et de Chiffres s'ouvrent d'un toucher
 // (Ma journée reste ouverte) ; bouton « haut de page » quand on est descendu
 setTimeout(()=>{if(TEL())document.querySelectorAll('#p-exploitation section.card:not(#journee),#p-chiffres section.card:not(.repli)').forEach(sc=>{
@@ -2428,4 +2561,10 @@ setTimeout(()=>{if(TEL())document.querySelectorAll('#p-exploitation section.card
   h.addEventListener('click',e=>{if(e.target.closest('button,input,select,a,label'))return;sc.classList.toggle('ferme')})});
   const ht=document.getElementById('haut');ht.onclick=()=>scrollTo({top:0,behavior:'smooth'});
   addEventListener('scroll',()=>{ht.hidden=!(TEL()&&scrollY>900)},{passive:true})},60);
+// 17/11 (J, ergonomie des onglets) : textes d'aide longs sur une ligne ; cartes secondaires de Sous-traitants repliées (la première de chaque vue reste ouverte)
+setTimeout(()=>{document.querySelectorAll('.contenu p.sub').forEach(pp=>{if(pp.textContent.length<110||pp.querySelector('input,select,button')||pp.id)return;
+    pp.classList.add('aide');pp.onclick=()=>pp.classList.toggle('lu')});
+  document.querySelectorAll('#p-sst>div[id^=sv-]').forEach(v=>v.querySelectorAll(':scope>section.card:not([hidden]):not(#releve)').forEach((sc,i)=>{if(!i)return;
+    const h=sc.querySelector(':scope>h2');if(!h)return;sc.classList.add('pliable','ferme');
+    h.addEventListener('click',e=>{if(e.target.closest('button,input,select,a,label'))return;sc.classList.toggle('ferme')})}))},80);
 </script></body></html>
