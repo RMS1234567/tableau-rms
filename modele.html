@@ -632,6 +632,13 @@ main>div[id^="p-"]:not([hidden]),.contenu>div[id^="p-"]:not([hidden]){animation:
 .journee .etape{transition:background-color .15s}.journee .etape:hover{background:color-mix(in srgb,var(--accent) 4%,transparent)}
 .journee ul li{transition:color .15s,padding-left .15s}.journee ul li:hover{padding-left:4px}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+/* 17/11 (J, capture des cases de Planning : « agrandis les boutons ») : sur PC, les 9 cases tiennent sur 2 rangées au lieu d'une
+   seule rangée tronquée ; chiffre plus gros, texte entier sur deux lignes */
+@media (min-width:701px){#ptiles{flex-wrap:wrap!important;gap:12px}
+ #ptiles .kpi.grand,#ptiles .kpi.petit{flex:1 1 calc(20% - 12px);min-width:176px;padding:16px 18px}
+ #ptiles .kpi.grand b,#ptiles .kpi.petit b{font-size:32px;margin:6px 0 4px}
+ #ptiles .kpi .l{font-size:13.5px;white-space:normal;overflow:visible}
+ #ptiles .kpi small{font-size:12.5px;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.35}}
 </style></head><body>
 <div class="app">
 <aside class="side">
