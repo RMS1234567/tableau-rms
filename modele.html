@@ -608,6 +608,12 @@ html[data-style="verre"] .btn:not(.prim),html[data-style="verre"] .bt:not(.p),ht
 :root[data-theme="dark"] html[data-style="verre"] .card{border-color:rgba(255,255,255,.08)}
 html[data-style="verre"][data-theme="dark"] .card,html[data-style="verre"][data-theme="dark"] .hero,html[data-style="verre"][data-theme="dark"] .side,html[data-style="verre"][data-theme="dark"] .kpi,html[data-style="verre"][data-theme="dark"] .bar{border-color:rgba(255,255,255,.09);box-shadow:0 8px 30px rgba(0,0,0,.35)}
 @media (prefers-color-scheme: dark){html[data-style="verre"]:not([data-theme="light"]) .card,html[data-style="verre"]:not([data-theme="light"]) .hero,html[data-style="verre"]:not([data-theme="light"]) .side,html[data-style="verre"]:not([data-theme="light"]) .kpi{border-color:rgba(255,255,255,.09);box-shadow:0 8px 30px rgba(0,0,0,.35)}}
+/* 17/11 : Ma journée, étapes par urgence (barre de couleur) et phrase de tête */
+.journee .etape{position:relative}.journee .etape::before{content:'';position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:var(--faint)}
+.journee .etape.niv0::before{background:var(--rouge)}.journee .etape.niv1::before{background:var(--orange)}.journee .etape.niv2::before{background:var(--faint)}
+.journee .etape.niv0 .n{color:var(--rouge)}
+.journee .jres{margin:0;padding:12px 18px;font-size:14px;background:var(--soft);border-bottom:1px solid var(--line)}
+.journee ul li.plus[hidden]{display:none}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -2510,7 +2516,11 @@ function journee(){
   // 16/11 (J : « Ma journée pas assez épurée ») : une étape à zéro disparaît ; chaque étape tient sur une ligne, ses commandes
   // se déplient d'un clic sur l'étape (gardé ouvert quand la carte se redessine)
   const OUV=journee.ouv=journee.ouv||new Set();
-  const etape=(n,titre,sous,liste,bouton,go)=>!n?'':`<div class="etape"><div class="et-t"${liste.length?` data-pli="${esc(titre)}" style="cursor:pointer"`:''}><b class="n">${n}</b><div><b>${titre}</b>${liste.length?` <span class="tag pli">${OUV.has(titre)?'▾ replier':'▸ voir'}</span>`:''}<div class="tag">${sous}</div></div>${bouton?`<button class="btn prim" data-go="${go}">${bouton}</button>`:''}</div>${liste.length?`<ul${OUV.has(titre)?'':' hidden'}>${liste.slice(0,6).join('')}${liste.length>6?`<li class="tag">… et ${liste.length-6} autre(s)</li>`:''}</ul>`:''}</div>`;
+  // 17/11 (J : « Ma journée pourrait être mieux ») : l'urgent d'abord (rouge = à traiter maintenant, orange = du jour, gris = de fond),
+  // les 3 premières commandes de chaque étape visibles tout de suite (on agit sur place), le reste sur clic
+  const NIV0=new Set(['BC bloqués','Corrections à valider','Relances des bailleurs','Alertes du robot et des données']), NIV2=new Set(['Relances']);
+  const niv=t=>NIV0.has(t)||(t==='À suivre'&&suivA.some(suivEchu))?0:NIV2.has(t)||t==='À suivre'?2:1;
+  const etape=(n,titre,sous,liste,bouton,go)=>!n?'':`<div class="etape niv${niv(titre)}"><div class="et-t"${liste.length>3?` data-pli="${esc(titre)}" style="cursor:pointer"`:''}><b class="n">${n}</b><div><b>${titre}</b>${liste.length>3?` <span class="tag pli">${OUV.has(titre)?'▾ replier':'▸ voir les '+Math.min(liste.length,6)}</span>`:''}<div class="tag">${sous}</div></div>${bouton?`<button class="btn prim" data-go="${go}">${bouton}</button>`:''}</div>${liste.length?`<ul>${liste.slice(0,6).map((x,k)=>k<3?x:x.replace('<li','<li class="plus"'+(OUV.has(titre)?'':' hidden'))).join('')}${liste.length>6?`<li class="tag plus"${OUV.has(titre)?'':' hidden'}>… et ${liste.length-6} autre(s)</li>`:''}</ul>`:''}</div>`;
   // 1. commandes reçues depuis la veille, prises en compte, sans RDV
   const recues=[...new Set(L.filter(l=>l.n_nexxio&&l.jour>=debut).map(l=>l.n_nexxio))].map(n=>NXP[n]).filter(x=>x&&x.statut==='Prise en compte'&&!x.rdv);
   const occ=recues.filter(x=>!(LG[x.n_nexxio]||{}).vacant), vac=recues.filter(x=>(LG[x.n_nexxio]||{}).vacant);
@@ -2543,21 +2553,24 @@ function journee(){
   const rel=[];if(+today.slice(8)<=10){const prem={};RAP.forEach(r=>{const k=r.par+'|'+r.n_nexxio;if(!prem[k]||r.date<prem[k].date)prem[k]=r});
     const par={};Object.values(prem).filter(r=>(r.date||'').slice(0,7)===ymPrec).forEach(r=>{par[r.par]=(par[r.par]||0)+1});
     Object.keys(par).sort((a,b)=>a.localeCompare(b,'fr')).forEach(n=>{if(!ENV.get('rel:'+ymPrec+':'+n))rel.push(`<li style="cursor:default"><label><input type="checkbox" data-env="${esc('rel:'+ymPrec+':'+n)}"> envoyé</label> <b>${esc(n)}</b> · ${par[n]} commande(s) de ${esc(nomMois(ymPrec))}</li>`)})}
-  document.getElementById('journee').innerHTML=`<h2><span>Ma journée</span><span class="tag">depuis ${nomJ} ${fr(debut)}</span></h2>
-    ${etape(suivA.length,'À suivre',`${suivA.filter(suivEchu).length} à regarder maintenant · les autres sont mises de côté avec leur raison`,suivA.map(o=>li(o.n,`${esc(String(o.txt||'').slice(0,80))}${o.d?' · le '+fr(o.d):''}`)),'','')}
-    ${etape(propA.length,'Corrections à valider','Le robot propose une correction sur une commande déjà planifiée ou avec un sous-traitant : ouvrir la fiche et cliquer « Appliquer »',propA.map(n=>li(n,`${esc(PROPS[n].n_bc||'')} · ${esc(propDetail(PROPS[n]).slice(0,90))}`)),'','')}
-    ${etape(relA.length,'Relances des bailleurs','Un bailleur a relancé une commande : répondre, puis cocher « traité » dans la section Relances des bailleurs, plus haut',relA.map(r=>li(r.n_nexxio||r.n_bc,`${esc(r.n_bc)} · ${esc(String(r.motif||'').slice(0,90))}`)),'','')}
-    ${etape(rel.length,'Relevés du mois à envoyer',`Début de mois : le relevé du mois de ${nomMois(ymPrec)} de chaque sous-traitant, pour qu'il établisse sa facture ; cocher « envoyé » une fois fait`,rel,'Voir les relevés','rel')}
-    ${etape(recues.length+enCrea.length,'Commandes à planifier',`${occ.length} locataire(s) à appeler · ${vac.length} logement(s) vacant(s), clés à récupérer${enCrea.length?` · ${enCrea.length} encore à prendre en compte`:''}`,l1,'Voir À planifier','aplan')}
-    ${etape(l2.length,'Rapports à envoyer au bailleur','Arrivés depuis la veille : cocher « envoyé » une fois transmis (Extranet ou mail)',l2,'Voir les rapports','fact')}
-    ${etape(aF.length,'Factures à faire',`${nouv.length} nouveau(x) rapport(s) · ${pretes.length} prête(s) à facturer (facture du sous-traitant reçue)${pretes.length?' pour '+e0(pretes.reduce((s,x)=>s+(x.restant||0),0))+' HT':''} · ${e0(aF.reduce((s,x)=>s+(x.restant||0),0))} HT en tout`,l3,'Voir À facturer','fact')}
-    ${etape(ret.length+rdvnx.length,'Relances',`${ret.length} rapport(s) attendu(s) après RDV${rdvnx.length?` · ${rdvnx.length} RDV pris à mettre dans Nexxio`:''}`,rdvnx.map(x=>li(x.n_nexxio,`${esc(x.commune||'')} · RDV pris au téléphone : à mettre dans Nexxio`)),'Voir les relances','retard')}
-    ${etape(bloc.length,'BC bloqués','À reprendre ou commande Extranet en attente de ton accord',bloc.map(l=>li(l.n_nexxio||l.n_bc,`${esc(l.bailleur||'')} ${esc(l.n_bc)} · ${esc(l.etat)}`)),'Voir À faire','faire')}
-    ${etape(al.length,'Alertes du robot et des données',al.length?'Tâche en retard, erreur ou écart : le détail est dans l\'onglet Chiffres':`Les tâches du robot sont à l\'heure, aucun écart${suiv?` · ${suiv} point(s) à surveiller dans « Santé des données »`:''}`,al.map(x=>`<li style="cursor:default"><b>${esc(x.titre)}</b> · ${esc(x.detail)}</li>`),'Voir l\'état du robot','etat')}`;
+  const ET=[
+    etape(suivA.length,'À suivre',`${suivA.filter(suivEchu).length} à regarder maintenant · les autres sont mises de côté avec leur raison`,suivA.map(o=>li(o.n,`${esc(String(o.txt||'').slice(0,80))}${o.d?' · le '+fr(o.d):''}`)),'',''),
+    etape(propA.length,'Corrections à valider','Le robot propose une correction sur une commande déjà planifiée ou avec un sous-traitant : ouvrir la fiche et cliquer « Appliquer »',propA.map(n=>li(n,`${esc(PROPS[n].n_bc||'')} · ${esc(propDetail(PROPS[n]).slice(0,90))}`)),'',''),
+    etape(relA.length,'Relances des bailleurs','Un bailleur a relancé une commande : répondre, puis cocher « traité » dans la section Relances des bailleurs, plus haut',relA.map(r=>li(r.n_nexxio||r.n_bc,`${esc(r.n_bc)} · ${esc(String(r.motif||'').slice(0,90))}`)),'',''),
+    etape(rel.length,'Relevés du mois à envoyer',`Début de mois : le relevé du mois de ${nomMois(ymPrec)} de chaque sous-traitant, pour qu'il établisse sa facture ; cocher « envoyé » une fois fait`,rel,'Voir les relevés','rel'),
+    etape(recues.length+enCrea.length,'Commandes à planifier',`${occ.length} locataire(s) à appeler · ${vac.length} logement(s) vacant(s), clés à récupérer${enCrea.length?` · ${enCrea.length} encore à prendre en compte`:''}`,l1,'Voir À planifier','aplan'),
+    etape(l2.length,'Rapports à envoyer au bailleur','Arrivés depuis la veille : cocher « envoyé » une fois transmis (Extranet ou mail)',l2,'Voir les rapports','fact'),
+    etape(aF.length,'Factures à faire',`${nouv.length} nouveau(x) rapport(s) · ${pretes.length} prête(s) à facturer (facture du sous-traitant reçue)${pretes.length?' pour '+e0(pretes.reduce((s,x)=>s+(x.restant||0),0))+' HT':''} · ${e0(aF.reduce((s,x)=>s+(x.restant||0),0))} HT en tout`,l3,'Voir À facturer','fact'),
+    etape(ret.length+rdvnx.length,'Relances',`${ret.length} rapport(s) attendu(s) après RDV${rdvnx.length?` · ${rdvnx.length} RDV pris à mettre dans Nexxio`:''}`,rdvnx.map(x=>li(x.n_nexxio,`${esc(x.commune||'')} · RDV pris au téléphone : à mettre dans Nexxio`)),'Voir les relances','retard'),
+    etape(bloc.length,'BC bloqués','À reprendre ou commande Extranet en attente de ton accord',bloc.map(l=>li(l.n_nexxio||l.n_bc,`${esc(l.bailleur||'')} ${esc(l.n_bc)} · ${esc(l.etat)}`)),'Voir À faire','faire'),
+    etape(al.length,'Alertes du robot et des données',al.length?'Tâche en retard, erreur ou écart : le détail est dans l\'onglet Chiffres':`Les tâches du robot sont à l\'heure, aucun écart${suiv?` · ${suiv} point(s) à surveiller dans « Santé des données »`:''}`,al.map(x=>`<li style="cursor:default"><b>${esc(x.titre)}</b> · ${esc(x.detail)}</li>`),'Voir l\'état du robot','etat')].filter(Boolean).map((h,k)=>({h,k,v:+/niv(\d)/.exec(h)[1]})).sort((x,y)=>x.v-y.v||x.k-y.k);
+  const RES=[[al.length,'alerte(s) du robot'],[relA.length,'relance(s) de bailleur'],[propA.length,'correction(s) à valider'],[bloc.length,'BC bloqué(s)'],[suivA.filter(suivEchu).length,'commande(s) à suivre à regarder'],[recues.length+enCrea.length,'commande(s) à planifier'],[l2.length,'rapport(s) à envoyer'],[aF.length,'facture(s) à faire']].filter(x=>x[0]).map(x=>x[0]+' '+x[1]);
+  document.getElementById('journee').innerHTML=  `<h2><span>Ma journée</span><span class="tag">depuis ${nomJ} ${fr(debut)}</span></h2>
+    ${RES.length?`<p class="jres"><b>Aujourd’hui</b> : ${RES.join(' · ')}</p>`:''}${ET.map(x=>x.h).join('')}`;
   const J0=document.getElementById('journee');
   if(!J0.querySelector('.etape'))J0.insertAdjacentHTML('beforeend','<p class="sub" style="padding:12px 0 4px">Rien ne t’attend : commandes planifiées, rapports envoyés, factures faites, robot à l’heure.</p>');
-  J0.querySelectorAll('[data-pli]').forEach(h=>h.onclick=e=>{if(e.target.closest('button'))return;const u=h.parentNode.querySelector('ul'),k=h.dataset.pli;u.hidden=!u.hidden;
-    u.hidden?OUV.delete(k):OUV.add(k);h.querySelector('.pli').textContent=u.hidden?'▸ voir':'▾ replier'});
+  J0.querySelectorAll('[data-pli]').forEach(h=>h.onclick=e=>{if(e.target.closest('button'))return;const P=[...h.parentNode.querySelectorAll('ul .plus')],k=h.dataset.pli,ouvrir=P.some(x=>x.hidden);
+    P.forEach(x=>x.hidden=!ouvrir);ouvrir?OUV.add(k):OUV.delete(k);h.querySelector('.pli').textContent=ouvrir?'▾ replier':'▸ voir les '+Math.min(P.length+3,6)});
   J0.querySelectorAll('[data-fiche]').forEach(e=>e.onclick=()=>{if(NX[e.dataset.fiche])fiche(e.dataset.fiche)});
   J0.querySelectorAll('[data-env]').forEach(c=>c.onchange=()=>{ENV.set(c.dataset.env,c.checked);setTimeout(journee,250)});
   J0.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const g=b.dataset.go;
