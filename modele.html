@@ -327,6 +327,9 @@ p.sub.aide::before{content:'▸ ';color:var(--accent);font-weight:700}p.sub.aide
 #p-sst section.card.pliable>h2{cursor:pointer}
 #p-sst section.card.pliable>h2>span:first-child::after{content:' ▾';color:var(--faint)}#p-sst section.card.ferme>h2>span:first-child::after{content:' ▸'}
 #p-sst section.card.ferme>:not(h2){display:none!important}#p-sst section.card.ferme>h2{margin-bottom:0}
+/* vues enregistrées et récentes */
+.vues{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px}.vchip{display:inline-flex}.vchip .btn{border-top-right-radius:0;border-bottom-right-radius:0}.vx{border:1px solid var(--line);border-left:0;background:var(--card);color:var(--muted);border-radius:0 10px 10px 0;padding:0 8px;cursor:pointer}.vx:hover{color:var(--rouge)}
+#recents[hidden]{display:none}
 #svue{position:sticky;top:8px;z-index:30;box-shadow:var(--sh)}
 /* 12/11 (J) : la fiche d'une commande s'ouvre sur tout l'écran (16 px de marge), cases plus grandes, autant de colonnes
    que la largeur permet ; filets dessinés par case pour ne plus laisser de case grise vide en bout de ligne */
@@ -588,6 +591,7 @@ main th{background:color-mix(in srgb,var(--ton) 6%,var(--card))!important;color:
 <main>
 <!-- EXPLOITATION -->
 <div id="p-exploitation">
+  <div id="recents" hidden style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center"></div>
   <section class="card journee" id="journee"></section>
   <section class="hero" id="hero"></section>
   <div class="kpis" id="kpis"></div>
@@ -832,7 +836,7 @@ const RELB=(D.relances||[]).map(r=>Object.assign({id:'relb:'+(r.jour||'')+'|'+(r
 const PROP=flag('prop:'), PROPS=D.propositions||{};   // 17/11 : « Appliquer » une correction proposée par le robot : coche partagée prop:<n°>, l'heure du clic doit dépasser cree_ms
 const PAY=flag('pay:');   // 13/11 (J) : facture de sous-traitant payée (bon à payer), clé = nom du fichier de la facture   // env: rapport envoyé au bailleur (12/11)
 // 12/11 (J) : aussi les commentaires (« com: ») et les tentatives d'appel au locataire (« app: »), partagés de la même façon
-const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','plan:','ext:','wa:','wam:','mgr:','mnom:','prop:','suiv:'], CO_TXT=['com:','app:','plan:','ext:','wa:','wam:','mgr:','mnom:','suiv:'];   // mgr: question au manager (16/11)   // wam: WhatsApp ouvert à la main (15/11 soir)   // wa: WhatsApp RDV (15/11)   // plan: demande de planification (13/11)
+const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','plan:','ext:','wa:','wam:','mgr:','mnom:','prop:','suiv:','vue:'], CO_TXT=['com:','app:','plan:','ext:','wa:','wam:','mgr:','mnom:','suiv:','vue:'];   // mgr: question au manager (16/11)   // wam: WhatsApp ouvert à la main (15/11 soir)   // wa: WhatsApp RDV (15/11)   // plan: demande de planification (13/11)
 const NOTE={get:k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},
   set:(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k);localStorage.setItem('ts:'+k,Date.now())}catch(e){}coSave(k)}};
 // coches des autres PC, relues par le robot (D.coches) : la plus récente gagne, avant le premier affichage
@@ -1660,7 +1664,7 @@ function ficheBC(nbc){const l=[...L].reverse().find(x=>x.n_bc===nbc)||{};if(l.n_
   document.getElementById('fichein').innerHTML=`<h3><span>BC ${esc(nbc)} ${bai(l.bailleur||'')}</span><button class="btn" id="ffermer">Fermer</button></h3>
     ${l.motif?`<div class="s"><h4>Note du robot</h4>${esc(l.motif)}</div>`:''}${blocBC(nbc)}`;
   lierBlocBC();const f=document.getElementById('fiche');f.hidden=false;document.getElementById('ffermer').onclick=()=>f.hidden=true;f.onclick=e=>{if(e.target===f)f.hidden=true}}
-function fiche(n){const o=NX[n];if(!o)return;const pl=o.pl||{},s=o.sst||{},b=o.bc||{},dvx=o.dv||{},x=Object.assign({},dvx,b,s,pl);
+function fiche(n){const o=NX[n];if(!o)return;recentAjout(n);const pl=o.pl||{},s=o.sst||{},b=o.bc||{},dvx=o.dv||{},x=Object.assign({},dvx,b,s,pl);
   const cout=D.couts&&D.couts[n]!=null?D.couts[n]:null, ht=x.ht!=null&&x.ht!==''?+x.ht:null;
   const c=(l,v)=>v||v===0?`<div><small>${l}</small>${v}</div>`:'';
   document.getElementById('fichein').innerHTML=`<h3><span>${o.dv&&!o.pl&&!o.sst?'Devis':'Commande'} ${esc(n)} ${bai(x.client||x.bailleur)}</span><button class="btn" id="ffermer">Fermer</button></h3>${o.pl||o.sst||o.bc?frise(n,s,b,pl):''}
@@ -2627,4 +2631,31 @@ setTimeout(()=>{document.querySelectorAll('.contenu p.sub').forEach(pp=>{if(pp.t
   document.querySelectorAll('#p-sst>div[id^=sv-]').forEach(v=>v.querySelectorAll(':scope>section.card:not([hidden]):not(#releve)').forEach((sc,i)=>{if(!i)return;
     const h=sc.querySelector(':scope>h2');if(!h)return;sc.classList.add('pliable','ferme');
     h.addEventListener('click',e=>{if(e.target.closest('button,input,select,a,label'))return;sc.classList.toggle('ferme')})}))},80);
+/* 17/11 (J, idées prises sur GitHub : « vues enregistrées » et « récemment consultées ») :
+   - récentes : les 8 dernières fiches ouvertes sur cet appareil, en une ligne en haut de l'accueil ;
+   - vues : garder les filtres d'un onglet (listes déroulantes, champs, boutons de choix) sous un nom et les rouvrir d'un clic ;
+     texte partagé entre appareils (coche vue:<onglet>:<nom>). */
+function recentAjout(n){try{let r=JSON.parse(localStorage.getItem('recents')||'[]').filter(x=>x!==n);r.unshift(n);localStorage.setItem('recents',JSON.stringify(r.slice(0,8)))}catch(e){}}
+function recents(){const el=document.getElementById('recents');if(!el)return;let r=[];try{r=JSON.parse(localStorage.getItem('recents')||'[]')}catch(e){}
+  r=r.filter(n=>NX[n]);if(!r.length){el.hidden=true;return}
+  el.hidden=false;el.innerHTML='<span class="tag">Récemment consultées</span> '+r.map(n=>{const x=NX[n]||{},y=Object.assign({},x.dv||{},x.bc||{},x.sst||{},x.pl||{});return `<button class="btn" data-rec="${esc(n)}" title="${esc(y.client||y.bailleur||'')} ${esc(y.commune||'')}">${esc(n)}${y.commune?' · '+esc(y.commune):''}</button>`}).join(' ');
+  el.querySelectorAll('[data-rec]').forEach(b=>b.onclick=()=>fiche(b.dataset.rec))}
+const VUE_P=['p-exploitation','p-planning','p-devis','p-sst'];
+function vueCtrls(pan){const L=[];pan.querySelectorAll('select, input[type=search], input[type=date], input[type=text]').forEach((e,i)=>{if(e.closest('.vues,#fiche,.panneau'))return;L.push({k:e.id||('#'+i),e})});return L}
+function vueSegs(pan){const L=[];pan.querySelectorAll('.seg').forEach((e,i)=>L.push({k:e.id||('#'+i),e}));return L}
+function vueCapture(pan){const c={},g={};vueCtrls(pan).forEach(({k,e})=>{c[k]=e.value});
+  vueSegs(pan).forEach(({k,e})=>{const b=[...e.querySelectorAll('button')].findIndex(x=>x.classList.contains('on'));if(b>=0)g[k]=b});return {c,g}}
+function vueApplique(pan,v){vueSegs(pan).forEach(({k,e})=>{const b=e.querySelectorAll('button')[(v.g||{})[k]];if(b&&!b.classList.contains('on'))b.click()});
+  setTimeout(()=>{vueCtrls(pan).forEach(({k,e})=>{if(!(k in (v.c||{}))||e.value===v.c[k])return;e.value=v.c[k];e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))})},150)}
+function vuesListe(id){const L=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('vue:'+id+':')){try{const o=JSON.parse(localStorage.getItem(k)||'null');if(o)L.push({nom:k.slice(5+id.length),o})}catch(e){}}}}catch(e){}
+  return L.sort((a,b)=>a.nom.localeCompare(b.nom,'fr'))}
+function vuesBarre(id){const pan=document.getElementById(id);if(!pan)return;let bar=pan.querySelector(':scope>.vues');
+  if(!bar){bar=document.createElement('div');bar.className='vues';pan.insertAdjacentElement('afterbegin',bar)}
+  const V=vuesListe(id);
+  bar.innerHTML=`<span class="tag">Vues</span> ${V.map(v=>`<span class="vchip"><button class="btn" data-vapp="${esc(v.nom)}">${esc(v.nom)}</button><button class="vx" data-vdel="${esc(v.nom)}" title="Supprimer cette vue" aria-label="Supprimer la vue ${esc(v.nom)}">×</button></span>`).join(' ')} <button class="btn" data-vnew="1" title="Garde les filtres actuels de cet onglet sous un nom">＋ Enregistrer cette vue</button>`;
+  bar.querySelectorAll('[data-vapp]').forEach(b=>b.onclick=()=>{const v=V.find(x=>x.nom===b.dataset.vapp);if(v)vueApplique(pan,v.o)});
+  bar.querySelectorAll('[data-vdel]').forEach(b=>b.onclick=()=>{if(confirm('Supprimer la vue « '+b.dataset.vdel+' » ?')){NOTE.set('vue:'+id+':'+b.dataset.vdel,'');vuesBarre(id)}});
+  bar.querySelector('[data-vnew]').onclick=()=>{const nom=(prompt('Nom de la vue (ex. LMH à facturer) :')||'').trim().slice(0,40);if(!nom)return;
+    NOTE.set('vue:'+id+':'+nom,JSON.stringify(vueCapture(pan)));vuesBarre(id)}}
+setTimeout(()=>{try{recents();VUE_P.forEach(vuesBarre)}catch(e){console.error('Vues',e)}},120);
 </script></body></html>
