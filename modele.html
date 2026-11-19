@@ -1106,7 +1106,7 @@ const SAISI=l=>['Saisi','À prendre en compte','Doublon évité'].includes(l.eta
 /* 19/11 (J : « c'est pas vraiment 11 BC saisis et pris en compte, ça peut nous induire en erreur ») : le journal contient aussi des lignes vertes qui
    ne sont pas des BC reçus (annulation, « Pas pour RMS », complément, doublon, BC classé à la main). VRAI = un vrai BC reçu (une ligne par n° de BC, la
    dernière) ; SAISIV = vraiment saisi dans Nexxio (en création ou pris en compte) : seul lui compte pour « sans intervention ». */
-const VRAI=l=>['Saisi','À prendre en compte','À reprendre','Accord de J attendu'].includes(l.etat);
+const VRAI=l=>['Saisi','À prendre en compte','À reprendre','Accord de J attendu'].includes(l.etat)&&!/alerte d.annulation|relance du bailleur/i.test(l.motif||'');   // une alerte d'annulation ou une relance n'est pas un BC reçu
 const SAISIV=l=>['Saisi','À prendre en compte'].includes(l.etat);
 const SANSSAISIE=l=>!VRAI(l);
 const CLOS=['Terminé','Terminée','Réceptionné','Réceptionnée','Facturé / Accepté','Facturé','Facturée','Cloturé','Clôturée','Cloturée','Annulé','Annulée','Non réalisé'];
@@ -1192,7 +1192,7 @@ function heros(aR,aO,aI,j,m){
     else{pv='fact';store.set('pv','fact');onglet('planning');planning();window.scrollTo(0,0);telListe()}});
 }
 function kpis(){
-  const j=L.filter(l=>(l.arrive||l.jour)===today), m=L.filter(l=>l.jour.slice(0,7)===today.slice(0,7)&&VRAI(l)), c=r=>j.filter(l=>l.risque===r).length;
+  const j=L.filter(l=>(l.arrive||l.jour)===today&&!(!l.pdf&&DCMD[l.n_nexxio]&&DCMD[l.n_nexxio]<today)), m=L.filter(l=>l.jour.slice(0,7)===today.slice(0,7)&&VRAI(l)), c=r=>j.filter(l=>l.risque===r).length;
   const aR=L.filter(l=>l.risque==='rouge'&&!FAIT(l)&&l.jour>=jr(30)).length, aO=L.filter(l=>l.risque==='orange'&&!FAIT(l)&&l.jour>=jr(30)).length, aI=aImprimer().length;
   const j14=[...Array(14)].map((_,i)=>jr(13-i)), par=f=>j14.map(d=>f(L.filter(l=>l.jour===d&&VRAI(l))));
   // 12/11 : carte « Aujourd'hui » retirée, son chiffre et ses couleurs sont dans le titre du grand cadre
@@ -2719,7 +2719,7 @@ function actionsFact(){const sec=document.getElementById('frel');if(!sec)return;
    jour, pas les mises à jour de suivi sur de vieux BC), ce que J doit faire lui-même, commandes à planifier ; les relances des bailleurs dans leur carte, dessous. */
 function troisColonnes(){const el=document.getElementById('trois');if(!el)return;
   const ligne=l=>{const n=l.n_nexxio&&NX[l.n_nexxio]?l.n_nexxio:'',cle=n||l.n_bc;return `<li data-t3="${esc(cle)}" data-bc="${esc(l.n_bc||'')}"><b>${esc(l.n_bc||l.n_nexxio||'?')}</b> ${bai(l.bailleur||'')} <span class="t3c">${esc(l.commune||'')}</span></li>`};
-  const arr=L.filter(l=>(l.arrive||l.jour)===today&&VRAI(l)).sort((a,b)=>((b.heure||'')>(a.heure||''))?1:-1);
+  const arr=L.filter(l=>(l.arrive||l.jour)===today&&VRAI(l)&&!(!l.pdf&&DCMD[l.n_nexxio]&&DCMD[l.n_nexxio]<today)).sort((a,b)=>((b.heure||'')>(a.heure||''))?1:-1);
   const etat=l=>l.etat==='À reprendre'?'<span class="chip bad">à reprendre</span>':l.etat==='Accord de J attendu'?'<span class="chip warn">ton accord</span>':l.etat==='À prendre en compte'?'<span class="chip warn">en création</span>':'<span class="chip ok">pris en compte</span>';
   const faire=L.filter(l=>((l.etat==='À reprendre'||l.etat==='Accord de J attendu')&&l.jour>=jr(30)&&!FAIT(l))||(l.etat==='À prendre en compte'&&l.jour>=jr(14))).sort((a,b)=>(a.jour>b.jour)?1:-1);
   const dc=x=>DCMD[x.n_nexxio]||(L.find(l=>l.n_nexxio===x.n_nexxio)||{}).jour||'';   // même règle que « À planifier » du Planning : moins de 3 mois, sans rapport ni RDV d'agenda
