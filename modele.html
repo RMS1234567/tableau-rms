@@ -669,6 +669,15 @@ html[data-nav="haut"] .tabs{flex-direction:row;gap:2px;margin:0 auto;flex-wrap:n
 html[data-nav="haut"] .tabs button{padding:8px 10px}
 html[data-nav="haut"] .side .pied{margin:0;flex-direction:row;align-items:center;padding:0;gap:10px}
 }
+/* 19/11 : « Fait · Annuler », sélection groupée, aide clavier, fil d'activité */
+#toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:90;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:14px;display:flex;align-items:center;gap:12px;font-size:13.5px;transition:opacity .2s,transform .2s;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+#toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}#toast .btn{background:transparent;color:inherit;border-color:rgba(255,255,255,.4)}
+#selbar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:85;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;box-shadow:0 12px 34px rgba(0,0,0,.2);max-width:calc(100vw - 24px)}
+body.selmode #p-planning .wrap tbody tr{cursor:copy}#p-planning .wrap tbody tr.sel td{background:color-mix(in srgb,var(--accent) 16%,var(--card))!important}
+#aidek{position:fixed;left:50%;top:18vh;transform:translateX(-50%);z-index:95;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 22px;box-shadow:0 20px 50px rgba(0,0,0,.3);min-width:300px}#aidek h3{margin:0 0 10px}#aidek ul{list-style:none;margin:0 0 12px;padding:0;line-height:2}
+kbd{background:var(--soft);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 7px;font:600 12px var(--font-mono,monospace)}
+.fil summary{cursor:pointer}.filul{list-style:none;margin:8px 0 0;padding:0 0 0 12px;border-left:2px solid var(--line)}.filul li{display:flex;gap:12px;padding:4px 0;font-size:13px}.fd{flex:none;min-width:96px;color:var(--muted);font-variant-numeric:tabular-nums}
+@media (max-width:700px){#toast{bottom:96px}#selbar{bottom:96px}}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -1465,7 +1474,7 @@ function planning(){
       v.filter(x=>(x.client||'?')===c).sort((a,b)=>b._j-a._j).map(x=>`- ${x.n_nexxio} · ${x.n_bc||''} · ${x.commune||''} · ${x.statut||''} · ${x._j} j · ${(x._r||[]).join(' ; ')}`).join('\n')).join('\n'),e.target)};
   equipeVue();extranetVue();
   document.querySelectorAll('#p-planning td.motif').forEach(td=>td.onclick=()=>td.classList.toggle('open'));
-  document.querySelectorAll('input[data-fact]').forEach(c=>c.onchange=()=>{FACT.set(c.dataset.fact,c.checked);setTimeout(planning,200)});
+  document.querySelectorAll('input[data-fact]').forEach(c=>c.onchange=()=>{const k=c.dataset.fact,v=c.checked;FACT.set(k,v);setTimeout(planning,200);toast(v?'Marquée facturée':'Décochée',()=>{FACT.set(k,!v);setTimeout(planning,200)})});
   document.querySelectorAll('button[data-annule]').forEach(b=>b.onclick=e=>{e.stopPropagation();FACT.set(b.dataset.annule,true);setTimeout(planning,200)});
   store.set('qp',document.getElementById('qp').value);
 }
@@ -1773,6 +1782,7 @@ function fiche(n){const o=NX[n];if(!o)return;recentAjout(n);const pl=o.pl||{},s=
     ${c('Sous-traitant(s)',s.sst&&Object.keys(s.sst).length?Object.entries(s.sst).map(([k,v])=>esc(k)+' · '+eur(v)).join('<br>'):'')}${c('Délai du BC',fr(b.fin))}${c('Contrôle robot',b.risque?pill(b.risque):'')}</div>
     ${(o.ag||[]).length?`<div class="s"><h4>Agenda</h4>${o.ag.sort((a,b)=>a.debut<b.debut?-1:1).map(e=>`<div>${fr(e.debut.slice(0,10))} ${esc(e.debut.slice(11,16))} · <b>${esc(e.equipe)}</b>${e.prix?' · '+eur(e.prix):''}<span class="b2">${esc(e.lieu)}${e.note?' · '+esc(e.note):''}</span></div>`).join('')}</div>`:''}
     ${suivBloc(n)}
+    ${filActivite(n,o,x)}
     ${rdvLoc(n,pl)}
     ${factBloc(n,pl)}
     ${propBloc(n)}
@@ -2548,7 +2558,7 @@ function suivBloc(n){const o=suivLire(n);
 function lierSuiv(n){const go=document.getElementById('suiv-go'),fin=document.getElementById('suiv-fin');
   if(go)go.onclick=()=>{const t=document.getElementById('suiv-txt').value.trim();if(!t){document.getElementById('suiv-txt').focus();return}
     NOTE.set('suiv:'+n,JSON.stringify({q:Date.now(),txt:t.slice(0,300),d:document.getElementById('suiv-d').value||'',par:WEB?webQui():''}));fiche(n);suivi();journee()};
-  if(fin)fin.onclick=()=>{NOTE.set('suiv:'+n,'');fiche(n);suivi();journee()}}
+  if(fin)fin.onclick=()=>{const v=NOTE.get('suiv:'+n);NOTE.set('suiv:'+n,'');fiche(n);suivi();journee();toast('Retirée de À suivre',()=>{NOTE.set('suiv:'+n,v);suivi();journee()})}}
 function suivi(){const sec=document.getElementById('suivi');if(!sec)return;const S=suivListe();if(!S.length){sec.hidden=true;return}
   const ech=S.filter(suivEchu).length;
   sec.hidden=false;sec.innerHTML=`<h2><span>À suivre</span><span class="tag">${S.length} mise(s) de côté${ech?' · '+ech+' à regarder maintenant':''}</span></h2>
@@ -2556,7 +2566,42 @@ function suivi(){const sec=document.getElementById('suivi');if(!sec)return;const
     <div class="wrap"><table><thead><tr><th>Commande</th><th>Raison</th><th>Depuis</th><th>À regarder le</th><th></th></tr></thead><tbody>${S.map(o=>{const x=NX[o.n]||{},y=Object.assign({},x.dv||{},x.bc||{},x.sst||{},x.pl||{});
       return `<tr><td><a href="#" data-fiche="${esc(o.n)}"><b>${esc(o.n)}</b></a> ${bai(y.client||y.bailleur||'')} <span class="tag">${esc(y.commune||'')} ${esc(y.statut||'')}</span></td><td>${esc(o.txt||'')}</td><td>${fr(new Date(o.q||0).toISOString().slice(0,10))}</td><td>${o.d?`<span class="chip ${suivEchu(o)?'warn':'info'}">${fr(o.d)}</span>`:''}</td><td><button class="btn" data-suivfin="${esc(o.n)}">Terminé</button></td></tr>`}).join('')}</tbody></table></div>`;
   sec.querySelectorAll('[data-fiche]').forEach(a=>a.onclick=e=>{e.preventDefault();fiche(a.dataset.fiche)});
-  sec.querySelectorAll('[data-suivfin]').forEach(b=>b.onclick=()=>{NOTE.set('suiv:'+b.dataset.suivfin,'');suivi();journee()})}
+  sec.querySelectorAll('[data-suivfin]').forEach(b=>b.onclick=()=>{const k=b.dataset.suivfin,v=NOTE.get('suiv:'+k);NOTE.set('suiv:'+k,'');suivi();journee();toast('Retirée de À suivre',()=>{NOTE.set('suiv:'+k,v);suivi();journee()})})}
+/* 19/11 (J a choisi 4 idées vues sur GitHub : annuler après un clic, actions groupées, raccourcis clavier, fil d'activité) */
+// 1. « Fait · Annuler » 6 secondes en bas de l'écran (cases cochées, À suivre retiré...)
+function toast(msg,undo){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.setAttribute('role','status');document.body.appendChild(t)}
+  clearTimeout(toast._t);t.innerHTML='<span>'+esc(msg)+'</span>'+(undo?'<button class="btn" id="toast-u">Annuler</button>':'');t.classList.add('on');
+  if(undo)document.getElementById('toast-u').onclick=()=>{undo();t.classList.remove('on')};
+  toast._t=setTimeout(()=>t.classList.remove('on'),6000)}
+// 2. actions groupées : « Sélectionner » dans Planning, un clic sur une ligne la choisit, barre en bas
+let SELM=false;const SEL=new Set();
+const selN=tr=>{const c=tr.querySelector('td');const m=c&&/(?:^|[^0-9])(\d{3,5})(?:[^0-9]|$)/.exec(c.textContent);return m?m[1]:null};
+function selApplique(){document.querySelectorAll('#p-planning .wrap tbody[id] tr').forEach(tr=>{const n=selN(tr);tr.classList.toggle('sel',!!n&&SEL.has(n))})}
+function selBarre(){let b=document.getElementById('selbar');if(!SELM){if(b)b.remove();document.body.classList.remove('selmode');return}
+  document.body.classList.add('selmode');if(!b){b=document.createElement('div');b.id='selbar';document.body.appendChild(b)}
+  const n=SEL.size;b.innerHTML='<b>'+n+' sélectionnée(s)</b><button class="btn" data-sa="fact"'+(n?'':' disabled')+'>Marquer facturé</button><button class="btn" data-sa="suiv"'+(n?'':' disabled')+'>Mettre à suivre</button><button class="btn" data-sa="copie"'+(n?'':' disabled')+'>Copier les n°</button><button class="btn" data-sa="fin">Terminer</button>';
+  b.querySelectorAll('[data-sa]').forEach(x=>x.onclick=()=>selAction(x.dataset.sa))}
+function selAction(a){const L=[...SEL];
+  if(a==='fin'){SELM=false;SEL.clear();selApplique();selBarre();const bt=document.getElementById('selmode');if(bt)bt.textContent='Sélectionner';return}
+  if(!L.length)return;
+  if(a==='copie'){const t=L.join(' ');try{navigator.clipboard.writeText(t).then(()=>toast(L.length+' numéro(s) copié(s)'),()=>prompt('Copier :',t))}catch(e){prompt('Copier :',t)}return}
+  if(a==='fact'){const avant=L.map(n=>[n,FACT.get(n)]);L.forEach(n=>FACT.set(n,true));SEL.clear();selApplique();selBarre();setTimeout(planning,200);
+    toast(L.length+' commande(s) marquée(s) facturée(s)',()=>{avant.forEach(([n,v])=>FACT.set(n,v));setTimeout(planning,200)});return}
+  if(a==='suiv'){const r=(prompt('Pourquoi les mettre à suivre ? (une raison pour toutes)')||'').trim().slice(0,300);if(!r)return;
+    const avant=L.map(n=>[n,NOTE.get('suiv:'+n)]);L.forEach(n=>NOTE.set('suiv:'+n,JSON.stringify({q:Date.now(),txt:r,d:'',par:WEB?webQui():''})));SEL.clear();selApplique();selBarre();suivi();journee();
+    toast(L.length+' commande(s) mises à suivre',()=>{avant.forEach(([n,v])=>NOTE.set('suiv:'+n,v||''));suivi();journee()})}}
+// 3. fil d'activité d'une commande (dans la fiche)
+function filActivite(n,o,x){const E=[],A=2026;const iso=(d,h)=>{const m=/^(\d{2})\/(\d{2})(?: (\d{2}:\d{2}))?/.exec(d||'');return m?A+'-'+m[2]+'-'+m[1]+'T'+(m[3]||'00:00'):(d||'')+(h?'T'+h:'')};
+  const l=[...L].reverse().find(y=>y.n_nexxio===n)||{};
+  if((o.sst||{}).date||(o.bc||{}).jour)E.push([((o.sst||{}).date||(o.bc||{}).jour),'Commande passée']);
+  if(l.jour)E.push([l.jour+'T'+(l.heure||'00:00'),'BC reçu et traité par le robot ('+(l.statut||'')+')']);
+  (l.histoire||[]).forEach(h=>E.push([iso(h.date),(h.qui?h.qui+' : ':'')+h.texte]));
+  const pl=o.pl||{};if(pl.rdv_iso)E.push([pl.rdv_iso.replace(' ','T'),'Rendez-vous']);
+  RAP.filter(r=>r.n_nexxio===n).forEach(r=>E.push([r.date,'Rapport reçu · '+(r.par||'')]));
+  if((o.sst||{}).facturee)E.push([o.sst.facturee,'Facturée']);
+  try{const v=JSON.parse(NOTE.get('mgr:bc:'+(l.n_bc||(o.bc||{}).n_bc||''))||'null');if(v&&v.q)E.push([new Date(v.q).toISOString().slice(0,16),'Demande au manager : '+v.txt])}catch(e){}
+  if(!E.length)return '';E.sort((a,b)=>String(a[0])<String(b[0])?-1:1);
+  return '<div class="s"><details class="fil"><summary><h4 style="display:inline">Fil d’activité</h4> <span class="tag">'+E.length+' événement(s)</span></summary><ul class="filul">'+E.map(e=>'<li><span class="fd">'+fr(String(e[0]).slice(0,10))+(String(e[0]).length>10&&String(e[0]).slice(11,16)!=='00:00'?' '+String(e[0]).slice(11,16):'')+'</span><span>'+esc(e[1])+'</span></li>').join('')+'</ul></details></div>'}
 function relancesBailleurs(){const sec=document.getElementById('relb');if(!sec)return;const R=RELB.filter(r=>(r.jour||'')>=jr(60));
   if(!R.length){sec.hidden=true;return}
   const att=R.filter(r=>!ENV.get(r.id)), fait=R.filter(r=>ENV.get(r.id)).sort((a,b)=>(b.jour||'')>(a.jour||'')?1:-1).slice(0,5);
@@ -2566,7 +2611,7 @@ function relancesBailleurs(){const sec=document.getElementById('relb');if(!sec)r
   sec.hidden=false;sec.innerHTML=`<h2><span>Relances des bailleurs</span><span class="tag">${att.length?att.length+' à traiter':'toutes traitées'}</span></h2>
     <p class="sub">Mails où un bailleur relance une commande déjà passée (ce ne sont pas des BC). Cocher « traité » une fois la réponse donnée ou le point réglé.</p>
     <div class="wrap"><table><thead><tr><th></th><th>Reçue</th><th>Bailleur</th><th>BC</th><th>Commande Nexxio</th><th>Résumé</th></tr></thead><tbody>${[...att,...fait].map(lig).join('')}</tbody></table></div>`;
-  sec.querySelectorAll('[data-relb]').forEach(c=>c.onchange=()=>{ENV.set(c.dataset.relb,c.checked);relancesBailleurs();journee()});
+  sec.querySelectorAll('[data-relb]').forEach(c=>c.onchange=()=>{const k=c.dataset.relb,v=c.checked;ENV.set(k,v);relancesBailleurs();journee();toast(v?'Relance traitée':'Relance rouverte',()=>{ENV.set(k,!v);relancesBailleurs();journee()})});
   sec.querySelectorAll('[data-fiche]').forEach(a=>a.onclick=e=>{e.preventDefault();fiche(a.dataset.fiche)})}
 function journee(){
   const d=new Date(today+'T12:00:00'), recul=d.getDay()===1?3:d.getDay()===0?2:1;
@@ -2645,7 +2690,7 @@ function journee(){
   J0.querySelectorAll('[data-pli]').forEach(h=>h.onclick=e=>{if(e.target.closest('button'))return;const P=[...h.parentNode.querySelectorAll('ul .plus')],k=h.dataset.pli,ouvrir=P.some(x=>x.hidden);
     P.forEach(x=>x.hidden=!ouvrir);ouvrir?OUV.add(k):OUV.delete(k);h.querySelector('.pli').textContent=ouvrir?'▾ replier':'▸ voir les '+Math.min(P.length+VIS,6)});
   J0.querySelectorAll('[data-fiche]').forEach(e=>e.onclick=()=>{if(NX[e.dataset.fiche])fiche(e.dataset.fiche)});
-  J0.querySelectorAll('[data-env]').forEach(c=>c.onchange=()=>{ENV.set(c.dataset.env,c.checked);setTimeout(journee,250)});
+  J0.querySelectorAll('[data-env]').forEach(c=>c.onchange=()=>{const k=c.dataset.env,v=c.checked;ENV.set(k,v);setTimeout(journee,250);toast(v?'Marqué envoyé':'Décoché',()=>{ENV.set(k,!v);setTimeout(journee,50)})});
   J0.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const g=b.dataset.go;
     if(g==='faire'){document.getElementById('faire').scrollIntoView({behavior:'smooth'});return}
     if(g==='rel'){onglet('sst');svue='rel';svues();window.scrollTo(0,0);return}
@@ -2791,4 +2836,25 @@ setTimeout(()=>{if(!TEL())return;const f=document.getElementById('fcli');if(!f)r
   const b=document.createElement('button');b.className='btn';b.style.cssText='margin:0 12px 10px;width:calc(100% - 24px)';b.textContent='Voir le détail par client ▸';
   b.onclick=()=>{const o=f.classList.toggle('ferme-tel');b.textContent=o?'Voir le détail par client ▸':'Replier le détail par client ▾'};f.insertAdjacentElement('beforebegin',b)},100);
 
+// 19/11 : sélection groupée (bouton dans la barre des vues de Planning) et raccourcis clavier
+setTimeout(()=>{const pan=document.getElementById('p-planning'),bar=pan&&pan.querySelector(':scope>.vues');
+  if(bar&&!document.getElementById('selmode')){const b=document.createElement('button');b.className='btn';b.id='selmode';b.textContent='Sélectionner';b.title='Choisir plusieurs commandes puis agir sur toutes en une fois';
+    b.onclick=()=>{SELM=!SELM;if(!SELM)SEL.clear();b.textContent=SELM?'Sélection : oui':'Sélectionner';selApplique();selBarre()};bar.appendChild(b)}
+  document.querySelectorAll('#p-planning .wrap tbody[id]').forEach(tb=>new MutationObserver(selApplique).observe(tb,{childList:true}))},140);
+document.addEventListener('click',e=>{if(!SELM)return;const tr=e.target.closest('#p-planning .wrap tbody[id] tr');if(!tr||e.target.closest('input,button,a,select,label'))return;
+  const n=selN(tr);if(!n)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();SEL.has(n)?SEL.delete(n):SEL.add(n);selApplique();selBarre()},true);
+function aideClavier(){let a=document.getElementById('aidek');if(a){a.remove();return}a=document.createElement('div');a.id='aidek';
+  a.innerHTML='<h3>Raccourcis clavier</h3><ul><li><kbd>/</kbd> chercher partout</li><li><kbd>1</kbd> à <kbd>6</kbd> changer d’onglet</li><li><kbd>j</kbd> <kbd>k</kbd> commande suivante / précédente (fiche ouverte)</li><li><kbd>Échap</kbd> fermer la fiche</li><li><kbd>?</kbd> cette aide</li></ul><button class="btn" id="aidek-x">Fermer</button>';
+  document.body.appendChild(a);document.getElementById('aidek-x').onclick=()=>a.remove()}
+function naviguerFiche(d){const f=document.getElementById('fichein'),m=f&&/(\d{3,5})/.exec((f.querySelector('h3 span')||{}).textContent||'');if(!m)return;
+  const pan=[...document.querySelectorAll('main > div[id^="p-"], .contenu > div[id^="p-"]')].find(x=>!x.hidden);if(!pan)return;
+  const ns=[...pan.querySelectorAll('tbody tr')].filter(tr=>tr.getClientRects().length).map(selN).filter(Boolean);
+  const i=ns.indexOf(m[1]);const n=ns[i+d];if(n&&NX[n])fiche(n)}
+addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey)return;const t=e.target;if(t&&(/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)||t.isContentEditable))return;
+  const f=document.getElementById('fiche');
+  if(e.key==='/'){e.preventDefault();const g=document.getElementById('gq');if(g)g.focus();return}
+  if(e.key==='?'){aideClavier();return}
+  if(e.key==='Escape'){const a=document.getElementById('aidek');if(a)a.remove();return}
+  if(/^[1-6]$/.test(e.key)&&f.hidden){const b=document.querySelectorAll('.tabs button')[+e.key-1];if(b)b.click();return}
+  if((e.key==='j'||e.key==='k')&&!f.hidden)naviguerFiche(e.key==='j'?1:-1)});
 </script></body></html>
