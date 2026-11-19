@@ -646,6 +646,9 @@ section.card.pliable>h2>span:first-child::after{content:' ▾';color:var(--faint
 section.card.ferme>:not(h2){display:none!important}section.card.ferme>h2{margin-bottom:0}
 .toutdep{display:flex;justify-content:flex-end;margin:0 0 10px}
 @media (max-width:700px){#verre{padding:9px 12px}#verre span{display:inline!important;font-size:11px}}
+/* 19/11 : téléphone, le roulement en CA garde son titre et sa barre ; le détail est déjà dans les cases juste dessous */
+@media (max-width:700px){#proul .card>div:nth-child(3){display:none!important}}
+#fcli.ferme-tel{display:none}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -2747,4 +2750,8 @@ setTimeout(()=>{if(TEL())return;const cs=[...document.querySelectorAll('#blocage
     h.addEventListener('click',e=>{if(e.target.closest('button,input,select,a,label'))return;sc.classList.toggle('ferme')})});
   const pc=document.getElementById('p-chiffres');if(pc&&cs.length){const b=document.createElement('div');b.className='toutdep';b.innerHTML='<button class="btn">Tout déplier</button>';
     pc.insertAdjacentElement('afterbegin',b);const bt=b.querySelector('button');bt.onclick=()=>{const ouvrir=cs.some(x=>x.classList.contains('ferme'));cs.forEach(x=>x.classList.toggle('ferme',!ouvrir));bt.textContent=ouvrir?'Tout replier':'Tout déplier'}}},90);
+// 19/11 (J : moins d'info) : téléphone, le récap par client de « à facturer » (une grande fiche par client) est replié derrière un bouton
+setTimeout(()=>{if(!TEL())return;const f=document.getElementById('fcli');if(!f)return;f.classList.add('ferme-tel');
+  const b=document.createElement('button');b.className='btn';b.style.cssText='margin:0 12px 10px;width:calc(100% - 24px)';b.textContent='Voir le détail par client ▸';
+  b.onclick=()=>{const o=f.classList.toggle('ferme-tel');b.textContent=o?'Voir le détail par client ▸':'Replier le détail par client ▾'};f.insertAdjacentElement('beforebegin',b)},100);
 </script></body></html>
