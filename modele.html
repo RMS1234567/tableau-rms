@@ -2555,7 +2555,7 @@ function journee(){
   // 17/11 (J : « Ma journée pourrait être mieux ») : l'urgent d'abord (rouge = à traiter maintenant, orange = du jour, gris = de fond),
   // les 3 premières commandes de chaque étape visibles tout de suite (on agit sur place), le reste sur clic
   const VIS=TEL()?0:3;   // 19/11 : sur téléphone, une étape de Ma journée tient sur son titre (un toucher montre les commandes)
-  const NIV0=new Set(['BC bloqués','Corrections à valider','Relances des bailleurs','Alertes du robot et des données']), NIV2=new Set(['Relances']);
+  const NIV0=new Set(['À terminer dans Nexxio','BC bloqués','Corrections à valider','Relances des bailleurs','Alertes du robot et des données']), NIV2=new Set(['Relances']);
   const niv=t=>NIV0.has(t)||(t==='À suivre'&&suivA.some(suivEchu))?0:NIV2.has(t)||t==='À suivre'?2:1;
   const etape=(n,titre,sous,liste,bouton,go)=>!n?'':`<div class="etape niv${niv(titre)}"><div class="et-t"${liste.length>VIS?` data-pli="${esc(titre)}" style="cursor:pointer"`:''}><b class="n">${n}</b><div><b>${titre}</b>${liste.length>VIS?` <span class="tag pli">${OUV.has(titre)?'▾ replier':'▸ voir les '+Math.min(liste.length,6)}</span>`:''}<div class="tag">${sous}</div></div>${bouton?`<button class="btn prim" data-go="${go}">${bouton}</button>`:''}</div>${liste.length?`<ul>${liste.slice(0,6).map((x,k)=>k<VIS?x:x.replace('<li','<li class="plus"'+(OUV.has(titre)?'':' hidden'))).join('')}${liste.length>6?`<li class="tag plus"${OUV.has(titre)?'':' hidden'}>… et ${liste.length-6} autre(s)</li>`:''}</ul>`:''}</div>`;
   // 1. commandes reçues depuis la veille, prises en compte, sans RDV
@@ -2586,11 +2586,14 @@ function journee(){
   const ymPrec=(()=>{let y=+today.slice(0,4),m=+today.slice(5,7)-1;if(m<1){m=12;y--}return y+'-'+String(m).padStart(2,'0')})();
   const propA=Object.keys(PROPS).filter(n=>PROPS[n].etat==='à valider'&&!(PROP.get(n)&&propTs(n)>(+PROPS[n].cree_ms||0)));
   const suivA=suivListe();
+  // 19/11 : rapport reçu mais commande pas « Terminée » dans Nexxio (contrôle de santé) : à terminer pour que le suivi soit juste
+  const aTerm=P.filter(x=>(x.rapports||0)>0&&['Prise en compte','Planifiée','Planifié'].includes(x.statut)&&(x.restant||0)>0&&!FACT.get(x.n_nexxio));
   const relA=RELB.filter(r=>(r.jour||'')>=jr(60)&&!ENV.get(r.id));
   const rel=[];if(+today.slice(8)<=10){const prem={};RAP.forEach(r=>{const k=r.par+'|'+r.n_nexxio;if(!prem[k]||r.date<prem[k].date)prem[k]=r});
     const par={};Object.values(prem).filter(r=>(r.date||'').slice(0,7)===ymPrec).forEach(r=>{par[r.par]=(par[r.par]||0)+1});
     Object.keys(par).sort((a,b)=>a.localeCompare(b,'fr')).forEach(n=>{if(!ENV.get('rel:'+ymPrec+':'+n))rel.push(`<li style="cursor:default"><label><input type="checkbox" data-env="${esc('rel:'+ymPrec+':'+n)}"> envoyé</label> <b>${esc(n)}</b> · ${par[n]} commande(s) de ${esc(nomMois(ymPrec))}</li>`)})}
   const ET=[
+    etape(aTerm.length,'À terminer dans Nexxio',`Un rapport est arrivé mais la commande n’est pas encore « Terminée » : à terminer dans Nexxio (le robot ne le fait jamais seul)`,aTerm.map(x=>li(x.n_nexxio,`${esc(x.commune||'')} · statut ${esc(x.statut)} · ${eur(x.restant)} · <a href="https://rmsbatiment.app.nexxio.fr/main/item?order_number=${encodeURIComponent(x.n_nexxio)}" target="_blank" onclick="event.stopPropagation()">ouvrir dans Nexxio</a>`)),'',''),
     etape(suivA.length,'À suivre',`${suivA.filter(suivEchu).length} à regarder maintenant · les autres sont mises de côté avec leur raison`,suivA.map(o=>li(o.n,`${esc(String(o.txt||'').slice(0,80))}${o.d?' · le '+fr(o.d):''}`)),'',''),
     etape(propA.length,'Corrections à valider','Le robot propose une correction sur une commande déjà planifiée ou avec un sous-traitant : ouvrir la fiche et cliquer sur le bouton de la proposition',propA.map(n=>li(n,`${esc(PROPS[n].n_bc||'')} · ${esc(propDetail(PROPS[n]).slice(0,90))}`)),'',''),
     etape(relA.length,'Relances des bailleurs','Un bailleur a relancé une commande : répondre, puis cocher « traité » dans la section Relances des bailleurs, plus haut',relA.map(r=>li(r.n_nexxio||r.n_bc,`${esc(r.n_bc)} · ${esc(String(r.motif||'').slice(0,90))}`)),'',''),
