@@ -1226,7 +1226,7 @@ function rendre(){
     <td>${bai(l.bailleur)}${l.marche?`<span class="b2">${esc(l.marche)}</span>`:''}</td>
     <td>${esc(l.commune)}</td><td class="num">${eur(l.ht)}</td><td class="nw ${delai(l)?'':''}">${delai(l)?`<span class="chip bad">${fr(l.fin)}</span>`:fr(l.fin)}</td>
     <td class="motif"><div class="c">${nx}${nx&&suiviClair(l)?'<br>':''}${esc(suiviClair(l))}${l.motif?`<details class="det" onclick="event.stopPropagation()"><summary>détail</summary>${esc(humain(l.motif))}</details>`:''}</div></td>
-    <td class="nw">${l.pdf?`<a class="bt" href="${encodeURI(l.pdf)}" target="_blank">PDF</a>`:''}${l.pdf_joint==='oui'?'<span class="b2 jn">✓ dans Nexxio</span>':l.pdf_joint==='non'?'<span class="b2"><span class="chip warn">à joindre</span></span>':''}</td></tr>`}).join('')
+    <td class="nw">${l.pdf?`<a class="bt" href="${encodeURI(l.pdf)}" target="_blank">PDF</a>`:''}${l.pdf_joint==='oui'?'<span class="b2 jn">✓ dans Nexxio</span>':l.pdf_joint==='non'?'<span class="b2"><span class="chip warn">à joindre</span></span>':l.pdf_joint==='?'?'<span class="b2"><span class="chip" title="PDF annoncé joint mais absent à la relecture : le robot revérifie">PDF en vérification</span></span>':''}</td></tr>`}).join('')
     :'<tr><td colspan="9" class="vide">Aucune commande pour ces filtres.</td></tr>';
   document.getElementById('plus').innerHTML=r.length>MAXL?`<button class="btn" id="bplus">${tout?'Afficher seulement les '+MAXL+' plus récentes':'Afficher les '+(r.length-MAXL)+' autres commandes'}</button>`:'';
   if(r.length>MAXL)document.getElementById('bplus').onclick=()=>{tout=!tout;rendre()};
