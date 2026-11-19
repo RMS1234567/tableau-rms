@@ -649,6 +649,26 @@ section.card.ferme>:not(h2){display:none!important}section.card.ferme>h2{margin-
 /* 19/11 : téléphone, le roulement en CA garde son titre et sa barre ; le détail est déjà dans les cases juste dessous */
 @media (max-width:700px){#proul .card>div:nth-child(3){display:none!important}}
 #fcli.ferme-tel{display:none}
+/* 19/11 (J : « Ma journée trop bourrée, pas assez épurée ») : vue Focus par défaut = 3 compteurs, au plus 6 lignes (étape, nombre, première commande, un bouton) ;
+   idée prise des pages « Today / Focus » vues sur GitHub. « Voir le détail » rend l'ancienne vue complète. */
+.journee>h2{gap:10px}.journee>h2 #jmode{margin-left:auto;flex:none}
+.jcards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:14px 18px 6px}
+.jc{border-radius:16px;padding:12px 14px;background:var(--soft)}.jc b{display:block;font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}.jc span{font-size:12.5px;color:var(--muted)}
+.jc.niv0{background:var(--rouge-bg)}.jc.niv0 b{color:var(--rouge)}.jc.niv1{background:var(--orange-bg)}.jc.niv1 b{color:var(--orange)}
+.jrow{padding:12px 18px;border-top:1px solid var(--line);position:relative}.jrow:first-of-type{border-top:0}
+.jrow::before{content:'';position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:var(--faint)}.jrow.niv0::before{background:var(--rouge)}.jrow.niv1::before{background:var(--orange)}
+.jh{display:flex;align-items:center;gap:10px}.jt{font-weight:650;font-size:14.5px}.jn{background:var(--soft);border-radius:999px;padding:1px 9px;font-size:12px;font-weight:700}.jh .btn{margin-left:auto}
+.jul{list-style:none;margin:4px 0 0;padding:0;color:var(--muted);font-size:13px}.jul li{cursor:pointer}.jul li:hover{color:var(--accent)}
+@media (max-width:620px){.jcards{padding:12px 14px 4px;gap:8px}.jc{padding:10px}.jc b{font-size:24px}.jrow{padding:12px 14px}.jh .btn{display:none}}
+/* 19/11 (J : « teste plusieurs gros changements ») : option « Menu en haut » (PC) : les onglets passent en barre du haut, la page gagne toute sa largeur */
+@media (min-width:961px){
+html[data-nav="haut"] .app{grid-template-columns:minmax(0,1fr);gap:14px}
+html[data-nav="haut"] .side{position:sticky;top:10px;height:auto;z-index:60;flex-direction:row;align-items:center;padding:8px 16px;border-radius:18px;gap:18px;min-width:0}
+html[data-nav="haut"] .side .rub,html[data-nav="haut"] .side .brand small,html[data-nav="haut"] .side .pied small{display:none}
+html[data-nav="haut"] .tabs{flex-direction:row;gap:2px;margin:0 auto;flex-wrap:nowrap}html[data-nav="haut"] .side .brand div:last-child{display:none}html[data-nav="haut"] .tabs button{white-space:nowrap;font-size:13px}html[data-nav="haut"] .side .pied .btn{padding:6px 10px;font-size:11.5px;white-space:nowrap}
+html[data-nav="haut"] .tabs button{padding:8px 10px}
+html[data-nav="haut"] .side .pied{margin:0;flex-direction:row;align-items:center;padding:0;gap:10px}
+}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -658,7 +678,7 @@ section.card.ferme>:not(h2){display:none!important}section.card.ferme>h2{margin-
   <div class="pied"><span class="etat-robot" id="robot"><i></i><span></span></span><button class="btn partage" id="partage" hidden></button><small id="maj"></small></div>
 </aside>
 <div class="contenu">
-<div class="entete"><div><h1 id="bonjour">Bonjour</h1><p id="resume"></p></div><div class="gsearch"><input type="search" id="gq" placeholder="Rechercher partout : n° Nexxio, BC, adresse, locataire, équipe…" autocomplete="off"><div id="gres" hidden></div></div><button class="theme" id="theme" title="Clair, sombre ou automatique"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span></span></button><button class="theme" id="verre" title="Style verre dépoli : cartes translucides sur fond en halos de couleur"><span>Verre</span></button></div>
+<div class="entete"><div><h1 id="bonjour">Bonjour</h1><p id="resume"></p></div><div class="gsearch"><input type="search" id="gq" placeholder="Rechercher partout : n° Nexxio, BC, adresse, locataire, équipe…" autocomplete="off"><div id="gres" hidden></div></div><button class="theme" id="theme" title="Clair, sombre ou automatique"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span></span></button><button class="theme" id="verre" title="Style verre dépoli : cartes translucides sur fond en halos de couleur"><span>Verre</span></button><button class="theme" id="navhaut" title="Menu en barre du haut au lieu de la colonne de gauche (PC)"><span>Menu en haut</span></button></div>
 <div id="alerte"></div><div id="alerte-cx" class="alerte-cx"></div><div id="alerte-co" class="alerte-co"></div><div id="ptitre"></div>
 <div id="fiche" hidden><div class="in" id="fichein"></div></div><button class="btn" id="haut" hidden title="Haut de page">↑</button>
 <main>
@@ -2562,7 +2582,9 @@ function journee(){
   const VIS=TEL()?0:3;   // 19/11 : sur téléphone, une étape de Ma journée tient sur son titre (un toucher montre les commandes)
   const NIV0=new Set(['À terminer dans Nexxio','BC bloqués','Corrections à valider','Relances des bailleurs','Alertes du robot et des données']), NIV2=new Set(['Relances']);
   const niv=t=>NIV0.has(t)||(t==='À suivre'&&suivA.some(suivEchu))?0:NIV2.has(t)||t==='À suivre'?2:1;
-  const etape=(n,titre,sous,liste,bouton,go)=>!n?'':`<div class="etape niv${niv(titre)}"><div class="et-t"${liste.length>VIS?` data-pli="${esc(titre)}" style="cursor:pointer"`:''}><b class="n">${n}</b><div><b>${titre}</b>${liste.length>VIS?` <span class="tag pli">${OUV.has(titre)?'▾ replier':'▸ voir les '+Math.min(liste.length,6)}</span>`:''}<div class="tag">${sous}</div></div>${bouton?`<button class="btn prim" data-go="${go}">${bouton}</button>`:''}</div>${liste.length?`<ul>${liste.slice(0,6).map((x,k)=>k<VIS?x:x.replace('<li','<li class="plus"'+(OUV.has(titre)?'':' hidden'))).join('')}${liste.length>6?`<li class="tag plus"${OUV.has(titre)?'':' hidden'}>… et ${liste.length-6} autre(s)</li>`:''}</ul>`:''}</div>`;
+  const FOC=[];   // 19/11 (J : « Ma journée trop bourrée ») : chaque étape est aussi gardée pour la vue épurée « Focus »
+  const etape=(n,titre,sous,liste,bouton,go)=>{if(n)FOC.push({n,titre,sous,liste,bouton,go,v:niv(titre)});return etape0(n,titre,sous,liste,bouton,go)};
+  const etape0=(n,titre,sous,liste,bouton,go)=>!n?'':`<div class="etape niv${niv(titre)}"><div class="et-t"${liste.length>VIS?` data-pli="${esc(titre)}" style="cursor:pointer"`:''}><b class="n">${n}</b><div><b>${titre}</b>${liste.length>VIS?` <span class="tag pli">${OUV.has(titre)?'▾ replier':'▸ voir les '+Math.min(liste.length,6)}</span>`:''}<div class="tag">${sous}</div></div>${bouton?`<button class="btn prim" data-go="${go}">${bouton}</button>`:''}</div>${liste.length?`<ul>${liste.slice(0,6).map((x,k)=>k<VIS?x:x.replace('<li','<li class="plus"'+(OUV.has(titre)?'':' hidden'))).join('')}${liste.length>6?`<li class="tag plus"${OUV.has(titre)?'':' hidden'}>… et ${liste.length-6} autre(s)</li>`:''}</ul>`:''}</div>`;
   // 1. commandes reçues depuis la veille, prises en compte, sans RDV
   const recues=[...new Set(L.filter(l=>l.n_nexxio&&l.jour>=debut).map(l=>l.n_nexxio))].map(n=>NXP[n]).filter(x=>x&&x.statut==='Prise en compte'&&!x.rdv);
   const occ=recues.filter(x=>!(LG[x.n_nexxio]||{}).vacant), vac=recues.filter(x=>(LG[x.n_nexxio]||{}).vacant);
@@ -2610,10 +2632,16 @@ function journee(){
     etape(bloc.length,'BC bloqués','À reprendre ou commande Extranet en attente de ton accord',bloc.map(l=>li(l.n_nexxio||l.n_bc,`${esc(l.bailleur||'')} ${esc(l.n_bc)} · ${esc(l.etat)}`)),'Voir À faire','faire'),
     etape(al.length,'Alertes du robot et des données',al.length?'Tâche en retard, erreur ou écart : le détail est dans l\'onglet Chiffres':`Les tâches du robot sont à l\'heure, aucun écart${suiv?` · ${suiv} point(s) à surveiller dans « Santé des données »`:''}`,al.map(x=>`<li style="cursor:default"><b>${esc(x.titre)}</b> · ${esc(x.detail)}</li>`),'Voir l\'état du robot','etat')].filter(Boolean).map((h,k)=>({h,k,v:+/niv(\d)/.exec(h)[1]})).sort((x,y)=>x.v-y.v||x.k-y.k);
   const RES=[[al.length,'alerte(s) du robot'],[relA.length,'relance(s) de bailleur'],[propA.length,'correction(s) à valider'],[bloc.length,'BC bloqué(s)'],[suivA.filter(suivEchu).length,'commande(s) à suivre à regarder'],[recues.length+enCrea.length,'commande(s) à planifier'],[l2.length,'rapport(s) à envoyer'],[aF.length,'facture(s) à faire']].filter(x=>x[0]).map(x=>x[0]+' '+x[1]);
-  document.getElementById('journee').innerHTML=  `<h2><span>Ma journée</span><span class="tag">depuis ${nomJ} ${fr(debut)}</span></h2>
-    ${RES.length?`<p class="jres"><b>Aujourd’hui</b> : ${RES.join(' · ')}</p>`:''}${ET.map(x=>x.h).join('')}`;
+  const JM=(()=>{try{return localStorage.getItem('jmode')||'epure'}catch(e){return 'epure'}})();
+  const NV=[0,0,0];FOC.forEach(f=>NV[f.v]+=f.n);
+  const NOMV=['À traiter maintenant','Du jour','De fond'];
+  const FRows=[...FOC].sort((a,b)=>a.v-b.v).slice(0,6).map(f=>`<div class="jrow niv${f.v}"><div class="jh"><span class="jt">${f.titre}</span><span class="jn">${f.n}</span>${f.bouton?`<button class="btn" data-go="${f.go}">${f.bouton}</button>`:''}</div>${f.liste.length?`<ul class="jul">${f.liste[0]}</ul>`:''}</div>`).join('');
+  const VFocus=`<div class="jcards">${NV.map((n,k)=>`<div class="jc niv${k}"><b>${n}</b><span>${NOMV[k]}</span></div>`).join('')}</div>${FRows}${FOC.length>6?`<p class="tag" style="padding:6px 18px 0">et ${FOC.length-6} autre(s) étape(s) dans le détail</p>`:''}`;
+  document.getElementById('journee').innerHTML=`<h2><span>Ma journée</span><span class="tag">depuis ${nomJ} ${fr(debut)}</span><button class="btn" id="jmode">${JM==='epure'?'Voir le détail':'Vue épurée'}</button></h2>
+    ${JM==='epure'?VFocus:`${RES.length?`<p class="jres"><b>Aujourd’hui</b> : ${RES.join(' · ')}</p>`:''}${ET.map(x=>x.h).join('')}`}`;
+  document.getElementById('jmode').onclick=()=>{try{localStorage.setItem('jmode',JM==='epure'?'detail':'epure')}catch(e){}journee()};
   const J0=document.getElementById('journee');
-  if(!J0.querySelector('.etape'))J0.insertAdjacentHTML('beforeend','<p class="sub" style="padding:12px 0 4px">Rien ne t’attend : commandes planifiées, rapports envoyés, factures faites, robot à l’heure.</p>');
+  if(!FOC.length)J0.insertAdjacentHTML('beforeend','<p class="sub" style="padding:12px 0 4px">Rien ne t’attend : commandes planifiées, rapports envoyés, factures faites, robot à l’heure.</p>');
   J0.querySelectorAll('[data-pli]').forEach(h=>h.onclick=e=>{if(e.target.closest('button'))return;const P=[...h.parentNode.querySelectorAll('ul .plus')],k=h.dataset.pli,ouvrir=P.some(x=>x.hidden);
     P.forEach(x=>x.hidden=!ouvrir);ouvrir?OUV.add(k):OUV.delete(k);h.querySelector('.pli').textContent=ouvrir?'▾ replier':'▸ voir les '+Math.min(P.length+VIS,6)});
   J0.querySelectorAll('[data-fiche]').forEach(e=>e.onclick=()=>{if(NX[e.dataset.fiche])fiche(e.dataset.fiche)});
@@ -2762,4 +2790,8 @@ setTimeout(()=>{if(TEL())return;const cs=[...document.querySelectorAll('#blocage
 setTimeout(()=>{if(!TEL())return;const f=document.getElementById('fcli');if(!f)return;f.classList.add('ferme-tel');
   const b=document.createElement('button');b.className='btn';b.style.cssText='margin:0 12px 10px;width:calc(100% - 24px)';b.textContent='Voir le détail par client ▸';
   b.onclick=()=>{const o=f.classList.toggle('ferme-tel');b.textContent=o?'Voir le détail par client ▸':'Replier le détail par client ▾'};f.insertAdjacentElement('beforebegin',b)},100);
+(function(){const b=document.getElementById('navhaut'),h=document.documentElement;if(!b)return;
+  const lire=()=>{try{return localStorage.getItem('nav')==='haut'}catch(e){return false}};
+  const maj=()=>{const v=lire();if(v)h.setAttribute('data-nav','haut');else h.removeAttribute('data-nav');b.querySelector('span').textContent=v?'Menu en haut : oui':'Menu en haut';b.setAttribute('aria-pressed',v?'true':'false')};
+  b.onclick=()=>{try{if(lire())localStorage.removeItem('nav');else localStorage.setItem('nav','haut')}catch(e){}maj()};maj()})();
 </script></body></html>
