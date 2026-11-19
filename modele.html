@@ -1085,6 +1085,12 @@ const aImprimer=()=>L.filter(l=>l.pdf&&!IMP.get(l.pdf)&&l.jour>=jr(14));
 const J=L.filter(l=>l.journal), n=v=>parseFloat(v)||0, som=r=>r.reduce((s,l)=>s+n(l.ht),0);
 const lundi=s=>{const d=new Date(s+'T00:00:00Z');d.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7));return d.toISOString().slice(0,10)};
 const SAISI=l=>['Saisi','À prendre en compte','Doublon évité'].includes(l.etat);
+/* 19/11 (J : « c'est pas vraiment 11 BC saisis et pris en compte, ça peut nous induire en erreur ») : le journal contient aussi des lignes vertes qui
+   ne sont pas des BC reçus (annulation, « Pas pour RMS », complément, doublon, BC classé à la main). VRAI = un vrai BC reçu (une ligne par n° de BC, la
+   dernière) ; SAISIV = vraiment saisi dans Nexxio (en création ou pris en compte) : seul lui compte pour « sans intervention ». */
+const VRAI=l=>['Saisi','À prendre en compte','À reprendre','Accord de J attendu'].includes(l.etat);
+const SAISIV=l=>['Saisi','À prendre en compte'].includes(l.etat);
+const SANSSAISIE=l=>!VRAI(l);
 const CLOS=['Terminé','Terminée','Réceptionné','Réceptionnée','Facturé / Accepté','Facturé','Facturée','Cloturé','Clôturée','Cloturée','Annulé','Annulée','Non réalisé'];
 const ouvert=l=>!CLOS.includes(l.statut)&&l.etat!=='Annulé'&&l.etat!=='Doublon évité';
 // IN'LI écrit souvent « Travaux prévus entre le 10/11 et le 10/11 » (la date du BC) : ce n'est pas un vrai délai (J le 11/11)
@@ -1127,8 +1133,8 @@ const CAUSES=[[/prix du BC [\d.,]+ différent du BPU|au-dessus du BPU/i,'écarts
   [/Commande Extranet à accepter/i,'commandes Extranet à accepter'],[/PDF absent/i,'PDF absent du mail'],
   [/erreur robot|Page\.\w+|Timeout \d+|net::ERR/i,'lenteurs de Nexxio'],[/mode essai/i,'mode essai (laissées En création)']];
 function tendance(){
-  const sems=[3,2,1,0].map(k=>{const s=lundi(jr(7*k)),r=J.filter(l=>l.jour&&lundi(l.jour)===s);return r.length?Math.round(100*r.filter(l=>l.risque==='vert').length/r.length)+' %':'—'});
-  const nv=J.filter(l=>l.jour>=jr(30)&&l.risque!=='vert'), c=CAUSES.map(([re,t])=>[t,nv.filter(l=>re.test(l.motif||'')).length]).filter(x=>x[1]).sort((a,b)=>b[1]-a[1]).slice(0,2);
+  const sems=[3,2,1,0].map(k=>{const s=lundi(jr(7*k)),r=J.filter(l=>SAISIV(l)&&l.jour&&lundi(l.jour)===s);return r.length?Math.round(100*r.filter(l=>l.risque==='vert').length/r.length)+' %':'—'});
+  const nv=J.filter(l=>SAISIV(l)&&l.jour>=jr(30)&&l.risque!=='vert'), c=CAUSES.map(([re,t])=>[t,nv.filter(l=>re.test(l.motif||'')).length]).filter(x=>x[1]).sort((a,b)=>b[1]-a[1]).slice(0,2);
   return `Saisis sans intervention, par semaine : <span class="tend">${sems.slice(0,3).join(' · ')} · <b>${sems[3]}</b> cette semaine</span>`+
     (c.length?`<br>Le plus souvent à cause : ${c.map(([t,n])=>`${t} (${n} BC)`).join(', ')}.`:'')}
 // vu le 12/11 : « 39 devis à faire » ici contre 33 sur l'onglet Devis, qui écarte aussi les demandes dont le devis
@@ -1138,7 +1144,12 @@ function demandesATraiter(){const DV=D.devis||[], N=t=>String(t||'').toUpperCase
     const r=(d.refs||[]).map(N).filter(x=>x.length>=5);
     return !(r.length&&DV.some(x=>{const h=N([x.n_bc,x.libelle,x.n_devis].join(' '));return r.some(z=>h.includes(z))}))})}
 function heros(aR,aO,aI,j,m){
-  const r30=L.filter(l=>l.journal&&l.jour>=jr(30)), pct=r30.length?Math.round(100*r30.filter(l=>l.risque==='vert').length/r30.length):0;
+  const r30=L.filter(l=>l.journal&&l.jour>=jr(30)&&SAISIV(l)), pct=r30.length?Math.round(100*r30.filter(l=>l.risque==='vert').length/r30.length):0;
+  // 19/11 : les vrais BC du jour, répartis ; le reste est dit à part (classés sans saisie)
+  const PLS={};(D.planning||[]).forEach(x=>{PLS[x.n_nexxio]=x.statut});
+  const vr=j.filter(VRAI), enCr=vr.filter(l=>l.etat==='À prendre en compte'||PLS[l.n_nexxio]==='En création'), aJ=vr.filter(l=>(l.etat==='À reprendre'||l.etat==='Accord de J attendu')&&!FAIT(l)), pris=vr.filter(l=>!enCr.includes(l)&&!aJ.includes(l));
+  const sans=j.filter(SANSSAISIE), NOMSANS={'Pas pour RMS':'pas pour RMS','Annulé':'annulé','Doublon évité':'doublon','Complément':'complément'}, cs={};sans.forEach(l=>{const k=NOMSANS[l.etat]||'classé à la main';cs[k]=(cs[k]||0)+1});
+  const sansTxt=sans.length?'<br><span class="tag">+ '+sans.length+' classé'+(sans.length>1?'s':'')+' sans saisie : '+Object.entries(cs).map(([k,v])=>v+' '+k).join(', ')+'</span>':'';
   const fact=(D.planning||[]).filter(x=>x.rapports>0&&(x.restant||0)>0&&!FACT.get(x.n_nexxio));
   const dem=demandesATraiter().length;
   const C=2*Math.PI*52, h=new Date().getHours();
@@ -1152,7 +1163,7 @@ function heros(aR,aO,aI,j,m){
   const rr=j.filter(l=>l.risque==='rouge'&&!FAIT(l)).length, rf=cj('rouge')-rr;
   const rouges=rf&&!rr?`${rf} rouge déjà réglé${rf>1?'s':''}`:`${rr} rouge`+(rf?` · ${rf} déjà réglé${rf>1?'s':''}`:'');
   document.getElementById('hero').innerHTML=`<div><span class="eti">Mis à jour le ${esc(D.genere)}</span>
-    <h2>${j.length?`${j.length} BC reçu${j.length>1?'s':''} aujourd'hui<br><em>${cj('vert')} vert · ${cj('orange')} orange · ${rouges}</em>`:`Aucun BC reçu aujourd'hui<br><em>Le robot surveille les boîtes mail toutes les 10 minutes.</em>`}</h2>
+    <h2>${vr.length?`${vr.length} BC reçu${vr.length>1?'s':''} aujourd'hui<br><em>${pris.length} pris en compte · ${enCr.length} en création · ${aJ.length} à faire par toi</em>${sansTxt}`:`Aucun BC reçu aujourd'hui${sansTxt}<br><em>Le robot surveille les boîtes mail toutes les 10 minutes.</em>`}</h2>
     <p>${tendance()}</p>
     <div class="chiffres"><button data-go="rouge" class="${aR?'r':''}"><b>${aR}</b><span>à reprendre ›</span></button><button data-go="imp"><b>${aI}</b><span>à imprimer ›</span></button><button data-go="fact"><b>${fact.length}</b><span>à facturer ›</span></button><button data-go="devis"><b>${dem}</b><span>devis à faire ›</span></button></div></div>
     <div class="anneau"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--soft)" stroke-width="10"/><circle cx="60" cy="60" r="52" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct/100)}"/></svg><div class="v"><div><b>${pct} %</b><span>saisis sans<br>intervention</span></div></div></div>`;
@@ -1163,9 +1174,9 @@ function heros(aR,aO,aI,j,m){
     else{pv='fact';store.set('pv','fact');onglet('planning');planning();window.scrollTo(0,0);telListe()}});
 }
 function kpis(){
-  const j=L.filter(l=>l.jour===today), m=L.filter(l=>l.jour.slice(0,7)===today.slice(0,7)), c=r=>j.filter(l=>l.risque===r).length;
+  const j=L.filter(l=>l.jour===today), m=L.filter(l=>l.jour.slice(0,7)===today.slice(0,7)&&VRAI(l)), c=r=>j.filter(l=>l.risque===r).length;
   const aR=L.filter(l=>l.risque==='rouge'&&!FAIT(l)&&l.jour>=jr(30)).length, aO=L.filter(l=>l.risque==='orange'&&!FAIT(l)&&l.jour>=jr(30)).length, aI=aImprimer().length;
-  const j14=[...Array(14)].map((_,i)=>jr(13-i)), par=f=>j14.map(d=>f(L.filter(l=>l.jour===d)));
+  const j14=[...Array(14)].map((_,i)=>jr(13-i)), par=f=>j14.map(d=>f(L.filter(l=>l.jour===d&&VRAI(l))));
   // 12/11 : carte « Aujourd'hui » retirée, son chiffre et ses couleurs sont dans le titre du grand cadre
   const k=[['mois',m.length,'Ce mois-ci',e0(som(m))+' HT','var(--accent)','€',par(som)],
     // vu le 11/11 : « À reprendre » et « À imprimer » étaient déjà dans le grand cadre, cartes retirées
@@ -1279,7 +1290,7 @@ const nomMois=ym=>['janvier','février','mars','avril','mai','juin','juillet','a
 const JTOUS=J;
 function chiffres(){
   const [P0,P1,titre]=periode();store.set('cp',CP);
-  const J0=JTOUS;const J=J0.filter(l=>l.jour&&l.jour>=P0&&l.jour<=P1);
+  const J0=JTOUS;const J=J0.filter(l=>l.jour&&l.jour>=P0&&l.jour<=P1), JV=J.filter(VRAI);   // JV : les vrais BC (19/11)
   document.querySelectorAll('#cper button').forEach(b=>b.classList.toggle('on',b.dataset.p===CP.p));
   // J le 11/11 : trop de choix. Ce mois, Cette année ou Personnalisée ; les dates n'apparaissent qu'en Personnalisée
   // (la période choisie reste écrite dans le titre en dessous)
@@ -1299,17 +1310,17 @@ function chiffres(){
     document.getElementById(idA).innerHTML=cles.map(k=>`<span>${etq(k)}</span>`).join('');
   }
   const jours=[...new Set(J.map(l=>l.jour).filter(Boolean))].sort().slice(-31);
-  barres('bjour','ajour','lgjour',jours,(d,b)=>J.filter(l=>l.jour===d&&l.bailleur===b).length,jm,v=>v+' BC');
+  barres('bjour','ajour','lgjour',jours,(d,b)=>JV.filter(l=>l.jour===d&&l.bailleur===b).length,jm,v=>v+' BC');
   const okS=J.filter(l=>SAISI(l)&&l.jour), sems=[...new Set(okS.map(l=>lundi(l.jour)))].sort().slice(-20);
   barres('bsem','asem','lgsem',sems,(s,b)=>som(okS.filter(l=>lundi(l.jour)===s&&l.bailleur===b)),jm,e0);
-  const r30=J, ok30=r30.filter(SAISI), okAll=J.filter(SAISI);
+  const r30=JV, ok30=r30.filter(SAISI), okAll=J.filter(SAISI);
   document.getElementById('stats').innerHTML=[
     tuile(e0(som(ok30)),'Montant HT des BC reçus','BC saisis ou déjà dans Nexxio, sur la période'),
     tuile(ok30.length,'BC reçus','Panier moyen '+e0(ok30.length?som(ok30)/ok30.length:0)),
-    tuile(pct(r30.length?r30.filter(l=>l.risque==='vert').length/r30.length:0),'Saisis sans intervention','BC verts sur la période','var(--vert)'),
+    tuile(pct(ok30.filter(SAISIV).length?ok30.filter(l=>SAISIV(l)&&l.risque==='vert').length/ok30.filter(SAISIV).length:0),'Saisis sans intervention','BC vraiment saisis, verts, sur la période','var(--vert)'),
     tuile(pct(r30.length?r30.filter(l=>l.etat==='À reprendre').length/r30.length:0),'À reprendre',"Part des BC que le robot n'a pas su saisir",'var(--rouge)'),
     tuile(J0.length,'Total journal',e0(som(J0.filter(SAISI)))+' HT depuis le début · '+J0.filter(l=>l.etat==='Doublon évité').length+' doublon(s) évité(s)')].join('');
-  const pb=bs.map(b=>{const r=J.filter(l=>l.bailleur===b), o=r.filter(SAISI);return {b,n:r.length,v:r.filter(l=>l.risque==='vert').length,
+  const pb=bs.map(b=>{const r=JV.filter(l=>l.bailleur===b), o=r.filter(SAISI);return {b,n:r.length,v:r.filter(l=>l.risque==='vert').length,
     o:r.filter(l=>l.risque==='orange').length,r:r.filter(l=>l.risque==='rouge'||l.etat==='À reprendre').length,ht:som(o),moy:o.length?som(o)/o.length:0}});
   document.getElementById('tbail').innerHTML=pb.map(x=>`<tr><td>${bai(x.b)}</td><td class="num">${x.n}</td><td class="num">${x.v}</td><td class="num">${x.o}</td><td class="num">${x.r}</td><td class="num">${e0(x.ht)}</td><td class="num">${e0(x.moy)}</td></tr>`).join('');
   document.getElementById('controle').innerHTML=pb.map(x=>{const t=Math.max(1,x.v+x.o+x.r);return `<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center">${bai(x.b)}<span class="tag">${x.v} vert · ${x.o} orange · ${x.r} rouge · ${pct(x.v/t)} sans intervention</span></div>
