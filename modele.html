@@ -720,6 +720,15 @@ main>div[id^="p-"]>.card,main>div[id^="p-"]>section{margin-bottom:16px}
 @media (max-width:700px){#alerte{font-size:12.5px}}
 .kpi{display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-start}.kpi .l{min-height:22px}
 .bar:not([style*="border"]){background:transparent;border:0;padding:4px 0 10px}
+:root{--i-users:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8'/%3E%3C/svg%3E");--i-chart:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 20V10M12 20V4M6 20v-6'/%3E%3C/svg%3E");}
+/* 19/11 (J : « rafraîchis les autres onglets pareil ») : même langage que Ma journée sur chaque onglet : l'icône de l'onglet devant chaque titre de carte,
+   textes d'aide longs sur deux lignes (un clic les lit), roulement en CA replié sur son titre */
+main .card>h2>span:first-child::before{width:16px;height:16px;border-radius:0;background-color:var(--ton);margin-right:9px;vertical-align:-2px;-webkit-mask:var(--tic,var(--i-check)) center/contain no-repeat;mask:var(--tic,var(--i-check)) center/contain no-repeat;background-image:none}
+body[data-onglet="exploitation"]{--tic:var(--i-check)}body[data-onglet="planning"]{--tic:var(--i-calendar)}body[data-onglet="devis"]{--tic:var(--i-file)}
+body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:var(--i-chart)}body[data-onglet="manager"]{--tic:var(--i-bell)}
+#manager .it>.sub.aide2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}#manager .it>.sub.aide2.lu{display:block;overflow:visible}
+#proul .card>div:nth-child(n+2){display:none!important}#proul .card.ouv>div:nth-child(n+2){display:flex!important}#proul .card.ouv>div:nth-child(3){display:grid!important}#frel{margin-top:16px!important}
+#proul .card>div:first-child{cursor:pointer}#proul .card>div:first-child b::after{content:' ▸';color:var(--faint)}#proul .card.ouv>div:first-child b::after{content:' ▾'}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -2963,4 +2972,8 @@ addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey)return;const t=
   const lire=()=>{try{return localStorage.getItem('dens')==='compact'}catch(e){return false}};
   const maj=()=>{const v=lire();if(v)h.setAttribute('data-dens','compact');else h.removeAttribute('data-dens');b.querySelector('span').textContent=v?'Compact':'Confort'};
   b.onclick=()=>{try{if(lire())localStorage.removeItem('dens');else localStorage.setItem('dens','compact')}catch(e){}maj()};maj()})();
+// 19/11 : autres onglets rafraîchis : textes du manager sur deux lignes, roulement en CA replié (un clic l'ouvre)
+setTimeout(()=>{const pr=document.querySelector('#proul .card');if(pr&&!pr._i){pr._i=1;pr.querySelector(':scope>div').addEventListener('click',()=>pr.classList.toggle('ouv'))}},160);
+const aideMgr=()=>document.querySelectorAll('#manager .it>.sub:not(.aide2)').forEach(e=>{if(e.textContent.length>150&&!e.querySelector('button,a,input')){e.classList.add('aide2');e.onclick=()=>e.classList.toggle('lu')}});
+new MutationObserver(aideMgr).observe(document.getElementById('manager'),{childList:true,subtree:true});setTimeout(aideMgr,200);
 </script></body></html>
