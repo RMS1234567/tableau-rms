@@ -729,6 +729,14 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 #manager .it>.sub.aide2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}#manager .it>.sub.aide2.lu{display:block;overflow:visible}
 #proul .card>div:nth-child(n+2){display:none!important}#proul .card.ouv>div:nth-child(n+2){display:flex!important}#proul .card.ouv>div:nth-child(3){display:grid!important}#frel{margin-top:16px!important}
 #proul .card>div:first-child{cursor:pointer}#proul .card>div:first-child b::after{content:' ▸';color:var(--faint)}#proul .card.ouv>div:first-child b::after{content:' ▾'}
+/* trois colonnes de l'accueil */
+.trois{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 16px}
+.t3 h2{padding:14px 16px 4px;border-bottom:0}.t3n{font-size:30px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.t3a .t3n{color:var(--accent)}.t3b .t3n{color:var(--rouge)}.t3c2 .t3n{color:var(--orange)}
+.t3s{padding:0 16px 8px!important;font-size:12px}
+.t3l{list-style:none;margin:0;padding:0 8px 10px}.t3l li{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;padding:8px 8px;border-top:1px solid var(--line);font-size:13px;cursor:pointer;border-radius:10px}
+.t3l li:hover{background:var(--soft)}.t3l li.vide{cursor:default;border:0;padding:14px 8px;display:block}.t3l li.vide::before,.t3l li.vide::after{display:none}.t3c{color:var(--muted)}
+@media (max-width:960px){.trois{grid-template-columns:1fr}}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -745,6 +753,8 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 <!-- EXPLOITATION -->
 <div id="p-exploitation">
   <div id="recents" hidden style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center"></div>
+  <div class="trois" id="trois"></div>
+  <section class="card" id="relb" hidden style="margin-bottom:18px"></section>
   <section class="card journee" id="journee"></section>
   <section class="hero" id="hero"></section>
   <div class="kpis" id="kpis"></div>
@@ -756,7 +766,6 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
       <p class="sub">BC des 14 derniers jours. Cocher une fois imprimé (mémorisé sur ce PC).</p><ul class="liste" id="imp"></ul></section>
   </div>
   <section class="card" id="suivi" hidden style="margin-bottom:18px"></section>
-  <section class="card" id="relb" hidden style="margin-bottom:18px"></section>
   <section class="card" id="commandes" style="margin-bottom:18px">
     <h2><span>Commandes</span><span class="tag" id="total"></span></h2>
     <div class="bar">
@@ -1157,7 +1166,7 @@ function heros(aR,aO,aI,j,m){
   // 19/11 : les vrais BC du jour, répartis ; le reste est dit à part (classés sans saisie)
   const PLS={};(D.planning||[]).forEach(x=>{PLS[x.n_nexxio]=x.statut});
   const vr=j.filter(VRAI), enCr=vr.filter(l=>l.etat==='À prendre en compte'||PLS[l.n_nexxio]==='En création'), aJ=vr.filter(l=>(l.etat==='À reprendre'||l.etat==='Accord de J attendu')&&!FAIT(l)), pris=vr.filter(l=>!enCr.includes(l)&&!aJ.includes(l));
-  const sans=j.filter(SANSSAISIE), NOMSANS={'Pas pour RMS':'pas pour RMS','Annulé':'annulé','Doublon évité':'doublon','Complément':'complément'}, cs={};sans.forEach(l=>{const k=NOMSANS[l.etat]||'classé à la main';cs[k]=(cs[k]||0)+1});
+  const sans=L.filter(l=>l.jour===today&&SANSSAISIE(l)), NOMSANS={'Pas pour RMS':'pas pour RMS','Annulé':'annulé','Doublon évité':'doublon','Complément':'complément'}, cs={};sans.forEach(l=>{const k=NOMSANS[l.etat]||'classé à la main';cs[k]=(cs[k]||0)+1});
   const sansTxt=sans.length?'<br><span class="tag">+ '+sans.length+' classé'+(sans.length>1?'s':'')+' sans saisie : '+Object.entries(cs).map(([k,v])=>v+' '+k).join(', ')+'</span>':'';
   const fact=(D.planning||[]).filter(x=>x.rapports>0&&(x.restant||0)>0&&!FACT.get(x.n_nexxio));
   const dem=demandesATraiter().length;
@@ -1183,7 +1192,7 @@ function heros(aR,aO,aI,j,m){
     else{pv='fact';store.set('pv','fact');onglet('planning');planning();window.scrollTo(0,0);telListe()}});
 }
 function kpis(){
-  const j=L.filter(l=>l.jour===today), m=L.filter(l=>l.jour.slice(0,7)===today.slice(0,7)&&VRAI(l)), c=r=>j.filter(l=>l.risque===r).length;
+  const j=L.filter(l=>(l.arrive||l.jour)===today), m=L.filter(l=>l.jour.slice(0,7)===today.slice(0,7)&&VRAI(l)), c=r=>j.filter(l=>l.risque===r).length;
   const aR=L.filter(l=>l.risque==='rouge'&&!FAIT(l)&&l.jour>=jr(30)).length, aO=L.filter(l=>l.risque==='orange'&&!FAIT(l)&&l.jour>=jr(30)).length, aI=aImprimer().length;
   const j14=[...Array(14)].map((_,i)=>jr(13-i)), par=f=>j14.map(d=>f(L.filter(l=>l.jour===d&&VRAI(l))));
   // 12/11 : carte « Aujourd'hui » retirée, son chiffre et ses couleurs sont dans le titre du grand cadre
@@ -2705,6 +2714,22 @@ function actionsFact(){const sec=document.getElementById('frel');if(!sec)return;
   sec.querySelectorAll('[data-rfcopy]').forEach(b=>b.onclick=()=>{const [c,o]=cl[+b.dataset.rfcopy],t=msg(c,o);
     try{navigator.clipboard.writeText(t).then(()=>toast('Message copié pour '+c),()=>prompt('Copier :',t))}catch(e){prompt('Copier :',t)}});
   sec.querySelectorAll('[data-fiche]').forEach(a=>a.onclick=e=>{e.preventDefault();if(NX[a.dataset.fiche])fiche(a.dataset.fiche)})}
+/* 19/11 (J : « j'arrive sur le dashboard je sais pas quelle commande je dois planifier, quelle commande a été relancée... je sais plus lesquels sont arrivés
+   aujourd'hui, lesquels je dois saisir ») : trois listes séparées en haut de l'accueil : BC arrivés aujourd'hui (première ligne du BC au journal datée du
+   jour, pas les mises à jour de suivi sur de vieux BC), ce que J doit faire lui-même, commandes à planifier ; les relances des bailleurs dans leur carte, dessous. */
+function troisColonnes(){const el=document.getElementById('trois');if(!el)return;
+  const ligne=l=>{const n=l.n_nexxio&&NX[l.n_nexxio]?l.n_nexxio:'',cle=n||l.n_bc;return `<li data-t3="${esc(cle)}" data-bc="${esc(l.n_bc||'')}"><b>${esc(l.n_bc||l.n_nexxio||'?')}</b> ${bai(l.bailleur||'')} <span class="t3c">${esc(l.commune||'')}</span></li>`};
+  const arr=L.filter(l=>(l.arrive||l.jour)===today&&VRAI(l)).sort((a,b)=>((b.heure||'')>(a.heure||''))?1:-1);
+  const etat=l=>l.etat==='À reprendre'?'<span class="chip bad">à reprendre</span>':l.etat==='Accord de J attendu'?'<span class="chip warn">ton accord</span>':l.etat==='À prendre en compte'?'<span class="chip warn">en création</span>':'<span class="chip ok">pris en compte</span>';
+  const faire=L.filter(l=>((l.etat==='À reprendre'||l.etat==='Accord de J attendu')&&l.jour>=jr(30)&&!FAIT(l))||(l.etat==='À prendre en compte'&&l.jour>=jr(14))).sort((a,b)=>(a.jour>b.jour)?1:-1);
+  const dc=x=>DCMD[x.n_nexxio]||(L.find(l=>l.n_nexxio===x.n_nexxio)||{}).jour||'';   // même règle que « À planifier » du Planning : moins de 3 mois, sans rapport ni RDV d'agenda
+  const PL=(D.planning||[]).filter(x=>x.statut==='Prise en compte'&&!x.rdv&&!x.rapports&&!AG_N[x.n_nexxio]&&!(dc(x)&&dc(x)<jr(90))).sort((a,b)=>b.n_nexxio-a.n_nexxio);
+  const pla=PL.map(x=>({x,g:(D.logements||{})[x.n_nexxio]||{}})).sort((a,b)=>(a.g.vacant?1:0)-(b.g.vacant?1:0));
+  const col=(cl,titre,n,sous,items,vide)=>`<section class="card t3 ${cl}"><h2><span>${titre}</span><span class="t3n">${n}</span></h2><p class="sub t3s">${sous}</p><ul class="t3l">${items.length?items.slice(0,6).join(''):'<li class="vide">'+vide+'</li>'}</ul>${items.length>6?'<p class="tag" style="padding:4px 16px 10px">… et '+(items.length-6)+' autre(s)</p>':''}</section>`;
+  el.innerHTML=col('t3a','Arrivés aujourd’hui',arr.length,'Les BC reçus aujourd’hui (pas les mises à jour de suivi sur de vieux BC)',arr.map(l=>ligne(l).replace('</li>',' '+etat(l)+'</li>')),'Aucun BC reçu aujourd’hui.')+
+    col('t3b','À faire par toi',faire.length,'À saisir, à valider ou à reprendre : seuls ceux qui attendent une action de toi',faire.map(l=>ligne(l).replace('</li>',' '+etat(l)+'</li>')),'Rien à faire : le robot a tout traité.')+
+    col('t3c2','À planifier',PL.length,'Commandes prises en compte sans rendez-vous',pla.map(({x,g})=>`<li data-t3="${esc(x.n_nexxio)}"><b>${esc(x.n_nexxio)}</b> ${bai(x.client||x.bailleur||'')} <span class="t3c">${esc(x.commune||'')}</span> ${g.vacant?'<span class="chip info">vacant : clés</span>':'<span class="chip warn">appeler</span>'}</li>`),'Toutes les commandes ont un rendez-vous.');
+  el.querySelectorAll('[data-t3]').forEach(li=>li.onclick=()=>{const c=li.dataset.t3;if(NX[c])fiche(c);else ficheBC(li.dataset.bc||c)})}
 function relancesBailleurs(){const sec=document.getElementById('relb');if(!sec)return;const R=RELB.filter(r=>(r.jour||'')>=jr(60));
   if(!R.length){sec.hidden=true;return}
   const att=R.filter(r=>!ENV.get(r.id)), fait=R.filter(r=>ENV.get(r.id)).sort((a,b)=>(b.jour||'')>(a.jour||'')?1:-1).slice(0,5);
@@ -2808,6 +2833,7 @@ function journee(){
     pv=g;store.set('pv',g);if(g==='fact')store.set('ffact','toutes');onglet('planning');planning();window.scrollTo(0,0);telListe()});
 }
 try{journee()}catch(e){console.error('Ma journée',e)}
+try{troisColonnes()}catch(e){console.error('Trois colonnes',e)}
 try{relancesBailleurs()}catch(e){console.error('Relances',e)}
 try{actionsFact()}catch(e){console.error('Factures à relancer',e)}
 try{suivi()}catch(e){console.error('À suivre',e)}
