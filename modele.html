@@ -771,6 +771,7 @@ main>div[id^="p-"]>.card,main>div[id^="p-"]>section{margin-bottom:16px}
   <p class="maj" id="psuivi"></p>
   <div id="proul" style="margin:0 0 12px"></div>
   <div class="kpis" id="ptiles" style="grid-template-columns:repeat(auto-fit,minmax(128px,1fr))"></div>
+  <section class="card" id="frel" hidden style="margin:0 0 16px"></section>
   <div class="bar" style="border:1px solid var(--line);border-radius:var(--r);margin:14px 0"><input type="search" id="qp" placeholder="Rechercher : n° Nexxio, BC, commune, pilote…"><label class="tag" id="lvoirfact"><input type="checkbox" id="voirfact"> afficher aussi les commandes marquées facturées</label></div>
   <section class="card vue" data-v="fact"><h2><span>Rapport reçu : à facturer</span><span class="tag" id="nfact"></span></h2>
     <p class="sub" style="padding-bottom:10px">Le rapport du technicien est arrivé dans Nexxio : la commande peut être facturée. Cocher « Facturé » une fois fait.</p>
@@ -853,7 +854,7 @@ main>div[id^="p-"]>.card,main>div[id^="p-"]>section{margin-bottom:16px}
       <select id="fc-eq"><option value="">Tous les sous-traitants</option></select><span id="per-fc"></span>
       <select id="fc-etat"><option value="">Toutes les factures</option><option value="pb">À vérifier</option><option value="ok">Conformes</option></select></div>
     <section class="card" id="bap" style="margin-bottom:18px"><h2><span>Bon à payer par sous-traitant</span><span class="tag" id="nbap"></span></h2>
-      <p class="sub" style="padding-bottom:10px">Factures reçues et pas encore payées. <b>À payer</b> : tout concorde (commandes reconnues, rapport reçu, prix de l'agenda, pas déjà facturée). <b>À vérifier</b> : la raison est indiquée, cliquer la ligne pour le détail. Cocher « Payé » après le virement (partagé avec les autres PC).<br>
+      <p class="sub" style="padding-bottom:10px">Factures reçues et pas encore payées. Chaque facture est classée : <b>Conforme</b> (commandes reconnues, rapport reçu, prix de l'agenda, pas déjà facturée), <b>Écart</b> de prix, <b>Rapport manquant</b> ou <b>À vérifier</b> (la raison est indiquée, cliquer la ligne pour le détail). <b>Valider les conformes</b> d'un clic en fait un bon à payer, ou cocher « Bon à payer » facture par facture (même avec un écart, c'est ton choix). Le robot ne paie rien et n'envoie rien : cocher « Payé » après ton virement (partagé avec les autres PC).<br>
       Mise en route : <label>marquer payées toutes les factures reçues avant le <input type="date" id="bap-av"></label> <button class="btn" id="bap-ok">Marquer payées</button> <span class="tag" id="bap-msg"></span></p>
       <div id="bap-corps"></div></section>
     <section class="card"><h2><span>Factures des sous-traitants</span><span class="tag" id="nfc"></span></h2>
@@ -978,9 +979,10 @@ const flag=p=>({get:k=>{try{return localStorage.getItem(p+k)==='1'}catch(e){retu
 const IMP=flag('imp:'), OK=flag('ok:'), FACT=flag('fact:'), DEV=flag('dev:'), CLES=flag('cles:'), ENV=flag('env:');
 const RELB=(D.relances||[]).map(r=>Object.assign({id:'relb:'+(r.jour||'')+'|'+(r.n_bc||'')+'|'+(r.heure||'')},r));   // 17/11 : relances des bailleurs, case « traité » = ENV
 const PROP=flag('prop:'), PROPS=D.propositions||{};   // 17/11 : « Appliquer » une correction proposée par le robot : coche partagée prop:<n°>, l'heure du clic doit dépasser cree_ms
-const PAY=flag('pay:');   // 13/11 (J) : facture de sous-traitant payée (bon à payer), clé = nom du fichier de la facture   // env: rapport envoyé au bailleur (12/11)
+const PAY=flag('pay:'), BAP=flag('bap:');   // 19/11 (J, bon à payer validé d'un clic) : clé = nom du fichier de la facture, rien ne part et rien n'est payé d'ici
+   // 13/11 (J) : facture de sous-traitant payée (bon à payer), clé = nom du fichier de la facture   // env: rapport envoyé au bailleur (12/11)
 // 12/11 (J) : aussi les commentaires (« com: ») et les tentatives d'appel au locataire (« app: »), partagés de la même façon
-const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','plan:','ext:','wa:','wam:','mgr:','mnom:','prop:','suiv:','vue:'], CO_TXT=['com:','app:','plan:','ext:','wa:','wam:','mgr:','mnom:','suiv:','vue:'];   // mgr: question au manager (16/11)   // wam: WhatsApp ouvert à la main (15/11 soir)   // wa: WhatsApp RDV (15/11)   // plan: demande de planification (13/11)
+const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','bap:','plan:','ext:','wa:','wam:','mgr:','mnom:','prop:','suiv:','vue:'], CO_TXT=['com:','app:','plan:','ext:','wa:','wam:','mgr:','mnom:','suiv:','vue:'];   // mgr: question au manager (16/11)   // wam: WhatsApp ouvert à la main (15/11 soir)   // wa: WhatsApp RDV (15/11)   // plan: demande de planification (13/11)
 const NOTE={get:k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},
   set:(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k);localStorage.setItem('ts:'+k,Date.now())}catch(e){}coSave(k)}};
 // coches des autres PC, relues par le robot (D.coches) : la plus récente gagne, avant le premier affichage
@@ -2169,7 +2171,12 @@ function controleFacture(f){
   const lgE=lignes.filter(l=>l.rq.some(r=>/^facturé/.test(r))).length;if(lgE)pb.push(lgE+' ligne(s) à un autre prix');if(f.ht==null&&!f.erreur)pb.push('montant non trouvé');if(!lignes.length&&!f.erreur)pb.push(f.sans_pdf?'facture en lien : détail à ouvrir dans le mail':'aucune commande reconnue');if(horsL>=1)pb.push(eur(horsL)+' sur des lignes non reconnues');
   const sr=lignes.filter(l=>!l.rap).length, sp=lignes.filter(l=>l.prix==null).length, dbl=lignes.filter(l=>l.rq.some(r=>/déjà/.test(r))).length;
   if(sr)pb.push(sr+' sans rapport');if(dbl)pb.push(dbl+' déjà facturée(s)');if(sp)pb.push(sp+' sans prix agenda');if(ecart&&Math.abs(ecart)>=1&&!sp&&!lgE)pb.push('écart '+eur(ecart));
-  return {nom,lignes,ag,ecart,pb}}
+  // 19/11 (chantier « facturation des sous-traitants ») : une classe par facture, pour le bon à payer : conforme / écart de prix /
+  // rapport manquant / autre à vérifier (illisible, aucune commande, prix absent de l'agenda, déjà facturée...)
+  const classe=!pb.length?'conforme':pb.some(p=>/sans rapport/.test(p))?'rapport':pb.some(p=>/^écart|autre prix|lignes non reconnues/.test(p))?'ecart':'autre';
+  return {nom,lignes,ag,ecart,pb,classe}}
+const CLASSE={conforme:['ok','Conforme'],ecart:['bad','Écart'],rapport:['warn','Rapport manquant'],autre:['warn','À vérifier']};
+const chipClasse=c=>`<span class="chip ${CLASSE[c][0]}">${CLASSE[c][1]}</span>`;
 let FSEL='';
 function facturesVue(){
   const eq=document.getElementById('fc-eq').value, et=document.getElementById('fc-etat').value, P=PER_FC.get();
@@ -2186,7 +2193,7 @@ function facturesVue(){
   document.getElementById('tfc').innerHTML=r.length?r.map(x=>`<tr data-f="${esc(x.f.fichier)}" style="cursor:pointer"><td class="nw">${fr((x.f.recu||'').slice(0,10))}<span class="b2">${esc((x.f.expediteur||'déposée').split('@')[0])}</span></td>
     <td>${esc(x.f.sst_affiche?x.f.sst_affiche+' ('+x.nom+')':(x.nom||'?'))}${x.f.societe&&x.f.societe.toLowerCase()!==String(x.nom).toLowerCase()?`<span class="b2">${esc(x.f.societe)}</span>`:''}</td><td>${x.f.sans_pdf?`<b>${esc(x.f.numero||'facture')}</b>`:`<a href="${encodeURI('FACTURES SOUS-TRAITANTS/'+x.f.fichier)}" target="_blank" onclick="event.stopPropagation()">${esc(x.f.numero||x.f.fichier)}</a>`}<span class="b2">${x.f.date?'du '+fr(x.f.date)+' · ':''}${x.f.sans_pdf?'lien dans le mail · ':''}${x.f.lignes_ia?'lignes lues par l\'IA · ':''}${x.lignes.length} commande(s)</span></td>
     <td class="num"><b>${x.f.ht!=null?eur(x.f.ht):'?'}</b></td><td class="num">${x.lignes.length?eur(x.ag):''}</td><td class="num">${x.ecart!=null?(x.lignes.some(l=>l.prix==null)?`<span class="tag" title="un prix manque dans l'agenda">${eur(x.ecart)} ?</span>`:`<b class="${Math.abs(x.ecart)>=1?'neg':''}">${eur(x.ecart)}</b>`):''}</td>
-    <td>${x.pb.length?x.pb.map(p=>`<span class="chip warn">${esc(p)}</span>`).join(' '):'<span class="chip ok">Conforme</span>'}</td></tr>`).join('')
+    <td>${chipClasse(x.classe)} ${x.pb.map(p=>`<span class="chip warn">${esc(p)}</span>`).join(' ')}</td></tr>`).join('')
     :`<tr><td colspan="7" class="vide">${FAC.length?'Aucune facture pour ces critères.':'Aucune facture lue pour l\'instant.'}</td></tr>`;
   document.querySelectorAll('#tfc tr[data-f]').forEach(tr=>tr.onclick=()=>{FSEL=FSEL===tr.dataset.f?'':tr.dataset.f;facturesVue()});
   const x=L.find(y=>y.f.fichier===FSEL);document.getElementById('fc-det').hidden=!x;
@@ -2237,24 +2244,30 @@ function rapprochementVue(L,eq,P){
 }
 // 13/11 (J) : bon à payer par sous-traitant. Une facture reçue 2 fois (même n°, même montant) ne compte qu'une fois.
 function bapVue(L,eq,P){
-  const nonP=L.filter(x=>(!eq||x.nom===eq)&&dansP((x.f.date||x.f.recu||'').slice(0,10),P)&&!PAY.get(x.f.fichier)&&!x.pb.some(p=>/même facture reçue 2 fois/.test(p)));
+  const nonP=L.filter(x=>(!eq||x.nom===eq)&&dansP((x.f.date||x.f.recu||'').slice(0,10),P)&&!PAY.get(x.f.fichier)&&!x.pb.some(p=>/même facture reçue 2 fois|^remplacée par/.test(p)));
   const g={};nonP.forEach(x=>{(g[x.nom||'Sous-traitant inconnu']=g[x.nom||'Sous-traitant inconnu']||[]).push(x)});
-  const som=l=>l.reduce((t,x)=>t+(x.f.ht||0),0), ok=l=>l.filter(x=>!x.pb.length), ko=l=>l.filter(x=>x.pb.length);
-  const S=Object.entries(g).sort((a,b)=>som(ok(b[1]))-som(ok(a[1]))||som(b[1])-som(a[1]));
-  const tot=som(nonP.filter(x=>!x.pb.length));
-  document.getElementById('nbap').textContent=nonP.length?`${e0(tot)} HT à payer · ${nonP.filter(x=>x.pb.length).length} à vérifier`:'';
+  // 19/11 (J : « prépare une liste bon à payer que je valide d'un clic ») : trois paquets par sous-traitant : bon à payer
+  // validé par J (coche partagée « bap: »), conformes pas encore validés (un clic les valide), à vérifier (écart, rapport manquant...).
+  // Rien n'est payé ni envoyé d'ici : « Payé » reste une coche de J après son virement.
+  const som=l=>l.reduce((t,x)=>t+(x.f.ht||0),0), vl=l=>l.filter(x=>BAP.get(x.f.fichier)), ok=l=>l.filter(x=>!BAP.get(x.f.fichier)&&x.classe==='conforme'), ko=l=>l.filter(x=>!BAP.get(x.f.fichier)&&x.classe!=='conforme');
+  const S=Object.entries(g).sort((a,b)=>som(vl(b[1]))-som(vl(a[1]))||som(ok(b[1]))-som(ok(a[1]))||som(b[1])-som(a[1]));
+  document.getElementById('nbap').textContent=nonP.length?`${e0(som(vl(nonP)))} HT validés · ${ok(nonP).length} conforme(s) à valider · ${ko(nonP).length} à vérifier`:'';
   const txt=(nom,l)=>`RMS BATIMENT - Bon à payer - ${nom} - ${fr(today)}\n\n`+l.map(x=>`Facture n° ${x.f.numero||x.f.fichier}${x.f.date?' du '+fr(x.f.date):''} : ${x.f.ht!=null?eur(x.f.ht):'?'} HT${x.f.ttc!=null&&x.f.ttc!==x.f.ht?' ('+eur(x.f.ttc)+' TTC)':''}`).join('\n')+`\n\nTotal à payer : ${eur(som(l))} HT`;
-  document.getElementById('bap-corps').innerHTML=S.length?S.map(([nom,l])=>{const o=ok(l),k=ko(l);
+  document.getElementById('bap-corps').innerHTML=S.length?S.map(([nom,l])=>{const v=vl(l),o=ok(l),k=ko(l);
     return `<div class="s" style="margin:0 0 14px"><h4 style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span><b>${esc(nom)}</b></span>
-      <span class="chip ok">À payer ${e0(som(o))} (${o.length})</span>${k.length?`<span class="chip warn">À vérifier ${e0(som(k))} (${k.length})</span>`:''}
-      ${o.length?`<button class="btn" data-bapc="${esc(nom)}">Copier le bon à payer</button>`:''}</h4>
-      <div class="wrap"><table><thead><tr><th>Reçue</th><th>Facture</th><th class="num">Montant HT</th><th>Contrôle</th><th>Payé</th></tr></thead><tbody class="bapt">
-      ${[...o,...k].map(x=>`<tr data-f="${esc(x.f.fichier)}" style="cursor:pointer"><td class="nw">${fr((x.f.recu||'').slice(0,10))}</td><td>${esc(x.f.numero||x.f.fichier)}${x.f.date?`<span class="b2">du ${fr(x.f.date)}</span>`:''}</td>
-        <td class="num"><b>${x.f.ht!=null?eur(x.f.ht):'?'}</b></td><td>${x.pb.length?x.pb.map(p=>`<span class="chip warn">${esc(p)}</span>`).join(' '):'<span class="chip ok">À payer</span>'}</td>
+      ${v.length?`<span class="chip ok">Bon à payer validé ${e0(som(v))} (${v.length})</span>`:''}${o.length?`<span class="chip info">Conformes à valider ${e0(som(o))} (${o.length})</span>`:''}${k.length?`<span class="chip warn">À vérifier ${e0(som(k))} (${k.length})</span>`:''}
+      ${o.length?`<button class="btn prim" data-bapv="${esc(nom)}" title="Un clic : ces ${o.length} factures conformes deviennent un bon à payer. Rien n'est payé ni envoyé.">Valider les ${o.length} conformes</button>`:''}
+      ${v.length?`<button class="btn" data-bapc="${esc(nom)}">Copier le bon à payer</button>`:''}</h4>
+      <div class="wrap"><table><thead><tr><th>Reçue</th><th>Facture</th><th class="num">Montant HT</th><th>Contrôle</th><th>Bon à payer</th><th>Payé</th></tr></thead><tbody class="bapt">
+      ${[...v,...o,...k].map(x=>`<tr data-f="${esc(x.f.fichier)}" style="cursor:pointer"><td class="nw">${fr((x.f.recu||'').slice(0,10))}</td><td>${esc(x.f.numero||x.f.fichier)}${x.f.date?`<span class="b2">du ${fr(x.f.date)}</span>`:''}</td>
+        <td class="num"><b>${x.f.ht!=null?eur(x.f.ht):'?'}</b></td><td>${chipClasse(x.classe)} ${x.pb.map(p=>`<span class="chip warn">${esc(p)}</span>`).join(' ')}</td>
+        <td><input type="checkbox" data-bap="${esc(x.f.fichier)}" ${BAP.get(x.f.fichier)?'checked':''} title="Bon à payer : ta validation pour cette facture (même avec un écart)"></td>
         <td><input type="checkbox" data-pay="${esc(x.f.fichier)}" title="Payé (virement fait)"></td></tr>`).join('')}</tbody></table></div></div>`}).join('')
     :`<p class="vide" style="padding:14px">${L.length?'Rien à payer pour ces critères : toutes les factures sont marquées payées.':'Aucune facture de sous-traitant lue pour l\'instant.'}</p>`;
-  const BT={};S.forEach(([nom,l])=>BT[nom]=txt(nom,ok(l)));
+  const BT={};S.forEach(([nom,l])=>BT[nom]=txt(nom,vl(l)));
   document.querySelectorAll('#bap-corps [data-bapc]').forEach(b=>b.onclick=e=>{e.stopPropagation();copier(BT[b.dataset.bapc],b)});
+  document.querySelectorAll('#bap-corps [data-bapv]').forEach(b=>b.onclick=e=>{e.stopPropagation();(g[b.dataset.bapv]||[]).filter(x=>x.classe==='conforme').forEach(x=>BAP.set(x.f.fichier,true));setTimeout(facturesVue,200)});
+  document.querySelectorAll('#bap-corps input[data-bap]').forEach(c=>{c.onclick=e=>e.stopPropagation();c.onchange=()=>{BAP.set(c.dataset.bap,c.checked);setTimeout(facturesVue,200)}});
   document.querySelectorAll('#bap-corps input[data-pay]').forEach(c=>{c.onclick=e=>e.stopPropagation();c.onchange=()=>{PAY.set(c.dataset.pay,c.checked);setTimeout(facturesVue,200)}});
   document.querySelectorAll('#bap-corps tr[data-f]').forEach(tr=>tr.onclick=()=>{FSEL=tr.dataset.f;facturesVue()});
 }
@@ -2644,6 +2657,34 @@ function filActivite(n,o,x){const E=[],A=2026;const iso=(d,h)=>{const m=/^(\d{2}
   try{const v=JSON.parse(NOTE.get('mgr:bc:'+(l.n_bc||(o.bc||{}).n_bc||''))||'null');if(v&&v.q)E.push([new Date(v.q).toISOString().slice(0,16),'Demande au manager : '+v.txt])}catch(e){}
   if(!E.length)return '';E.sort((a,b)=>String(a[0])<String(b[0])?-1:1);
   return '<div class="s"><details class="fil"><summary><h4 style="display:inline">Fil d’activité</h4> <span class="tag">'+E.length+' événement(s)</span></summary><ul class="filul">'+E.map(e=>'<li><span class="fd">'+fr(String(e[0]).slice(0,10))+(String(e[0]).length>10&&String(e[0]).slice(11,16)!=='00:00'?' '+String(e[0]).slice(11,16):'')+'</span><span>'+esc(e[1])+'</span></li>').join('')+'</ul></details></div>'}
+/* 19/11 (chantier choisi par J : factures clients et relances) : liste d'actions pour J, en lecture seule : factures « Envoyé » en retard
+   à relancer (par client, avec un texte à copier : le robot n'envoie jamais de mail), commandes terminées pas encore facturées, factures
+   réglées selon l'Extranet à pointer dans Nexxio. Jamais de facture, de lettrage ni de mail par le robot. */
+const RFA=(()=>{try{return +localStorage.getItem('rfmin')||60}catch(e){return 60}})();let RFMIN=RFA;
+function actionsFact(){const sec=document.getElementById('frel');if(!sec)return;
+  if(!sec._init){sec._init=1;sec.classList.add('pliable','ferme');sec.addEventListener('click',e=>{const h=e.target.closest('h2');if(h&&h.parentNode===sec&&!e.target.closest('button,input,select,a,label'))sec.classList.toggle('ferme')})}   // repliée au départ : la liste du Planning reste en haut
+  const FN=(D.fnx||[]).filter(f=>f.etat==='Envoyé'&&f.type!=='avoir'),age=f=>Math.round((new Date(today)-new Date(f.date))/864e5);
+  const X=D.extranet_factures||[],reg=new Set(X.filter(x=>/^réglée/i.test(x.reglee||'')).map(x=>x.ref_fournisseur));
+  const BC={};(D.planning||[]).forEach(x=>{if(x.n_bc)BC[x.n_nexxio]=x.n_bc});
+  const R=FN.filter(f=>age(f)>=RFMIN&&age(f)<=365&&!reg.has(f.numero)).sort((a,b)=>a.date<b.date?-1:1), aPointer=FN.filter(f=>reg.has(f.numero)), vieilles=FN.filter(f=>age(f)>365&&!reg.has(f.numero));   // plus d'un an « Envoyé » : très probablement payées et pas pointées
+  const par={};R.forEach(f=>{const o=par[f.client]=par[f.client]||{n:0,ht:0,old:9999,L:[]};o.n++;o.ht+=f.ht||0;o.old=Math.min(o.old,-age(f));o.L.push(f)});
+  const cl=Object.entries(par).sort((a,b)=>b[1].ht-a[1].ht);
+  const T=(D.planning||[]).filter(x=>/^(termin|réception)/i.test(x.statut||'')&&(x.restant||0)>0&&!FACT.get(x.n_nexxio)).sort((a,b)=>(b.restant||0)-(a.restant||0));
+  const msg=(c,o)=>'Bonjour,'+'\n\n'+'Sauf erreur de notre part, les factures suivantes sont en attente de règlement :'+'\n'+o.L.map(f=>'- Facture '+f.numero+' du '+fr(f.date)+' : '+e0(f.ht)+' HT'+(BC[f.n_nexxio]?' (BC '+BC[f.n_nexxio]+')':'')).join('\n')+'\n\n'+'Pouvez-vous nous indiquer la date de paiement prévue ? Merci.'+'\n'+'Cordialement, RMS BATIMENT';
+  sec.hidden=false;
+  sec.innerHTML=`<h2><span>Factures : à relancer et à facturer</span><span class="tag">${R.length} impayée(s) en retard · ${e0(R.reduce((t,f)=>t+(f.ht||0),0))} HT · ${T.length} terminée(s) à facturer</span></h2>
+    <p class="sub">Liste d’actions en lecture seule : le robot ne facture, ne lettre et n’écrit jamais à un client. Les textes sont à copier pour que tu les envoies toi-même.</p>
+    <div class="bar" style="padding:8px 16px"><span class="tag">Impayées depuis plus de</span><div class="seg" id="rf-seg">${[30,60,90].map(j=>`<button data-j="${j}" class="${RFMIN===j?'on':''}">${j} jours</button>`).join('')}</div></div>
+    ${cl.length?`<div class="wrap"><table><thead><tr><th>Client</th><th class="num">Factures</th><th class="num">À encaisser HT</th><th class="num">La plus ancienne</th><th></th></tr></thead><tbody>${cl.map(([c,o],i)=>`<tr><td>${bai(c)}</td><td class="num">${o.n}</td><td class="num"><b>${e0(o.ht)}</b></td><td class="num"><span class="chip ${-o.old>=90?'bad':'warn'}">${-o.old} j</span></td><td><button class="btn" data-rfcopy="${i}">Copier le message</button></td></tr>`).join('')}</tbody></table></div>
+    <div class="wrap"><table><thead><tr><th class="num">Âge</th><th>Client</th><th>Facture</th><th>Commande</th><th class="num">HT</th></tr></thead><tbody>${R.slice(0,12).map(f=>`<tr><td class="num">${age(f)} j</td><td>${esc(f.client||'')}</td><td><b>${esc(f.numero)}</b> <span class="tag">${fr(f.date)}</span></td><td>${f.n_nexxio?`<a href="#" data-fiche="${esc(f.n_nexxio)}">${esc(f.n_nexxio)}</a>`:''}${BC[f.n_nexxio]?' <span class="tag">'+esc(BC[f.n_nexxio])+'</span>':''}</td><td class="num">${e0(f.ht)}</td></tr>`).join('')}</tbody></table></div>${R.length>12?`<p class="tag" style="padding:6px 16px">… et ${R.length-12} autre(s) : le détail par bailleur est dans Chiffres, « À encaisser »</p>`:''}`:'<div class="vide">Aucune facture impayée depuis plus de '+RFMIN+' jours.</div>'}
+    ${vieilles.length?`<p class="sub"><b>${vieilles.length} facture(s) de plus d’un an</b> encore « Envoyé » dans Nexxio (${e0(vieilles.reduce((t,f)=>t+(f.ht||0),0))} HT) : très probablement déjà payées, à pointer « Payé » plutôt qu’à relancer.</p>`:''}
+    ${aPointer.length?`<p class="sub"><b>${aPointer.length} facture(s) réglée(s) selon l’Extranet Alliade</b> mais encore « Envoyé » dans Nexxio (${e0(aPointer.reduce((t,f)=>t+(f.ht||0),0))} HT) : à pointer « Payé » dans Nexxio, pas à relancer.</p>`:''}
+    <h3 style="margin:14px 16px 6px;font-size:14px">Terminées, pas encore facturées</h3>
+    ${T.length?`<div class="wrap"><table><thead><tr><th>Commande</th><th>Client · commune</th><th>Statut</th><th class="num">Reste à facturer HT</th></tr></thead><tbody>${T.slice(0,12).map(x=>`<tr><td><a href="#" data-fiche="${esc(x.n_nexxio)}"><b>${esc(x.n_nexxio)}</b></a> <span class="tag">${esc(x.n_bc||'')}</span></td><td>${esc(x.client||x.bailleur||'')} · ${esc(x.commune||'')}</td><td>${esc(x.statut)} ${(x.rapports||0)>0?'<span class="chip ok">rapport reçu</span>':'<span class="chip warn">sans rapport</span>'}</td><td class="num"><b>${e0(x.restant)}</b></td></tr>`).join('')}</tbody></table></div>${T.length>12?`<p class="tag" style="padding:6px 16px">… et ${T.length-12} autre(s)</p>`:''}`:'<div class="vide">Aucune commande terminée en attente de facture.</div>'}`;
+  sec.querySelectorAll('#rf-seg button').forEach(b=>b.onclick=()=>{RFMIN=+b.dataset.j;try{localStorage.setItem('rfmin',RFMIN)}catch(e){}actionsFact()});
+  sec.querySelectorAll('[data-rfcopy]').forEach(b=>b.onclick=()=>{const [c,o]=cl[+b.dataset.rfcopy],t=msg(c,o);
+    try{navigator.clipboard.writeText(t).then(()=>toast('Message copié pour '+c),()=>prompt('Copier :',t))}catch(e){prompt('Copier :',t)}});
+  sec.querySelectorAll('[data-fiche]').forEach(a=>a.onclick=e=>{e.preventDefault();if(NX[a.dataset.fiche])fiche(a.dataset.fiche)})}
 function relancesBailleurs(){const sec=document.getElementById('relb');if(!sec)return;const R=RELB.filter(r=>(r.jour||'')>=jr(60));
   if(!R.length){sec.hidden=true;return}
   const att=R.filter(r=>!ENV.get(r.id)), fait=R.filter(r=>ENV.get(r.id)).sort((a,b)=>(b.jour||'')>(a.jour||'')?1:-1).slice(0,5);
@@ -2667,7 +2708,7 @@ function journee(){
   // 17/11 (J : « Ma journée pourrait être mieux ») : l'urgent d'abord (rouge = à traiter maintenant, orange = du jour, gris = de fond),
   // les 3 premières commandes de chaque étape visibles tout de suite (on agit sur place), le reste sur clic
   const VIS=TEL()?0:3;   // 19/11 : sur téléphone, une étape de Ma journée tient sur son titre (un toucher montre les commandes)
-  const NIV0=new Set(['À terminer dans Nexxio','BC bloqués','Corrections à valider','Relances des bailleurs','Alertes du robot et des données']), NIV2=new Set(['Relances']);
+  const NIV0=new Set(['Factures impayées en retard','À terminer dans Nexxio','BC bloqués','Corrections à valider','Relances des bailleurs','Alertes du robot et des données']), NIV2=new Set(['Relances']);
   const niv=t=>NIV0.has(t)||(t==='À suivre'&&suivA.some(suivEchu))?0:NIV2.has(t)||t==='À suivre'?2:1;
   const FOC=[];   // 19/11 (J : « Ma journée trop bourrée ») : chaque étape est aussi gardée pour la vue épurée « Focus »
   const etape=(n,titre,sous,liste,bouton,go)=>{if(n)FOC.push({n,titre,sous,liste,bouton,go,v:niv(titre)});return etape0(n,titre,sous,liste,bouton,go)};
@@ -2700,6 +2741,9 @@ function journee(){
   const ymPrec=(()=>{let y=+today.slice(0,4),m=+today.slice(5,7)-1;if(m<1){m=12;y--}return y+'-'+String(m).padStart(2,'0')})();
   const propA=Object.keys(PROPS).filter(n=>PROPS[n].etat==='à valider'&&!(PROP.get(n)&&propTs(n)>(+PROPS[n].cree_ms||0)));
   const suivA=suivListe();
+  const FNJ=(D.fnx||[]).filter(f=>f.etat==='Envoyé'&&f.type!=='avoir'),ageF=f=>Math.round((new Date(today)-new Date(f.date))/864e5),regF=new Set((D.extranet_factures||[]).filter(x=>/^réglée/i.test(x.reglee||'')).map(x=>x.ref_fournisseur));
+  const impay=FNJ.filter(f=>ageF(f)>=60&&ageF(f)<=365&&!regF.has(f.numero)).sort((a,b)=>a.date<b.date?-1:1);
+  const termF=P.filter(x=>/^(termin|réception)/i.test(x.statut||'')&&(x.restant||0)>0&&!FACT.get(x.n_nexxio)).sort((a,b)=>(b.restant||0)-(a.restant||0));
   // 19/11 : rapport reçu mais commande pas « Terminée » dans Nexxio (contrôle de santé) : à terminer pour que le suivi soit juste
   const aTerm=P.filter(x=>(x.rapports||0)>0&&['Prise en compte','Planifiée','Planifié'].includes(x.statut)&&(x.restant||0)>0&&!FACT.get(x.n_nexxio));
   const relA=RELB.filter(r=>(r.jour||'')>=jr(60)&&!ENV.get(r.id));
@@ -2708,6 +2752,8 @@ function journee(){
     Object.keys(par).sort((a,b)=>a.localeCompare(b,'fr')).forEach(n=>{if(!ENV.get('rel:'+ymPrec+':'+n))rel.push(`<li style="cursor:default"><label><input type="checkbox" data-env="${esc('rel:'+ymPrec+':'+n)}"> envoyé</label> <b>${esc(n)}</b> · ${par[n]} commande(s) de ${esc(nomMois(ymPrec))}</li>`)})}
   const ET=[
     etape(aTerm.length,'À terminer dans Nexxio',`Un rapport est arrivé mais la commande n’est pas encore « Terminée » : à terminer dans Nexxio (le robot ne le fait jamais seul)`,aTerm.map(x=>li(x.n_nexxio,`${esc(x.commune||'')} · statut ${esc(x.statut)} · ${eur(x.restant)}${RAP.some(r=>r.n_nexxio===x.n_nexxio)?'':' · rapport de plus d’un an (hors de la liste lue)'} · <a href="https://rmsbatiment.app.nexxio.fr/main/item?order_number=${encodeURIComponent(x.n_nexxio)}" target="_blank" onclick="event.stopPropagation()">ouvrir dans Nexxio</a>`)),'',''),
+    etape(impay.length,'Factures impayées en retard',`${e0(impay.reduce((t,f)=>t+(f.ht||0),0))} HT depuis plus de 60 jours : à relancer (texte à copier dans Planning)`,impay.slice(0,6).map(f=>`<li data-fiche="${esc(f.n_nexxio||'')}"><b>${esc(f.numero)}</b> ${esc(f.client||'')} · ${e0(f.ht)} · ${ageF(f)} j</li>`),'Voir les relances','relf'),
+    etape(termF.length,'Terminées, pas encore facturées',`${e0(termF.reduce((t,x)=>t+(x.restant||0),0))} HT : commandes terminées ou réceptionnées à facturer`,termF.slice(0,6).map(x=>li(x.n_nexxio,`${esc(x.commune||'')} · ${e0(x.restant)} · ${esc(x.statut)}`)),'Voir à facturer','relf'),
     etape(suivA.length,'À suivre',`${suivA.filter(suivEchu).length} à regarder maintenant · les autres sont mises de côté avec leur raison`,suivA.map(o=>li(o.n,`${esc(String(o.txt||'').slice(0,80))}${o.d?' · le '+fr(o.d):''}`)),'',''),
     etape(propA.length,'Corrections à valider','Le robot propose une correction sur une commande déjà planifiée ou avec un sous-traitant : ouvrir la fiche et cliquer sur le bouton de la proposition',propA.map(n=>li(n,`${esc(PROPS[n].n_bc||'')} · ${esc(propDetail(PROPS[n]).slice(0,90))}`)),'',''),
     etape(relA.length,'Relances des bailleurs','Un bailleur a relancé une commande : répondre, puis cocher « traité » dans la section Relances des bailleurs, plus haut',relA.map(r=>li(r.n_nexxio||r.n_bc,`${esc(r.n_bc)} · ${esc(String(r.motif||'').slice(0,90))}`)),'',''),
@@ -2722,7 +2768,7 @@ function journee(){
   const JM=(()=>{try{return localStorage.getItem('jmode')||'epure'}catch(e){return 'epure'}})();
   const NV=[0,0,0];FOC.forEach(f=>NV[f.v]+=f.n);
   const NOMV=['À traiter maintenant','Du jour','De fond'];
-  const ICN={'BC bloqués':'alert','Alertes du robot et des données':'alert','À terminer dans Nexxio':'check','Corrections à valider':'tool','Relances des bailleurs':'bell','Relances':'clock','Commandes à planifier':'calendar','Rapports à envoyer au bailleur':'file','Factures à faire':'receipt','À suivre':'pin','Relevés du mois à envoyer':'file'};
+  const ICN={'BC bloqués':'alert','Alertes du robot et des données':'alert','À terminer dans Nexxio':'check','Corrections à valider':'tool','Relances des bailleurs':'bell','Relances':'clock','Commandes à planifier':'calendar','Rapports à envoyer au bailleur':'file','Factures à faire':'receipt','À suivre':'pin','Relevés du mois à envoyer':'file','Factures impayées en retard':'receipt','Terminées, pas encore facturées':'receipt'};
   const FRows=[...FOC].sort((a,b)=>a.v-b.v).slice(0,6).map(f=>`<div class="jrow niv${f.v}"><div class="jh"><span class="jt ic ic-${ICN[f.titre]||'check'}">${f.titre}</span><span class="jn">${f.n}</span>${f.bouton?`<button class="btn" data-go="${f.go}">${f.bouton}</button>`:''}</div>${f.liste.length?`<ul class="jul">${f.liste[0]}</ul>`:''}</div>`).join('');
   const VFocus=`<div class="jcards">${NV.map((n,k)=>`<div class="jc niv${k}"><b>${n}</b><span>${NOMV[k]}</span></div>`).join('')}</div>${FRows}${FOC.length>6?`<p class="tag" style="padding:6px 18px 0">et ${FOC.length-6} autre(s) étape(s) dans le détail</p>`:''}`;
   document.getElementById('journee').innerHTML=`<h2><span>Ma journée</span><span class="tag">depuis ${nomJ} ${fr(debut)}</span><button class="btn" id="jmode">${JM==='epure'?'Voir le détail':'Vue épurée'}</button></h2>
@@ -2737,11 +2783,13 @@ function journee(){
   J0.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const g=b.dataset.go;
     if(g==='faire'){document.getElementById('faire').scrollIntoView({behavior:'smooth'});return}
     if(g==='rel'){onglet('sst');svue='rel';svues();window.scrollTo(0,0);return}
+    if(g==='relf'){onglet('planning');actionsFact();const e=document.getElementById('frel');if(e){e.classList.remove('ferme');e.scrollIntoView({behavior:'smooth'})}return}
     if(g==='etat'){onglet('chiffres');const er=document.getElementById('etatrobot');er._ouv=true;document.getElementById('etat-l').hidden=false;er.scrollIntoView();return}
     pv=g;store.set('pv',g);if(g==='fact')store.set('ffact','toutes');onglet('planning');planning();window.scrollTo(0,0);telListe()});
 }
 try{journee()}catch(e){console.error('Ma journée',e)}
 try{relancesBailleurs()}catch(e){console.error('Relances',e)}
+try{actionsFact()}catch(e){console.error('Factures à relancer',e)}
 try{suivi()}catch(e){console.error('À suivre',e)}
 try{corrAuto()}catch(e){console.error('Corrections auto',e)}
 /* ---------- Compte rendu du manager (16/11, J : « je veux que tu deviennes comme un manager et t'auras plusieurs agents
