@@ -2474,7 +2474,8 @@ else coBandeau();
    statut, résumé, case « traité » partagée. Le compteur est aussi dans Ma journée. */
 /* 17/11 : correction proposée par le robot (commande planifiée ou avec sous-traitant, libellé, vacant) : J l'applique d'un clic ;
    le robot ne la fait que si l'heure du clic est plus récente que cree_ms, et une seule fois. */
-const PQ={pilote:'Pilote',gestionnaire:'Gestionnaire',libelle:'Libellé',vacant:'Logement vacant'};
+const propRes=n=>{const q=(PROPS[n]||{}).quoi;return (Array.isArray(q)?q:[q]).includes('ressaisie')};   // 17/11 : « ressaisie » = supprimer la commande en création puis la ressaisir (accord de J pour CE n°)
+const PQ={ressaisie:'Supprimer et ressaisir',pilote:'Pilote',gestionnaire:'Gestionnaire',libelle:'Libellé',vacant:'Logement vacant'};
 const propQuoi=q=>(Array.isArray(q)?q:[q]).filter(Boolean).map(x=>{const m=/^(quantite|ligne):(.*)$/.exec(x);return m?(m[1]==='ligne'?'Ligne à ajouter ':'Quantité ligne ')+m[2]:(PQ[x]||x)}).join(', ');
 function propDetail(p){if(p.detail)return p.detail;const v=p.valeurs||{};   // 17/11 : à défaut de texte, dit les lignes proposées (quantités, ajouts)
   return [...Object.entries(v.quantites||{}).map(([c,q])=>'Ligne '+c+' : quantité '+q),...(v.ajouts||[]).map(c=>'Ajouter la ligne '+c)].join(' · ')}
@@ -2485,11 +2486,11 @@ function propBloc(n){const p=PROPS[n];if(!p)return '';
   if(p.etat==='appliquée')etat=`<span class="chip ok">Appliquée</span> ${p.fait_le?fr(String(p.fait_le).slice(0,10)):''} ${esc(p.resultat||'')}`;
   else if(p.etat==='échec')etat=`<span class="chip bad">Échec</span> ${esc(p.resultat||'')}`;
   else if(clic)etat='<span class="chip info">Demande envoyée</span> le robot l’applique à son prochain passage';
-  else etat=`<span class="chip warn">À valider</span> <button class="btn prim" id="prop-go">Appliquer</button>`;
+  else etat=`<span class="chip warn">À valider</span> <button class="btn prim" id="prop-go">${propRes(n)?'Supprimer et ressaisir':'Appliquer'}</button>`;
   return `<div class="s" id="propb"><h4>Correction proposée par le robot</h4><div><b>${esc(propQuoi(p.quoi))}</b> : ${esc(propDetail(p))}</div>
     ${p.pourquoi?`<span class="b2">Pourquoi : ${esc(p.pourquoi)}</span>`:''}<div style="margin-top:8px">${etat}</div></div>`}
 function lierProp(n){const b=document.getElementById('prop-go');if(!b)return;b.onclick=()=>{
-  if(!confirm('Appliquer cette correction dans Nexxio sur la commande '+n+' ? '+propDetail(PROPS[n])))return;
+  if(!confirm(propRes(n)?'SUPPRIMER la commande '+n+' dans Nexxio, puis la ressaisir avec le BC relu ? Ton clic vaut accord pour cette commande seulement. '+propDetail(PROPS[n]):'Appliquer cette correction dans Nexxio sur la commande '+n+' ? '+propDetail(PROPS[n])))return;
   PROP.set(n,true);fiche(n);journee()}}
 function corrAuto(){const el=document.getElementById('corrauto');if(!el)return;const C=D.corrections_auto||[];if(!C.length){el.hidden=true;return}
   el.hidden=false;el.innerHTML=`<h2><span>Corrections faites seul par le robot</span><span class="tag">${C.length} dernière(s)</span></h2>
@@ -2580,7 +2581,7 @@ function journee(){
     Object.keys(par).sort((a,b)=>a.localeCompare(b,'fr')).forEach(n=>{if(!ENV.get('rel:'+ymPrec+':'+n))rel.push(`<li style="cursor:default"><label><input type="checkbox" data-env="${esc('rel:'+ymPrec+':'+n)}"> envoyé</label> <b>${esc(n)}</b> · ${par[n]} commande(s) de ${esc(nomMois(ymPrec))}</li>`)})}
   const ET=[
     etape(suivA.length,'À suivre',`${suivA.filter(suivEchu).length} à regarder maintenant · les autres sont mises de côté avec leur raison`,suivA.map(o=>li(o.n,`${esc(String(o.txt||'').slice(0,80))}${o.d?' · le '+fr(o.d):''}`)),'',''),
-    etape(propA.length,'Corrections à valider','Le robot propose une correction sur une commande déjà planifiée ou avec un sous-traitant : ouvrir la fiche et cliquer « Appliquer »',propA.map(n=>li(n,`${esc(PROPS[n].n_bc||'')} · ${esc(propDetail(PROPS[n]).slice(0,90))}`)),'',''),
+    etape(propA.length,'Corrections à valider','Le robot propose une correction sur une commande déjà planifiée ou avec un sous-traitant : ouvrir la fiche et cliquer sur le bouton de la proposition',propA.map(n=>li(n,`${esc(PROPS[n].n_bc||'')} · ${esc(propDetail(PROPS[n]).slice(0,90))}`)),'',''),
     etape(relA.length,'Relances des bailleurs','Un bailleur a relancé une commande : répondre, puis cocher « traité » dans la section Relances des bailleurs, plus haut',relA.map(r=>li(r.n_nexxio||r.n_bc,`${esc(r.n_bc)} · ${esc(String(r.motif||'').slice(0,90))}`)),'',''),
     etape(rel.length,'Relevés du mois à envoyer',`Début de mois : le relevé du mois de ${nomMois(ymPrec)} de chaque sous-traitant, pour qu'il établisse sa facture ; cocher « envoyé » une fois fait`,rel,'Voir les relevés','rel'),
     etape(recues.length+enCrea.length,'Commandes à planifier',`${occ.length} locataire(s) à appeler · ${vac.length} logement(s) vacant(s), clés à récupérer${enCrea.length?` · ${enCrea.length} encore à prendre en compte`:''}`,l1,'Voir À planifier','aplan'),
