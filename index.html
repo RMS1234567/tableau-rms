@@ -6,7 +6,7 @@
 .b{max-width:360px;width:100%}h2{margin:0 0 6px}label{display:block;margin:12px 0 4px;font-size:14px}
 input{width:100%;box-sizing:border-box;padding:10px;border:1px solid #cfccc3;border-radius:8px;font-size:16px}
 button{margin-top:16px;width:100%;padding:11px;border:0;border-radius:8px;background:#2456d6;color:#fff;font-size:16px;font-weight:600}
-a{color:#2456d6;font-size:14px}#m{min-height:1.4em}</style></head>
+a{color:#2456d6;font-size:14px}#m{min-height:1.4em}@keyframes brille{0%{background-position:-200px 0}100%{background-position:calc(200px + 100%) 0}}.sk{margin:18px auto 0;max-width:420px}.sk i{display:block;height:14px;border-radius:7px;margin:10px 0;background:linear-gradient(90deg,#e6e8f0 25%,#f3f4f9 37%,#e6e8f0 63%);background-size:200px 100%;animation:brille 1.3s infinite linear}.sk i:nth-child(2){width:80%}.sk i:nth-child(3){width:55%}</style></head>
 <body><div class="b"><h2>RMS BATIMENT</h2><p id="m">Chargement…</p>
 <form id="f" hidden><label for="e">E-mail</label><input id="e" type="email" autocomplete="username" required>
 <label for="p">Mot de passe</label><input id="p" type="password" autocomplete="current-password" required>
@@ -22,7 +22,7 @@ const dire=e=>({'auth/invalid-credential':'E-mail ou mot de passe incorrect.','a
   'auth/too-many-requests':'Trop d\'essais : réessayer dans quelques minutes.','auth/network-request-failed':'Pas de connexion internet.',
   'permission-denied':'Ce compte n\'a pas accès au tableau : demander à J.'})[e.code]||('Erreur : '+(e.message||e));
 const pause=t=>new Promise(r=>setTimeout(r,t));
-async function charger(){m.textContent='Chargement du tableau…';
+async function charger(){m.innerHTML='Chargement du tableau…<div class="sk"><i></i><i></i><i></i></div>';
   let meta,parts=[];
   for(let i=0;i<4;i++){   // le robot écrit les morceaux puis meta : on attend que tous les morceaux soient de la même version
     meta=(await getDoc(doc(db,'tableau','meta'))).data();
