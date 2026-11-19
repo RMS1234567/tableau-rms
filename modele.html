@@ -639,6 +639,13 @@ main>div[id^="p-"]:not([hidden]),.contenu>div[id^="p-"]:not([hidden]){animation:
  #ptiles .kpi.grand b,#ptiles .kpi.petit b{font-size:32px;margin:6px 0 4px}
  #ptiles .kpi .l{font-size:13.5px;white-space:normal;overflow:visible}
  #ptiles .kpi small{font-size:12.5px;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.35}}
+/* 19/11 (J : « moins d'info de partout ») : sur PC aussi, les cartes de détail (Chiffres, Blocages) sont repliées sur leur titre ;
+   un clic les ouvre, « Tout déplier » les ouvre toutes */
+section.card.pliable>h2{cursor:pointer}
+section.card.pliable>h2>span:first-child::after{content:' ▾';color:var(--faint)}section.card.ferme>h2>span:first-child::after{content:' ▸'}
+section.card.ferme>:not(h2){display:none!important}section.card.ferme>h2{margin-bottom:0}
+.toutdep{display:flex;justify-content:flex-end;margin:0 0 10px}
+@media (max-width:700px){#verre{padding:9px 12px}#verre span{display:inline!important;font-size:11px}}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -2733,4 +2740,10 @@ setTimeout(()=>{try{recents();VUE_P.forEach(vuesBarre)}catch(e){console.error('V
   const lire=()=>{try{return localStorage.getItem('style')==='verre'}catch(e){return false}};
   const maj=()=>{const v=lire();if(v)h.setAttribute('data-style','verre');else h.removeAttribute('data-style');b.querySelector('span').textContent=v?'Verre : oui':'Verre';b.setAttribute('aria-pressed',v?'true':'false')};
   b.onclick=()=>{try{if(lire())localStorage.removeItem('style');else localStorage.setItem('style','verre')}catch(e){}maj()};maj()})();
+// 19/11 (J : « moins d'info de partout ») : PC, cartes de Chiffres et Blocages repliées au départ (le téléphone avait déjà son repli)
+setTimeout(()=>{if(TEL())return;const cs=[...document.querySelectorAll('#blocages,#commandes,#p-chiffres section.card:not(.repli)')];
+  cs.forEach(sc=>{const h=sc.querySelector(':scope>h2');if(!h)return;sc.classList.add('pliable','ferme');
+    h.addEventListener('click',e=>{if(e.target.closest('button,input,select,a,label'))return;sc.classList.toggle('ferme')})});
+  const pc=document.getElementById('p-chiffres');if(pc&&cs.length){const b=document.createElement('div');b.className='toutdep';b.innerHTML='<button class="btn">Tout déplier</button>';
+    pc.insertAdjacentElement('afterbegin',b);const bt=b.querySelector('button');bt.onclick=()=>{const ouvrir=cs.some(x=>x.classList.contains('ferme'));cs.forEach(x=>x.classList.toggle('ferme',!ouvrir));bt.textContent=ouvrir?'Tout replier':'Tout déplier'}}},90);
 </script></body></html>
