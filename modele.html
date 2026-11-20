@@ -747,6 +747,12 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 @media (max-width:700px){.cjt{font-size:24px}.cjb{display:grid;grid-template-columns:1fr 1fr}.cjb .cjbt:last-child{grid-column:1/-1}.cjbt{min-height:52px}}
 .cjban{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:8px 16px 0;padding:10px 14px;border-radius:14px;background:var(--orange-bg);color:var(--orange);font-size:14px}.cjopt{padding:8px 16px 0}.cjg{margin:14px 0 0;font-size:15px;padding-top:10px;border-top:2px solid var(--line)}
 .cjres{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px 0}
+/* chantiers du jour, version compacte (20/11) */
+.cjl2{padding:0 16px 10px}.cjr{display:flex;align-items:center;gap:12px;padding:9px 0}.cjm{flex:1 1 auto;min-width:0}
+.cjt{font-size:17px}.cjh{gap:8px}.cja{margin-top:1px;font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cjl{font-weight:400;color:var(--muted)}
+.cjw{margin-top:1px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cjb{flex:none;margin:0;gap:8px}.cjbt{min-height:36px!important;padding:6px 14px!important;font-size:13.5px!important}
+@media (max-width:700px){.cjr{flex-wrap:wrap}.cjm{flex-basis:100%}.cjb{display:flex;width:100%}.cjb .cjbt{flex:1;min-height:44px!important;grid-column:auto}.cja,.cjw{white-space:normal}}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -2737,13 +2743,14 @@ function chantiersJour(){const sec=document.getElementById('cj');if(!sec)return;
   const dans=e=>{const d=e.debut.slice(0,10);return CJ==='j'?d===today:CJ==='d'?d===dem:(d>=today&&d<=fin)};
   const nb={j:A.filter(e=>e.debut.slice(0,10)===today).length,d:A.filter(e=>e.debut.slice(0,10)===dem).length,s:A.filter(e=>e.debut.slice(0,10)>=today&&e.debut.slice(0,10)<=fin).length};
   const R=A.filter(dans).sort((a,b)=>a.debut<b.debut?-1:1), JOUR=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
+  // 20/11 (J : « enlève le bouton itinéraire et compacte la fiche chantier du jour ») : une ligne par chantier : heure, équipe, commune, adresse, locataire, boutons Appeler et Fiche à droite
   const ligne=e=>{const n=e.n_nexxio,g=(D.logements||{})[n]||{},o=NX[n]||{},pl=o.pl||{},t0=(g.tels||[])[0],adr=e.lieu||g.adresse||pl.adresse||'';
     const d=new Date(e.debut.slice(0,10)+'T12:00:00');
-    return `<div class="cjr"><div class="cjh"><b class="cjt">${CJ==='s'?JOUR[d.getDay()]+' '+e.debut.slice(8,10)+' · ':''}${esc(e.debut.slice(11,16))}</b><span class="chip info">${esc(e.equipe||'équipe ?')}</span><span class="tag">${esc(pl.statut||'')}${pl.commune?' · '+esc(pl.commune):''}</span></div>
-      <div class="cja">${esc(adr)}</div>
-      ${g.nom&&!g.vacant?`<div class="cjl"><b>${esc(g.nom)}</b>${g.etage?' · étage '+esc(g.etage):''}${g.porte?' · porte '+esc(g.porte):''}</div>`:g.vacant?'<div class="cjl"><b>Logement vacant</b> : clés à l’agence</div>':''}
-      ${g.topo?`<div class="cjw">${esc(g.topo)}</div>`:''}
-      <div class="cjb">${t0&&!g.vacant?`<a class="bt cjbt" href="tel:${esc(tel(t0))}">Appeler</a>`:''}${adr?`<a class="bt cjbt" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(adr)}">Itinéraire</a>`:''}<button class="bt cjbt" data-cjf="${esc(n)}">Fiche ${esc(n)}</button></div></div>`};
+    const loc=g.nom&&!g.vacant?esc(g.nom)+(g.etage?' · ét. '+esc(g.etage):'')+(g.porte?' · porte '+esc(g.porte):''):g.vacant?'<b>vacant</b> : clés à l’agence':'';
+    return `<div class="cjr"><div class="cjm"><div class="cjh"><b class="cjt">${CJ==='s'?JOUR[d.getDay()]+' '+e.debut.slice(8,10)+' · ':''}${esc(e.debut.slice(11,16))}</b><span class="chip info">${esc(e.equipe||'équipe ?')}</span><span class="tag">${esc(pl.commune||'')}</span></div>
+      <div class="cja">${esc(adr)}${loc?' <span class="cjl">· '+loc+'</span>':''}</div>
+      ${g.topo?`<div class="cjw">${esc(g.topo)}</div>`:''}</div>
+      <div class="cjb">${t0&&!g.vacant?`<a class="bt cjbt" href="tel:${esc(tel(t0))}">Appeler</a>`:''}<button class="bt cjbt" data-cjf="${esc(n)}">Fiche</button></div></div>`};
   const RET=(D.planning||[]).filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)<jr(3)&&x.rdv_iso.slice(0,10)>=jr(60)&&!x.rapports&&['Planifiée','Planifié','En cours'].includes(x.statut));
   const CLES_J=R.filter(e=>((D.logements||{})[e.n_nexxio]||{}).vacant).length;
   const GRP=L2=>{const g={};L2.forEach(e=>{const pl=(NX[e.n_nexxio]||{}).pl||{},c=pl.commune||String(e.lieu||'').replace(/^.*\d{5}\s*/,'').trim()||'Commune ?';(g[c]=g[c]||[]).push(e)});
@@ -2764,12 +2771,12 @@ function troisColonnes(){const el=document.getElementById('trois');if(!el)return
   const etat=l=>l.etat==='À reprendre'?'<span class="chip bad">à reprendre</span>':l.etat==='Accord de J attendu'?'<span class="chip warn">ton accord</span>':l.etat==='À prendre en compte'?'<span class="chip warn">en création</span>':'<span class="chip ok">pris en compte</span>';
   const faire=L.filter(l=>((l.etat==='À reprendre'||l.etat==='Accord de J attendu')&&l.jour>=jr(30)&&!FAIT(l))||(l.etat==='À prendre en compte'&&l.jour>=jr(14))).sort((a,b)=>(a.jour>b.jour)?1:-1);
   const dc=x=>DCMD[x.n_nexxio]||(L.find(l=>l.n_nexxio===x.n_nexxio)||{}).jour||'';   // même règle que « À planifier » du Planning : moins de 3 mois, sans rapport ni RDV d'agenda
-  const PL=(D.planning||[]).filter(x=>x.statut==='Prise en compte'&&!x.rdv&&!x.rapports&&!AG_N[x.n_nexxio]&&!(dc(x)&&dc(x)<jr(90))).sort((a,b)=>b.n_nexxio-a.n_nexxio);
+  const PL=(D.planning||[]).filter(x=>x.statut==='Prise en compte'&&!x.rdv&&!x.rapports&&!AG_N[x.n_nexxio]&&!(dc(x)&&dc(x)<jr(90))).sort((a,b)=>(dc(a)||'9')<(dc(b)||'9')?-1:1);   // 20/11 (J : « comment savoir quelle commande planifier ») : les plus anciennes d'abord, avec leur ancienneté
   const pla=PL.map(x=>({x,g:(D.logements||{})[x.n_nexxio]||{}})).sort((a,b)=>(a.g.vacant?1:0)-(b.g.vacant?1:0));
   const col=(cl,titre,n,sous,items,vide)=>`<section class="card t3 ${cl}"><h2><span>${titre}</span><span class="t3n">${n}</span></h2><p class="sub t3s">${sous}</p><ul class="t3l">${items.length?items.slice(0,6).join(''):'<li class="vide">'+vide+'</li>'}</ul>${items.length>6?'<p class="tag" style="padding:4px 16px 10px">… et '+(items.length-6)+' autre(s)</p>':''}</section>`;
   el.innerHTML=col('t3a','Arrivés aujourd’hui',arr.length,'Les BC reçus aujourd’hui (pas les mises à jour de suivi sur de vieux BC)',arr.map(l=>ligne(l).replace('</li>',' '+etat(l)+'</li>')),'Aucun BC reçu aujourd’hui.')+
     col('t3b','À faire par toi',faire.length,'À saisir, à valider ou à reprendre : seuls ceux qui attendent une action de toi',faire.map(l=>ligne(l).replace('</li>',' '+etat(l)+'</li>')),'Rien à faire : le robot a tout traité.')+
-    col('t3c2','À planifier',PL.length,'Commandes prises en compte sans rendez-vous',pla.map(({x,g})=>`<li data-t3="${esc(x.n_nexxio)}"><b>${esc(x.n_nexxio)}</b> ${bai(x.client||x.bailleur||'')} <span class="t3c">${esc(x.commune||'')}</span> ${g.vacant?'<span class="chip info">vacant : clés</span>':'<span class="chip warn">appeler</span>'}</li>`),'Toutes les commandes ont un rendez-vous.');
+    col('t3c2','À planifier',PL.length,'Commandes prises en compte sans rendez-vous',pla.map(({x,g})=>`<li data-t3="${esc(x.n_nexxio)}"><b>${esc(x.n_nexxio)}</b> ${bai(x.client||x.bailleur||'')} <span class="t3c">${esc(x.commune||'')}</span> ${dc(x)?'<span class="chip '+(Math.round((new Date(today)-new Date(dc(x)))/864e5)>=5?'bad':'warn')+'">depuis '+Math.round((new Date(today)-new Date(dc(x)))/864e5)+' j</span>':''} ${g.vacant?'<span class="chip info">vacant : clés</span>':'<span class="chip warn">appeler</span>'}</li>`),'Toutes les commandes ont un rendez-vous.');
   el.querySelectorAll('[data-t3]').forEach(li=>li.onclick=()=>{const c=li.dataset.t3;if(NX[c])fiche(c);else ficheBC(li.dataset.bc||c)})}
 function relancesBailleurs(){const sec=document.getElementById('relb');if(!sec)return;const R=RELB.filter(r=>(r.jour||'')>=jr(60));
   if(!R.length){sec.hidden=true;return}
