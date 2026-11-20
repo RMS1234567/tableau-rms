@@ -760,6 +760,7 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 .tz4{cursor:default}.tz:hover:not(.tz4){border-color:var(--accent)}.tzl{font-size:12.5px;font-weight:600;color:var(--muted)}.tz b{font-size:26px;letter-spacing:-.6px;font-variant-numeric:tabular-nums;line-height:1.15}
 .tz small{font-size:12px;color:var(--muted)}.tz1 b{color:var(--vert)}.tz2 b{color:var(--accent)}.tz3 b{color:var(--orange)}.tz4 b.neg{color:var(--rouge)}
 @media (max-width:960px){.treso{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pe{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin:0;padding:11px 18px;font-size:14px;border-bottom:1px solid var(--line);background:var(--soft)}.pe.warn{background:var(--orange-bg);color:var(--orange)}.pe.info{background:var(--accent-bg);color:var(--accent)}.pe.ok{color:var(--muted)}.pe b{white-space:nowrap}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -1870,10 +1871,23 @@ function ficheBC(nbc){const l=[...L].reverse().find(x=>x.n_bc===nbc)||{};if(l.n_
   document.getElementById('fichein').innerHTML=`<h3><span>BC ${esc(nbc)} ${bai(l.bailleur||'')}</span><button class="btn" id="ffermer">Fermer</button></h3>
     ${l.motif?`<div class="s"><h4>Note du robot</h4>${esc(l.motif)}</div>`:''}${blocBC(nbc)}`;
   lierBlocBC();const f=document.getElementById('fiche');f.hidden=false;document.getElementById('ffermer').onclick=()=>f.hidden=true;f.onclick=e=>{if(e.target===f)f.hidden=true}}
+// 20/11 (J : briques plus lisibles et connectées) : en tête de chaque fiche, « Prochaine étape » : ce qu'il reste à faire sur CETTE commande, déduit des mêmes listes
+// que l'accueil et le Planning (à planifier, rapport manquant, à facturer, facture impayée).
+function prochaineEtape(n,pl){pl=pl||{};const ap=aPlanifier().some(x=>x.n_nexxio===n),rt=aRetard().some(x=>x.n_nexxio===n);
+  const imp=(D.fnx||[]).filter(f=>f.n_nexxio===n&&f.etat==='Envoyé'&&f.type!=='avoir').map(f=>({f,a:Math.round((new Date(today)-new Date(f.date))/864e5)})).sort((a,b)=>b.a-a.a)[0];
+  let t='',c='ok';
+  if(imp&&imp.a>=60&&imp.a<=365){t=`Facture ${esc(imp.f.numero)} impayée depuis ${imp.a} jours (${e0(imp.f.ht)} HT) : à relancer (Planning, Factures à relancer).`;c='warn'}
+  else if((pl.rapports||0)>0&&(pl.restant||0)>0&&!FACT.get(n)){t=`Rapport reçu : à facturer, reste ${e0(pl.restant)} HT. Utilise « Préparer la facture » plus bas.`;c='info'}
+  else if(rt){t='Rendez-vous passé sans rapport : relancer l’équipe pour le rapport d’intervention.';c='warn'}
+  else if(ap){const g=(D.logements||{})[n]||{};t=g.vacant?'À planifier : logement vacant, récupérer les clés à l’agence puis poser le rendez-vous.':'À planifier : appeler le locataire pour poser le rendez-vous.';c='warn'}
+  else if(((NX[n]||{}).bc||{}).risque==='rouge'||/reprendre/i.test((((NX[n]||{}).bc)||{}).statut||'')){t='BC rouge ou à reprendre : à corriger ou à expliquer au manager (« Demander au manager »). Un BC rouge n’est jamais pris en compte tel quel.';c='warn'}
+  else if(pl.statut==='En création'){t='En création : à prendre en compte dans Nexxio.';c='warn'}
+  else t=pl.statut?`Rien à faire pour l’instant (statut ${esc(pl.statut)}).`:'';
+  return t?`<div class="pe ${c}"><b>Prochaine étape</b> <span>${t}</span></div>`:''}
 function fiche(n){const o=NX[n];if(!o)return;recentAjout(n);const pl=o.pl||{},s=o.sst||{},b=o.bc||{},dvx=o.dv||{},x=Object.assign({},dvx,b,s,pl);
   const cout=D.couts&&D.couts[n]!=null?D.couts[n]:null, ht=x.ht!=null&&x.ht!==''?+x.ht:null;
   const c=(l,v)=>v||v===0?`<div><small>${l}</small>${v}</div>`:'';
-  document.getElementById('fichein').innerHTML=`<h3><span>${o.dv&&!o.pl&&!o.sst?'Devis':'Commande'} ${esc(n)} ${bai(x.client||x.bailleur)}</span><button class="btn" id="ffermer">Fermer</button></h3>${o.pl||o.sst||o.bc?frise(n,s,b,pl):''}
+  document.getElementById('fichein').innerHTML=`<h3><span>${o.dv&&!o.pl&&!o.sst?'Devis':'Commande'} ${esc(n)} ${bai(x.client||x.bailleur)}</span><button class="btn" id="ffermer">Fermer</button></h3>${o.pl||o.sst||o.bc?frise(n,s,b,pl):''}${prochaineEtape(n,pl)}
     <div class="g">${c('N° BC',esc(x.n_bc||x.n_devis))}${c('Statut',esc(x.statut))}${c('Commune',esc(x.commune))}
     ${c('Montant HT',ht!=null?eur(ht):'')}${c('Payé au sous-traitant',cout!=null?eur(cout):'')}${c('Marge',cout!=null&&ht!=null?`<b class="${ht-cout<0?'neg':''}">${eur(ht-cout)}</b> (${pct((ht-cout)/ht)})`:'')}
     ${c('Commandée le',fr(s.date||b.jour))}${c('RDV',esc(pl.rdv))}${c('Rapports',pl.rapports!=null?pl.rapports:'')}
