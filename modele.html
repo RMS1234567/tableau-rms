@@ -754,6 +754,12 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 .cjb{flex:none;margin:0;gap:8px}.cjbt{min-height:36px!important;padding:6px 14px!important;font-size:13.5px!important}
 @media (max-width:700px){.cjr{flex-wrap:wrap}.cjm{flex-basis:100%}.cjb{display:flex;width:100%}.cjb .cjbt{flex:1;min-height:44px!important;grid-column:auto}.cja,.cjw{white-space:normal}}
 .jc:hover{filter:brightness(.97)}.jrow:hover{background:color-mix(in srgb,var(--accent) 4%,transparent)}.t3>h2:hover .t3n{filter:brightness(1.15)}.t3>h2::after{content:'›';margin-left:6px;color:var(--faint);font-size:22px}
+/* trésorerie : une ligne d'argent en haut de l'accueil */
+.treso{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 16px}
+.tz{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;padding:14px 16px;border:1px solid var(--line);border-radius:18px;background:var(--card);font:inherit;color:var(--ink);cursor:pointer}
+.tz4{cursor:default}.tz:hover:not(.tz4){border-color:var(--accent)}.tzl{font-size:12.5px;font-weight:600;color:var(--muted)}.tz b{font-size:26px;letter-spacing:-.6px;font-variant-numeric:tabular-nums;line-height:1.15}
+.tz small{font-size:12px;color:var(--muted)}.tz1 b{color:var(--vert)}.tz2 b{color:var(--accent)}.tz3 b{color:var(--orange)}.tz4 b.neg{color:var(--rouge)}
+@media (max-width:960px){.treso{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -770,6 +776,7 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 <!-- EXPLOITATION -->
 <div id="p-exploitation">
   <div id="recents" hidden style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center"></div>
+  <div class="treso" id="treso"></div>
   <div class="trois" id="trois"></div>
   <section class="card" id="cj" hidden style="margin-bottom:16px"></section>
   <section class="card" id="relb" hidden style="margin-bottom:18px"></section>
@@ -2766,6 +2773,23 @@ function chantiersJour(){const sec=document.getElementById('cj');if(!sec)return;
   const gb=document.getElementById('cj-g');if(gb)gb.onclick=()=>{CJG=CJG==='c'?'h':'c';try{sessionStorage.setItem('cjg',CJG)}catch(e){}chantiersJour()};
   const rb=document.getElementById('cj-ret');if(rb)rb.onclick=()=>{onglet('sst');svue='ret';svues();window.scrollTo(0,0)};
   sec.querySelectorAll('[data-cjf]').forEach(b=>b.onclick=()=>{if(NX[b.dataset.cjf])fiche(b.dataset.cjf)})}
+/* 20/11 (objectif de J : « le dashboard le plus utile à RMS BATIMENT, entreprise de second oeuvre ») : le patron veut d'abord l'argent : à facturer aux clients,
+   à encaisser (dont en retard), à payer aux sous-traitants, et ce qu'il reste entre les deux. Une ligne en haut de l'accueil, chaque chiffre mène à sa liste. Lecture seule. */
+function tresorerie(){const el=document.getElementById('treso');if(!el)return;
+  const age=f=>Math.round((new Date(today)-new Date(f.date))/864e5);
+  const regT=new Set((D.extranet_factures||[]).filter(x=>/^réglée/i.test(x.reglee||'')).map(x=>x.ref_fournisseur));
+  // mêmes filtres que la liste « à relancer » : factures « Envoyé » de moins d'un an, sans celles déjà réglées selon l'Extranet (à pointer, pas à encaisser)
+  const FN=(D.fnx||[]).filter(f=>f.etat==='Envoyé'&&f.type!=='avoir'&&age(f)<=365&&!regT.has(f.numero)),enc=FN.reduce((t,f)=>t+(f.ht||0),0),ret=FN.filter(f=>age(f)>=60&&age(f)<=365).reduce((t,f)=>t+(f.ht||0),0);
+  const fact=(D.planning||[]).filter(x=>x.rapports>0&&(x.restant||0)>0&&!FACT.get(x.n_nexxio)).reduce((t,x)=>t+(x.restant||0),0);
+  const pay=FAC.filter(f=>!PAY.get(f.fichier)&&f.ht!=null&&(f.recu||f.date||'').slice(0,10)>=jr(60)).reduce((t,f)=>t+(f.ht||0),0);   // reçues depuis 60 jours : avant, la mise en route « marquer payées » n'a pas été faite pour tout l'historique, le total serait faux
+  const mois=L.filter(l=>l.jour.slice(0,7)===today.slice(0,7)&&VRAI(l)),cmd=som(mois);
+  const c=(cl,t,v,sous,go)=>`<button class="tz ${cl}" data-tz="${go}"><span class="tzl">${t}</span><b>${e0(v)}</b><small>${sous}</small></button>`;
+  el.innerHTML=c('tz1','À facturer aux clients',fact,'rapport reçu, pas encore facturé HT','fact')+c('tz2','À encaisser',enc,(ret?`dont ${e0(ret)} en retard de plus de 60 jours`:'envoyées, non pointées payées')+' · moins d’un an','enc')+c('tz3','À payer aux sous-traitants',pay,'factures reçues depuis 60 jours, pas cochées payées','pay')+
+    `<div class="tz tz4"><span class="tzl">Commandé ce mois-ci</span><b>${e0(cmd)}</b><small>${mois.length} BC reçus, HT</small></div>`;
+  el.querySelectorAll('[data-tz]').forEach(b=>b.onclick=()=>{const g=b.dataset.tz;
+    if(g==='fact'){pv='fact';store.set('pv','fact');onglet('planning');planning();window.scrollTo(0,0);telListe()}
+    else if(g==='enc'){onglet('planning');actionsFact();const x=document.getElementById('frel');if(x){x.classList.remove('ferme');x.scrollIntoView({behavior:'smooth'})}}
+    else{onglet('sst');svue='fac';svues();window.scrollTo(0,0)}})}
 function troisColonnes(){const el=document.getElementById('trois');if(!el)return;
   const ligne=l=>{const n=l.n_nexxio&&NX[l.n_nexxio]?l.n_nexxio:'',cle=n||l.n_bc;return `<li data-t3="${esc(cle)}" data-bc="${esc(l.n_bc||'')}"><b>${esc(l.n_bc||l.n_nexxio||'?')}</b> ${bai(l.bailleur||'')} <span class="t3c">${esc(l.commune||'')}</span></li>`};
   const arr=L.filter(l=>(l.arrive||l.jour)===today&&VRAI(l)&&!(!l.pdf&&DCMD[l.n_nexxio]&&DCMD[l.n_nexxio]<today)).sort((a,b)=>((b.heure||'')>(a.heure||''))?1:-1);
@@ -2896,6 +2920,7 @@ function journee(){
     pv=g;store.set('pv',g);if(g==='fact')store.set('ffact','toutes');onglet('planning');planning();window.scrollTo(0,0);telListe()});
 }
 try{journee()}catch(e){console.error('Ma journée',e)}
+try{tresorerie()}catch(e){console.error('Trésorerie',e)}
 try{troisColonnes()}catch(e){console.error('Trois colonnes',e)}
 try{chantiersJour()}catch(e){console.error('Chantiers du jour',e)}
 try{relancesBailleurs()}catch(e){console.error('Relances',e)}
