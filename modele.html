@@ -761,6 +761,8 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 .tz small{font-size:12px;color:var(--muted)}.tz1 b{color:var(--vert)}.tz2 b{color:var(--accent)}.tz3 b{color:var(--orange)}.tz4 b.neg{color:var(--rouge)}
 @media (max-width:960px){.treso{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .pe{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin:0;padding:11px 18px;font-size:14px;border-bottom:1px solid var(--line);background:var(--soft)}.pe.warn{background:var(--orange-bg);color:var(--orange)}.pe.info{background:var(--accent-bg);color:var(--accent)}.pe.ok{color:var(--muted)}.pe b{white-space:nowrap}
+.surv{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 16px}.svt{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)}
+.sv{display:inline-flex;align-items:center;gap:10px;padding:9px 16px;border:1px solid var(--line);border-radius:999px;background:var(--card);font:inherit;font-size:14px;color:var(--ink);cursor:pointer}.sv b{font-size:18px;font-variant-numeric:tabular-nums}.sv.niv0 b{color:var(--rouge)}.sv:hover{border-color:var(--accent)}.surv[hidden]{display:none}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -778,10 +780,11 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 <div id="p-exploitation">
   <div id="recents" hidden style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center"></div>
   <div class="treso" id="treso"></div>
+  <div class="surv" id="surv"></div>
   <div class="trois" id="trois"></div>
   <section class="card" id="cj" hidden style="margin-bottom:16px"></section>
   <section class="card" id="relb" hidden style="margin-bottom:18px"></section>
-  <section class="card journee" id="journee"></section>
+  <section class="card journee" id="journee" hidden></section>   <!-- 20/11 (J : « Ma journée ne sert plus à rien ») : masquée ; ses 4 éléments uniques sont dans la bande « À surveiller » -->
   <section class="hero" id="hero"></section>
   <div class="kpis" id="kpis"></div>
   <div class="minis" id="minis"></div>
@@ -2925,6 +2928,13 @@ function journee(){
     if(/relances des bailleurs/i.test(t)){const x=document.getElementById('relb');if(x)x.scrollIntoView({behavior:'smooth'});return}
     if(/à suivre/i.test(t)){const x=document.getElementById('suivi');if(x)x.scrollIntoView({behavior:'smooth'});return}
     const li=r.querySelector('li[data-fiche]');if(li)li.click()}});
+  // 20/11 : bande « À surveiller » : ce que seule « Ma journée » montrait (le reste existe déjà dans les trois colonnes, la trésorerie, les relances et À suivre)
+  {const SV=['À terminer dans Nexxio','Corrections à valider','Alertes du robot et des données','Factures impayées en retard'],sv=document.getElementById('surv');
+   if(sv){const it=SV.map(t=>FOC.find(f=>f.titre===t)).filter(Boolean);
+    sv.hidden=!it.length;sv.innerHTML=it.length?'<span class="tag svt">À surveiller</span>'+it.map(f=>`<button class="sv niv${f.v}" data-svg="${esc(f.titre)}"><b>${f.n}</b><span>${esc(f.titre)}</span></button>`).join(''):'';
+    sv.querySelectorAll('[data-svg]').forEach(b=>b.onclick=()=>{const f=FOC.find(x=>x.titre===b.dataset.svg);if(!f)return;
+      const go=f.go&&document.querySelector('#journee [data-go="'+f.go+'"]');if(go){go.click();return}
+      const m=/data-fiche="([^"]+)"/.exec(f.liste[0]||'');if(m&&NX[m[1]])fiche(m[1])})}}
   document.querySelectorAll('#journee .jc').forEach(c=>{c.style.cursor='pointer';c.onclick=()=>{const k=[...c.classList].find(x=>/^niv\d$/.test(x)),r=document.querySelector('#journee .jrow.'+k);if(r)r.scrollIntoView({behavior:'smooth',block:'center'})}});
   const J0=document.getElementById('journee');
   if(!FOC.length)J0.insertAdjacentHTML('beforeend','<p class="sub" style="padding:12px 0 4px">Rien ne t’attend : commandes planifiées, rapports envoyés, factures faites, robot à l’heure.</p>');
