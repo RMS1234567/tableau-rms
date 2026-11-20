@@ -745,6 +745,8 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 .cjb{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}.cjbt{min-height:46px;padding:10px 18px!important;font-size:15px!important;flex:0 1 auto}
 .bt.cjbt:first-child{background:var(--accent);border-color:var(--accent);color:var(--card)!important}
 @media (max-width:700px){.cjt{font-size:24px}.cjb{display:grid;grid-template-columns:1fr 1fr}.cjb .cjbt:last-child{grid-column:1/-1}.cjbt{min-height:52px}}
+.cjban{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:8px 16px 0;padding:10px 14px;border-radius:14px;background:var(--orange-bg);color:var(--orange);font-size:14px}.cjopt{padding:8px 16px 0}.cjg{margin:14px 0 0;font-size:15px;padding-top:10px;border-top:2px solid var(--line)}
+.cjres{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px 0}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -2729,7 +2731,7 @@ function actionsFact(){const sec=document.getElementById('frel');if(!sec)return;
 /* 20/11 (J : « améliore l'UI pour un conducteur de travaux dans le bâtiment ») : le conducteur de travaux pense en chantiers et en tournée : « Chantiers du jour »,
    les rendez-vous des équipes (agendas) aujourd'hui, demain ou sur 7 jours, avec ce qu'il lui faut sur place : heure, équipe, adresse, locataire et étage,
    travaux à faire, et de gros boutons Appeler, Itinéraire (Google Maps) et Fiche. Lecture seule : rien n'est envoyé. */
-let CJ=(()=>{try{return sessionStorage.getItem('cj')||'j'}catch(e){return 'j'}})();
+let CJ=(()=>{try{return sessionStorage.getItem('cj')||'j'}catch(e){return 'j'}})(), CJG=(()=>{try{return sessionStorage.getItem('cjg')||'h'}catch(e){return 'h'}})();   // CJG : tournée par heure (h) ou par commune (c)
 function chantiersJour(){const sec=document.getElementById('cj');if(!sec)return;
   const dem=jr(-1),fin=jr(-7),A=(D.agenda||[]).filter(e=>e.debut&&e.n_nexxio),tel=t=>String(t||'').replace(/[^0-9+]/g,'');
   const dans=e=>{const d=e.debut.slice(0,10);return CJ==='j'?d===today:CJ==='d'?d===dem:(d>=today&&d<=fin)};
@@ -2742,10 +2744,19 @@ function chantiersJour(){const sec=document.getElementById('cj');if(!sec)return;
       ${g.nom&&!g.vacant?`<div class="cjl"><b>${esc(g.nom)}</b>${g.etage?' · étage '+esc(g.etage):''}${g.porte?' · porte '+esc(g.porte):''}</div>`:g.vacant?'<div class="cjl"><b>Logement vacant</b> : clés à l’agence</div>':''}
       ${g.topo?`<div class="cjw">${esc(g.topo)}</div>`:''}
       <div class="cjb">${t0&&!g.vacant?`<a class="bt cjbt" href="tel:${esc(tel(t0))}">Appeler</a>`:''}${adr?`<a class="bt cjbt" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(adr)}">Itinéraire</a>`:''}<button class="bt cjbt" data-cjf="${esc(n)}">Fiche ${esc(n)}</button></div></div>`};
+  const RET=(D.planning||[]).filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)<jr(3)&&x.rdv_iso.slice(0,10)>=jr(60)&&!x.rapports&&['Planifiée','Planifié','En cours'].includes(x.statut));
+  const CLES_J=R.filter(e=>((D.logements||{})[e.n_nexxio]||{}).vacant).length;
+  const GRP=L2=>{const g={};L2.forEach(e=>{const pl=(NX[e.n_nexxio]||{}).pl||{},c=pl.commune||String(e.lieu||'').replace(/^.*\d{5}\s*/,'').trim()||'Commune ?';(g[c]=g[c]||[]).push(e)});
+    return Object.entries(g).sort((a,b)=>a[1][0].debut<b[1][0].debut?-1:1).map(([c,l])=>`<h3 class="cjg">${esc(c)} <span class="tag">${l.length} rdv</span></h3>${l.map(ligne).join('')}`).join('')};
   sec.hidden=false;
   sec.innerHTML=`<h2><span>Chantiers du jour</span><div class="seg" id="cj-seg"><button data-s="j" class="${CJ==='j'?'on':''}">Aujourd’hui <span class="tag">${nb.j}</span></button><button data-s="d" class="${CJ==='d'?'on':''}">Demain <span class="tag">${nb.d}</span></button><button data-s="s" class="${CJ==='s'?'on':''}">7 jours <span class="tag">${nb.s}</span></button></div></h2>
-    <div class="cjl2">${R.length?R.map(ligne).join(''):'<div class="vide">Aucun rendez-vous d’équipe '+(CJ==='j'?'aujourd’hui':CJ==='d'?'demain':'cette semaine')+'.</div>'}</div>`;
+    <div class="cjres"><span class="chip info">${new Set(R.map(e=>e.equipe)).size} équipe(s) sur site</span><span class="chip ${CLES_J?'warn':'ok'}">${CLES_J} clé(s) à récupérer à l’agence</span><span class="chip">${R.length} rendez-vous</span></div>
+    ${RET.length?`<div class="cjban"><span><b>${RET.length} rendez-vous passé${RET.length>1?'s':''} sans rapport</b> : à relancer auprès des équipes</span><button class="btn" id="cj-ret">Voir et copier la relance</button></div>`:''}
+    <div class="cjopt"><button class="btn" id="cj-g">${CJG==='c'?'Par heure':'Par commune (tournée)'}</button></div>
+    <div class="cjl2">${R.length?(CJG==='c'?GRP(R):R.map(ligne).join('')):'<div class="vide">Aucun rendez-vous d’équipe '+(CJ==='j'?'aujourd’hui':CJ==='d'?'demain':'cette semaine')+'.</div>'}</div>`;
   sec.querySelectorAll('#cj-seg button').forEach(b=>b.onclick=()=>{CJ=b.dataset.s;try{sessionStorage.setItem('cj',CJ)}catch(e){}chantiersJour()});
+  const gb=document.getElementById('cj-g');if(gb)gb.onclick=()=>{CJG=CJG==='c'?'h':'c';try{sessionStorage.setItem('cjg',CJG)}catch(e){}chantiersJour()};
+  const rb=document.getElementById('cj-ret');if(rb)rb.onclick=()=>{onglet('sst');svue='ret';svues();window.scrollTo(0,0)};
   sec.querySelectorAll('[data-cjf]').forEach(b=>b.onclick=()=>{if(NX[b.dataset.cjf])fiche(b.dataset.cjf)})}
 function troisColonnes(){const el=document.getElementById('trois');if(!el)return;
   const ligne=l=>{const n=l.n_nexxio&&NX[l.n_nexxio]?l.n_nexxio:'',cle=n||l.n_bc;return `<li data-t3="${esc(cle)}" data-bc="${esc(l.n_bc||'')}"><b>${esc(l.n_bc||l.n_nexxio||'?')}</b> ${bai(l.bailleur||'')} <span class="t3c">${esc(l.commune||'')}</span></li>`};
