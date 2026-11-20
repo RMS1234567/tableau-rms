@@ -1279,7 +1279,7 @@ document.getElementById('toutimp').onclick=()=>{if(confirm('Marquer tous les BC 
 (function(){
   const sem=J.filter(l=>l.jour>=lundi(today)&&SAISI(l)), rec=J.filter(l=>l.jour>=jr(14)&&ouvert(l));
   const m=[[J.filter(l=>l.etat==='À prendre en compte').length,'à prendre en compte','warn'],[J.filter(l=>l.etat==='Saisi'&&l.pdf_joint==='non').length,'PDF à joindre dans Nexxio','warn'],
-[rec.filter(l=>/RDV à prendre/i.test(l.motif)).length,'RDV à prendre (logement occupé)',''],[sem.length,'BC cette semaine · '+e0(som(sem))+' HT','']];
+[aPlanifier().filter(x=>!((D.logements||{})[x.n_nexxio]||{}).vacant).length,'locataires à appeler pour un RDV (à planifier)',''],[sem.length,'BC cette semaine · '+e0(som(sem))+' HT','']];
   document.getElementById('minis').innerHTML=m.map(x=>`<span class="mini ${x[0]?x[2]:''}"><b>${x[0]}</b>${x[1]}</span>`).join('');
   const todo=[];
   for(const l of J){const r=[];
@@ -1441,10 +1441,10 @@ function planning(){
   // commandes de moins de 3 mois, sans rapport reçu ni RDV dans l'agenda d'une équipe ; les plus vieilles restent dans « Qui dorment »
   const dcmd=x=>DCMD[x.n_nexxio]||(L.find(l=>l.n_nexxio===x.n_nexxio)||{}).jour||'';
   const sansRdv=P.filter(x=>x.statut==='Prise en compte'&&!x.rdv);
-  const aplan=sansRdv.filter(x=>!x.rapports&&!AG_N[x.n_nexxio]&&!(dcmd(x)&&dcmd(x)<jr(90))).sort((a,b)=>a.n_nexxio-b.n_nexxio);
+  const aplan=aPlanifier().sort((a,b)=>a.n_nexxio-b.n_nexxio);
   const vieilles=sansRdv.filter(x=>dcmd(x)&&dcmd(x)<jr(90)).length;
   // J le 17/11 : « RDV passés sans rapport » ne compte que les RDV de plus de 3 jours (47 commandes dont 14 vrais manques)
-  const retard=P.filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)<jr(3)&&!x.rapports&&['Planifiée','Planifié','En cours'].includes(x.statut)).sort((a,b)=>a.rdv_iso<b.rdv_iso?-1:1);
+  const retard=aRetard().sort((a,b)=>a.rdv_iso<b.rdv_iso?-1:1);
   const venir=P.filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)>=today).sort((a,b)=>a.rdv_iso<b.rdv_iso?-1:1);
   const dsuivi=D.suivi_genere?new Date(D.suivi_genere):null, age=dsuivi?Math.round((new Date()-dsuivi)/60000):null;
   document.getElementById('psuivi').textContent=dsuivi?`Lu dans Nexxio le ${dsuivi.toLocaleDateString('fr-FR')} à ${dsuivi.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}, relu toutes les 5 minutes, 24 h sur 24. Ce qui avance dans Nexxio (ou un RDV posé dans l\'agenda d\'une équipe) se met à jour ici tout seul.`+(age>60?' Attention : dernière lecture il y a plus d\'une heure.':''):'Suivi Nexxio pas encore lu par le robot.';
@@ -1784,6 +1784,7 @@ function encours(cle){const FN=(D.fnx||[]).filter(f=>f.etat==='Envoyé'), el=doc
   const X=D.extranet_factures||[], par={};FN.forEach(f=>par[f.numero]=f);
   const aPointer=X.filter(x=>/^réglée/i.test(x.reglee||'')&&par[x.ref_fournisseur]), vieux=FN.filter(f=>age(f)>=90);
   document.getElementById('encx').innerHTML=[aPointer.length?`<b>${aPointer.length} facture${aPointer.length>1?'s':''} Alliade réglée${aPointer.length>1?'s':''} selon l'Extranet</b> mais encore « Envoyé » dans Nexxio (${e0(aPointer.reduce((s,x)=>s+(par[x.ref_fournisseur].ht||0),0))} HT) : à pointer « Payé » dans Nexxio (n° ${aPointer.map(x=>esc(x.ref_fournisseur)).join(', ')}).`:'',
+    (()=>{const an=FN.filter(f=>age(f)>365&&f.type!=='avoir');return an.length?`<b>${an.length} facture${an.length>1?'s':''} de plus d’un an</b> (${e0(an.reduce((t,f)=>t+(f.ht||0),0))} HT) : très probablement payées et pas pointées. L’accueil les met de côté : son « À encaisser » ne compte que les factures de moins d’un an, sans celles réglées selon l’Extranet.`:''})(),
     vieux.length?`${vieux.length} facture${vieux.length>1?'s':''} de plus de 90 jours : souvent déjà payée${vieux.length>1?'s':''} mais pas pointée${vieux.length>1?'s':''} dans Nexxio ; sinon à relancer.`:'',
     Object.keys(g).length?'Cliquer un bailleur pour la liste de ses factures à relancer.':''].filter(Boolean).join('<br>');
   // 15/11 (chantier « Suivi des paiements clients », reste « relances par bailleur ») : clic sur un bailleur = ses factures
@@ -2759,14 +2760,14 @@ function chantiersJour(){const sec=document.getElementById('cj');if(!sec)return;
       <div class="cja">${esc(adr)}${loc?' <span class="cjl">· '+loc+'</span>':''}</div>
       ${g.topo?`<div class="cjw">${esc(g.topo)}</div>`:''}</div>
       <div class="cjb">${t0&&!g.vacant?`<a class="bt cjbt" href="tel:${esc(tel(t0))}">Appeler</a>`:''}<button class="bt cjbt" data-cjf="${esc(n)}">Fiche</button></div></div>`};
-  const RET=(D.planning||[]).filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)<jr(3)&&x.rdv_iso.slice(0,10)>=jr(60)&&!x.rapports&&['Planifiée','Planifié','En cours'].includes(x.statut));
+  const RET=aRetard();
   const CLES_J=R.filter(e=>((D.logements||{})[e.n_nexxio]||{}).vacant).length;
   const GRP=L2=>{const g={};L2.forEach(e=>{const pl=(NX[e.n_nexxio]||{}).pl||{},c=pl.commune||String(e.lieu||'').replace(/^.*\d{5}\s*/,'').trim()||'Commune ?';(g[c]=g[c]||[]).push(e)});
     return Object.entries(g).sort((a,b)=>a[1][0].debut<b[1][0].debut?-1:1).map(([c,l])=>`<h3 class="cjg">${esc(c)} <span class="tag">${l.length} rdv</span></h3>${l.map(ligne).join('')}`).join('')};
   sec.hidden=false;
   sec.innerHTML=`<h2><span>Chantiers du jour</span><div class="seg" id="cj-seg"><button data-s="j" class="${CJ==='j'?'on':''}">Aujourd’hui <span class="tag">${nb.j}</span></button><button data-s="d" class="${CJ==='d'?'on':''}">Demain <span class="tag">${nb.d}</span></button><button data-s="s" class="${CJ==='s'?'on':''}">7 jours <span class="tag">${nb.s}</span></button></div></h2>
     <div class="cjres"><span class="chip info">${new Set(R.map(e=>e.equipe)).size} équipe(s) sur site</span><span class="chip ${CLES_J?'warn':'ok'}">${CLES_J} clé(s) à récupérer à l’agence</span><span class="chip">${R.length} rendez-vous</span></div>
-    ${RET.length?`<div class="cjban"><span><b>${RET.length} rendez-vous passé${RET.length>1?'s':''} sans rapport</b> : à relancer auprès des équipes</span><button class="btn" id="cj-ret">Voir et copier la relance</button></div>`:''}
+    ${RET.length?`<div class="cjban"><span><b>${RET.length} rendez-vous passé${RET.length>1?'s':''} sans rapport</b> : à relancer auprès des équipes</span><button class="btn" id="cj-ret">Relancer les équipes</button></div>`:''}
     <div class="cjopt"><button class="btn" id="cj-g">${CJG==='c'?'Par heure':'Par commune (tournée)'}</button></div>
     <div class="cjl2">${R.length?(CJG==='c'?GRP(R):R.map(ligne).join('')):'<div class="vide">Aucun rendez-vous d’équipe '+(CJ==='j'?'aujourd’hui':CJ==='d'?'demain':'cette semaine')+'.</div>'}</div>`;
   sec.querySelectorAll('#cj-seg button').forEach(b=>b.onclick=()=>{CJ=b.dataset.s;try{sessionStorage.setItem('cj',CJ)}catch(e){}chantiersJour()});
@@ -2775,6 +2776,11 @@ function chantiersJour(){const sec=document.getElementById('cj');if(!sec)return;
   sec.querySelectorAll('[data-cjf]').forEach(b=>b.onclick=()=>{if(NX[b.dataset.cjf])fiche(b.dataset.cjf)})}
 /* 20/11 (objectif de J : « le dashboard le plus utile à RMS BATIMENT, entreprise de second oeuvre ») : le patron veut d'abord l'argent : à facturer aux clients,
    à encaisser (dont en retard), à payer aux sous-traitants, et ce qu'il reste entre les deux. Une ligne en haut de l'accueil, chaque chiffre mène à sa liste. Lecture seule. */
+/* 20/11 (J : « connecter les briques entre elles pour que les données soient le plus fiables possible ») : UNE seule définition de chaque liste, utilisée partout
+   (tuile et vue du Planning, trois colonnes, Ma journée, Chantiers du jour) ; avant, « à planifier » valait 68 ici et 13 là, « RDV passés sans rapport » 53 et 42. */
+function aRetard(){return (D.planning||[]).filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)<jr(3)&&!x.rapports&&['Planifiée','Planifié','En cours'].includes(x.statut))}
+function aPlanifier(){const DC=Object.fromEntries((D.sst||[]).map(x=>[x.n_nexxio,x.date])),dc=x=>DC[x.n_nexxio]||(L.find(l=>l.n_nexxio===x.n_nexxio)||{}).jour||'';   // moins de 3 mois, sans rapport ni RDV d'agenda
+  return (D.planning||[]).filter(x=>x.statut==='Prise en compte'&&!x.rdv&&!x.rapports&&!AG_N[x.n_nexxio]&&!(dc(x)&&dc(x)<jr(90))).sort((a,b)=>(dc(a)||'9')<(dc(b)||'9')?-1:1)}
 function tresorerie(){const el=document.getElementById('treso');if(!el)return;
   const age=f=>Math.round((new Date(today)-new Date(f.date))/864e5);
   const regT=new Set((D.extranet_factures||[]).filter(x=>/^réglée/i.test(x.reglee||'')).map(x=>x.ref_fournisseur));
@@ -2796,7 +2802,7 @@ function troisColonnes(){const el=document.getElementById('trois');if(!el)return
   const etat=l=>l.etat==='À reprendre'?'<span class="chip bad">à reprendre</span>':l.etat==='Accord de J attendu'?'<span class="chip warn">ton accord</span>':l.etat==='À prendre en compte'?'<span class="chip warn">en création</span>':'<span class="chip ok">pris en compte</span>';
   const faire=L.filter(l=>((l.etat==='À reprendre'||l.etat==='Accord de J attendu')&&l.jour>=jr(30)&&!FAIT(l))||(l.etat==='À prendre en compte'&&l.jour>=jr(14))).sort((a,b)=>(a.jour>b.jour)?1:-1);
   const dc=x=>DCMD[x.n_nexxio]||(L.find(l=>l.n_nexxio===x.n_nexxio)||{}).jour||'';   // même règle que « À planifier » du Planning : moins de 3 mois, sans rapport ni RDV d'agenda
-  const PL=(D.planning||[]).filter(x=>x.statut==='Prise en compte'&&!x.rdv&&!x.rapports&&!AG_N[x.n_nexxio]&&!(dc(x)&&dc(x)<jr(90))).sort((a,b)=>(dc(a)||'9')<(dc(b)||'9')?-1:1);   // 20/11 (J : « comment savoir quelle commande planifier ») : les plus anciennes d'abord, avec leur ancienneté
+  const PL=aPlanifier();   // les plus anciennes d'abord, avec leur ancienneté
   const pla=PL.map(x=>({x,g:(D.logements||{})[x.n_nexxio]||{}})).sort((a,b)=>(a.g.vacant?1:0)-(b.g.vacant?1:0));
   const col=(cl,titre,n,sous,items,vide)=>`<section class="card t3 ${cl}"><h2><span>${titre}</span><span class="t3n">${n}</span></h2><p class="sub t3s">${sous}</p><ul class="t3l">${items.length?items.slice(0,6).join(''):'<li class="vide">'+vide+'</li>'}</ul>${items.length>6?'<p class="tag" style="padding:4px 16px 10px">… et '+(items.length-6)+' autre(s)</p>':''}</section>`;
   el.innerHTML=col('t3a','Arrivés aujourd’hui',arr.length,'Les BC reçus aujourd’hui (pas les mises à jour de suivi sur de vieux BC)',arr.map(l=>ligne(l).replace('</li>',' '+etat(l)+'</li>')),'Aucun BC reçu aujourd’hui.')+
@@ -2837,9 +2843,9 @@ function journee(){
   const FOC=[];   // 19/11 (J : « Ma journée trop bourrée ») : chaque étape est aussi gardée pour la vue épurée « Focus »
   const etape=(n,titre,sous,liste,bouton,go)=>{if(n)FOC.push({n,titre,sous,liste,bouton,go,v:niv(titre)});return etape0(n,titre,sous,liste,bouton,go)};
   const etape0=(n,titre,sous,liste,bouton,go)=>!n?'':`<div class="etape niv${niv(titre)}"><div class="et-t"${liste.length>VIS?` data-pli="${esc(titre)}" style="cursor:pointer"`:''}><b class="n">${n}</b><div><b>${titre}</b>${liste.length>VIS?` <span class="tag pli">${OUV.has(titre)?'▾ replier':'▸ voir les '+Math.min(liste.length,6)}</span>`:''}<div class="tag">${sous}</div></div>${bouton?`<button class="btn prim" data-go="${go}">${bouton}</button>`:''}</div>${liste.length?`<ul>${liste.slice(0,6).map((x,k)=>k<VIS?x:x.replace('<li','<li class="plus"'+(OUV.has(titre)?'':' hidden'))).join('')}${liste.length>6?`<li class="tag plus"${OUV.has(titre)?'':' hidden'}>… et ${liste.length-6} autre(s)</li>`:''}</ul>`:''}</div>`;
-  // 1. commandes reçues depuis la veille, prises en compte, sans RDV
+  // 1. commandes à planifier (même liste que la tuile du Planning : toutes, les plus anciennes d'abord)
   const recues=[...new Set(L.filter(l=>l.n_nexxio&&l.jour>=debut).map(l=>l.n_nexxio))].map(n=>NXP[n]).filter(x=>x&&x.statut==='Prise en compte'&&!x.rdv);
-  const occ=recues.filter(x=>!(LG[x.n_nexxio]||{}).vacant), vac=recues.filter(x=>(LG[x.n_nexxio]||{}).vacant);
+  const PLN=aPlanifier(), occ=PLN.filter(x=>!(LG[x.n_nexxio]||{}).vacant), vac=PLN.filter(x=>(LG[x.n_nexxio]||{}).vacant);   // même liste que la tuile À planifier du Planning
   const l1=[...occ.map(x=>{const g=LG[x.n_nexxio]||{},e=etatAppels(x.n_nexxio);return li(x.n_nexxio,`${esc(x.commune||'')} · appeler ${esc(g.nom||'le locataire')}${e.n?` (${e.n}/3 appel${e.n>1?'s':''}${e.der.r?' · '+esc(e.der.r):''})`:''}`)}),
     ...vac.map(x=>li(x.n_nexxio,`${esc(x.commune||'')} · logement vacant : clés à l'agence${CLES.get(x.n_nexxio)?' (récupérées)':''}`))];
   const enCrea=L.filter(l=>l.jour>=debut&&l.etat==='À prendre en compte');
@@ -2852,8 +2858,8 @@ function journee(){
   const aF=P.filter(x=>x.rapports>0&&(x.restant||0)>0&&!FACT.get(x.n_nexxio)), pretes=aF.filter(x=>fsst(x.n_nexxio).length).sort((a,b)=>(b.restant||0)-(a.restant||0));
   const nouv=aF.filter(x=>RAP.some(r=>r.n_nexxio===x.n_nexxio&&(r.date||'')>=debut));
   const l3=[...nouv,...pretes.filter(x=>!nouv.includes(x))].map(x=>li(x.n_nexxio,`${esc(x.commune||'')} · ${eur(x.restant)}${fsst(x.n_nexxio).length?' · facture SST reçue':''}${nouv.includes(x)?' · rapport reçu '+nomJ:''}`));
-  // 4. relances : RDV passés sans rapport (60 derniers jours) ; RDV pris au téléphone pas encore dans Nexxio
-  const ret=P.filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)<jr(3)&&x.rdv_iso.slice(0,10)>=jr(60)&&!x.rapports&&['Planifiée','Planifié','En cours'].includes(x.statut));
+  // 4. relances : RDV passés sans rapport (même liste que la tuile du Planning, sans borne de 60 jours depuis le 20/11) ; RDV pris au téléphone pas encore dans Nexxio
+  const ret=aRetard();
   const rdvnx=P.filter(x=>etatAppels(x.n_nexxio).rdv&&!x.rdv);
   // 5. blocages : BC à reprendre, commandes Extranet en attente d'accord
   const bloc=L.filter(l=>(l.etat==='À reprendre'||l.etat==='Accord de J attendu')&&l.jour>=jr(30)&&!FAIT(l));
@@ -2882,7 +2888,7 @@ function journee(){
     etape(propA.length,'Corrections à valider','Le robot propose une correction sur une commande déjà planifiée ou avec un sous-traitant : ouvrir la fiche et cliquer sur le bouton de la proposition',propA.map(n=>li(n,`${esc(PROPS[n].n_bc||'')} · ${esc(propDetail(PROPS[n]).slice(0,90))}`)),'',''),
     etape(relA.length,'Relances des bailleurs','Un bailleur a relancé une commande : répondre, puis cocher « traité » dans la section Relances des bailleurs, plus haut',relA.map(r=>li(r.n_nexxio||r.n_bc,`${esc(r.n_bc)} · ${esc(String(r.motif||'').slice(0,90))}`)),'',''),
     etape(rel.length,'Relevés du mois à envoyer',`Début de mois : le relevé du mois de ${nomMois(ymPrec)} de chaque sous-traitant, pour qu'il établisse sa facture ; cocher « envoyé » une fois fait`,rel,'Voir les relevés','rel'),
-    etape(recues.length+enCrea.length,'Commandes à planifier',`${occ.length} locataire(s) à appeler · ${vac.length} logement(s) vacant(s), clés à récupérer${enCrea.length?` · ${enCrea.length} encore à prendre en compte`:''}`,l1,'Voir À planifier','aplan'),
+    etape(PLN.length+enCrea.length,'Commandes à planifier',`${occ.length} locataire(s) à appeler · ${vac.length} logement(s) vacant(s), clés à récupérer${enCrea.length?` · ${enCrea.length} encore à prendre en compte`:''}`,l1,'Voir À planifier','aplan'),
     etape(l2.length,'Rapports à envoyer au bailleur','Arrivés depuis la veille : cocher « envoyé » une fois transmis (Extranet ou mail)',l2,'Voir les rapports','fact'),
     etape(aF.length,'Factures à faire',`${nouv.length} nouveau(x) rapport(s) · ${pretes.length} prête(s) à facturer (facture du sous-traitant reçue)${pretes.length?' pour '+e0(pretes.reduce((s,x)=>s+(x.restant||0),0))+' HT':''} · ${e0(aF.reduce((s,x)=>s+(x.restant||0),0))} HT en tout`,l3,'Voir À facturer','fact'),
     etape(ret.length+rdvnx.length,'Relances',`${ret.length} rapport(s) attendu(s) après RDV${rdvnx.length?` · ${rdvnx.length} RDV pris à mettre dans Nexxio`:''}`,rdvnx.map(x=>li(x.n_nexxio,`${esc(x.commune||'')} · RDV pris au téléphone : à mettre dans Nexxio`)),'Voir les relances','retard'),
