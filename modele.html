@@ -737,6 +737,14 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 .t3l{list-style:none;margin:0;padding:0 8px 10px}.t3l li{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;padding:8px 8px;border-top:1px solid var(--line);font-size:13px;cursor:pointer;border-radius:10px}
 .t3l li:hover{background:var(--soft)}.t3l li.vide{cursor:default;border:0;padding:14px 8px;display:block}.t3l li.vide::before,.t3l li.vide::after{display:none}.t3c{color:var(--muted)}
 @media (max-width:960px){.trois{grid-template-columns:1fr}}
+/* chantiers du jour : lisible sur chantier, gros boutons au pouce */
+#cj>h2{flex-wrap:wrap;gap:10px}#cj .seg button{padding:8px 14px;font-size:14px}
+.cjl2{padding:4px 16px 14px}.cjr{padding:14px 0;border-top:1px solid var(--line)}.cjr:first-child{border-top:0}
+.cjh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.cjt{font-size:22px;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.cja{margin-top:4px;font-size:15px;font-weight:600}.cjl{margin-top:2px;font-size:14px}.cjw{margin-top:4px;font-size:13px;color:var(--muted)}
+.cjb{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}.cjbt{min-height:46px;padding:10px 18px!important;font-size:15px!important;flex:0 1 auto}
+.bt.cjbt:first-child{background:var(--accent);border-color:var(--accent);color:var(--card)!important}
+@media (max-width:700px){.cjt{font-size:24px}.cjb{display:grid;grid-template-columns:1fr 1fr}.cjb .cjbt:last-child{grid-column:1/-1}.cjbt{min-height:52px}}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -754,6 +762,7 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 <div id="p-exploitation">
   <div id="recents" hidden style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center"></div>
   <div class="trois" id="trois"></div>
+  <section class="card" id="cj" hidden style="margin-bottom:16px"></section>
   <section class="card" id="relb" hidden style="margin-bottom:18px"></section>
   <section class="card journee" id="journee"></section>
   <section class="hero" id="hero"></section>
@@ -2717,6 +2726,27 @@ function actionsFact(){const sec=document.getElementById('frel');if(!sec)return;
 /* 19/11 (J : « j'arrive sur le dashboard je sais pas quelle commande je dois planifier, quelle commande a été relancée... je sais plus lesquels sont arrivés
    aujourd'hui, lesquels je dois saisir ») : trois listes séparées en haut de l'accueil : BC arrivés aujourd'hui (première ligne du BC au journal datée du
    jour, pas les mises à jour de suivi sur de vieux BC), ce que J doit faire lui-même, commandes à planifier ; les relances des bailleurs dans leur carte, dessous. */
+/* 20/11 (J : « améliore l'UI pour un conducteur de travaux dans le bâtiment ») : le conducteur de travaux pense en chantiers et en tournée : « Chantiers du jour »,
+   les rendez-vous des équipes (agendas) aujourd'hui, demain ou sur 7 jours, avec ce qu'il lui faut sur place : heure, équipe, adresse, locataire et étage,
+   travaux à faire, et de gros boutons Appeler, Itinéraire (Google Maps) et Fiche. Lecture seule : rien n'est envoyé. */
+let CJ=(()=>{try{return sessionStorage.getItem('cj')||'j'}catch(e){return 'j'}})();
+function chantiersJour(){const sec=document.getElementById('cj');if(!sec)return;
+  const dem=jr(-1),fin=jr(-7),A=(D.agenda||[]).filter(e=>e.debut&&e.n_nexxio),tel=t=>String(t||'').replace(/[^0-9+]/g,'');
+  const dans=e=>{const d=e.debut.slice(0,10);return CJ==='j'?d===today:CJ==='d'?d===dem:(d>=today&&d<=fin)};
+  const nb={j:A.filter(e=>e.debut.slice(0,10)===today).length,d:A.filter(e=>e.debut.slice(0,10)===dem).length,s:A.filter(e=>e.debut.slice(0,10)>=today&&e.debut.slice(0,10)<=fin).length};
+  const R=A.filter(dans).sort((a,b)=>a.debut<b.debut?-1:1), JOUR=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
+  const ligne=e=>{const n=e.n_nexxio,g=(D.logements||{})[n]||{},o=NX[n]||{},pl=o.pl||{},t0=(g.tels||[])[0],adr=e.lieu||g.adresse||pl.adresse||'';
+    const d=new Date(e.debut.slice(0,10)+'T12:00:00');
+    return `<div class="cjr"><div class="cjh"><b class="cjt">${CJ==='s'?JOUR[d.getDay()]+' '+e.debut.slice(8,10)+' · ':''}${esc(e.debut.slice(11,16))}</b><span class="chip info">${esc(e.equipe||'équipe ?')}</span><span class="tag">${esc(pl.statut||'')}${pl.commune?' · '+esc(pl.commune):''}</span></div>
+      <div class="cja">${esc(adr)}</div>
+      ${g.nom&&!g.vacant?`<div class="cjl"><b>${esc(g.nom)}</b>${g.etage?' · étage '+esc(g.etage):''}${g.porte?' · porte '+esc(g.porte):''}</div>`:g.vacant?'<div class="cjl"><b>Logement vacant</b> : clés à l’agence</div>':''}
+      ${g.topo?`<div class="cjw">${esc(g.topo)}</div>`:''}
+      <div class="cjb">${t0&&!g.vacant?`<a class="bt cjbt" href="tel:${esc(tel(t0))}">Appeler</a>`:''}${adr?`<a class="bt cjbt" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(adr)}">Itinéraire</a>`:''}<button class="bt cjbt" data-cjf="${esc(n)}">Fiche ${esc(n)}</button></div></div>`};
+  sec.hidden=false;
+  sec.innerHTML=`<h2><span>Chantiers du jour</span><div class="seg" id="cj-seg"><button data-s="j" class="${CJ==='j'?'on':''}">Aujourd’hui <span class="tag">${nb.j}</span></button><button data-s="d" class="${CJ==='d'?'on':''}">Demain <span class="tag">${nb.d}</span></button><button data-s="s" class="${CJ==='s'?'on':''}">7 jours <span class="tag">${nb.s}</span></button></div></h2>
+    <div class="cjl2">${R.length?R.map(ligne).join(''):'<div class="vide">Aucun rendez-vous d’équipe '+(CJ==='j'?'aujourd’hui':CJ==='d'?'demain':'cette semaine')+'.</div>'}</div>`;
+  sec.querySelectorAll('#cj-seg button').forEach(b=>b.onclick=()=>{CJ=b.dataset.s;try{sessionStorage.setItem('cj',CJ)}catch(e){}chantiersJour()});
+  sec.querySelectorAll('[data-cjf]').forEach(b=>b.onclick=()=>{if(NX[b.dataset.cjf])fiche(b.dataset.cjf)})}
 function troisColonnes(){const el=document.getElementById('trois');if(!el)return;
   const ligne=l=>{const n=l.n_nexxio&&NX[l.n_nexxio]?l.n_nexxio:'',cle=n||l.n_bc;return `<li data-t3="${esc(cle)}" data-bc="${esc(l.n_bc||'')}"><b>${esc(l.n_bc||l.n_nexxio||'?')}</b> ${bai(l.bailleur||'')} <span class="t3c">${esc(l.commune||'')}</span></li>`};
   const arr=L.filter(l=>(l.arrive||l.jour)===today&&VRAI(l)&&!(!l.pdf&&DCMD[l.n_nexxio]&&DCMD[l.n_nexxio]<today)).sort((a,b)=>((b.heure||'')>(a.heure||''))?1:-1);
@@ -2834,6 +2864,7 @@ function journee(){
 }
 try{journee()}catch(e){console.error('Ma journée',e)}
 try{troisColonnes()}catch(e){console.error('Trois colonnes',e)}
+try{chantiersJour()}catch(e){console.error('Chantiers du jour',e)}
 try{relancesBailleurs()}catch(e){console.error('Relances',e)}
 try{actionsFact()}catch(e){console.error('Factures à relancer',e)}
 try{suivi()}catch(e){console.error('À suivre',e)}
@@ -2920,7 +2951,7 @@ try{managerVue()}catch(e){console.error('Manager',e)}
   document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',fermer));sync()})();
 // 16/11 (J, « téléphone : cartes repliées ») : sur téléphone, les cartes de l'accueil et de Chiffres s'ouvrent d'un toucher
 // (Ma journée reste ouverte) ; bouton « haut de page » quand on est descendu
-setTimeout(()=>{if(TEL())document.querySelectorAll('#p-exploitation section.card:not(#journee),#p-chiffres section.card:not(.repli)').forEach(sc=>{
+setTimeout(()=>{if(TEL())document.querySelectorAll('#p-exploitation section.card:not(#journee):not(#cj),#p-chiffres section.card:not(.repli)').forEach(sc=>{
   const h=sc.querySelector(':scope>h2');if(!h)return;sc.classList.add('pliable','ferme');
   h.addEventListener('click',e=>{if(e.target.closest('button,input,select,a,label'))return;sc.classList.toggle('ferme')})});
   const ht=document.getElementById('haut');ht.onclick=()=>scrollTo({top:0,behavior:'smooth'});
