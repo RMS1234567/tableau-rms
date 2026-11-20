@@ -3097,4 +3097,40 @@ addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey)return;const t=
 setTimeout(()=>{const pr=document.querySelector('#proul .card');if(pr&&!pr._i){pr._i=1;pr.querySelector(':scope>div').addEventListener('click',()=>pr.classList.toggle('ouv'))}},160);
 const aideMgr=()=>document.querySelectorAll('#manager .it>.sub:not(.aide2)').forEach(e=>{if(e.textContent.length>150&&!e.querySelector('button,a,input')){e.classList.add('aide2');e.onclick=()=>e.classList.toggle('lu')}});
 new MutationObserver(aideMgr).observe(document.getElementById('manager'),{childList:true,subtree:true});setTimeout(aideMgr,200);
+// 20/11 (J : « rendre plus faciles à lire les briques existantes et les connecter ») : chaque chiffre clé dit, au survol, ce qu'il compte et d'où il vient
+setTimeout(()=>{const DEF=[
+  ['#treso .tz1','À facturer : commandes avec rapport reçu et un restant à facturer dans Nexxio, pas cochées « facturé ». Même liste que la tuile À facturer du Planning.'],
+  ['#treso .tz2','À encaisser : factures « Envoyé » dans Nexxio de moins d’un an, sans celles déjà réglées selon l’Extranet Alliade. Plus d’un an : à pointer, voir Chiffres.'],
+  ['#treso .tz3','À payer : factures de sous-traitants reçues depuis 60 jours que tu n’as pas cochées « payées » (Sous-traitants, Factures).'],
+  ['#treso .tz4','Commandé ce mois-ci : vrais BC reçus ce mois (annulations, doublons, compléments et « pas pour RMS » exclus), montant HT.'],
+  ['#trois .t3a > h2','Arrivés aujourd’hui : BC dont la première trace (journal du robot ou classement du PDF) date d’aujourd’hui.'],
+  ['#trois .t3b > h2','À faire par toi : BC à reprendre, commandes attendant ton accord, commandes encore en création.'],
+  ['#trois .t3c2 > h2','À planifier : commandes prises en compte dans Nexxio, sans rendez-vous, sans rapport, de moins de 3 mois. Même liste que la tuile À planifier du Planning.'],
+  ['#hero [data-go=rouge]','À reprendre : BC que le robot n’a pas pu saisir et qui attendent ton action (rouges non réglés des 30 derniers jours).'],
+  ['#hero [data-go=fact]','À facturer : même liste que la tuile À facturer du Planning.']];
+  DEF.forEach(([q,t])=>document.querySelectorAll(q).forEach(e=>{if(!e.title)e.title=t}));
+  document.querySelectorAll('#ptiles .kpi').forEach(k=>{const l=(k.querySelector('.l')||{}).innerText||'';
+    const T={'À planifier':'Commandes prises en compte, sans rendez-vous ni rapport, de moins de 3 mois.','RDV passés sans rapport':'Rendez-vous passés depuis plus de 3 jours, sans rapport reçu : à relancer auprès de l’équipe.','À facturer':'Rapport reçu et restant à facturer, pas cochées facturé.','Qui dorment':'Prises en compte sans RDV depuis plus de 7 jours, ou RDV passé depuis plus de 14 jours sans rapport.','Clés à récupérer':'Logements vacants parmi les commandes à planifier, clés pas encore cochées « récupérées » : à passer prendre à l’agence.',"RDV aujourd'hui":'Rendez-vous posés dans Nexxio pour aujourd’hui ; en dessous, ceux à venir et ceux des 7 prochains jours.','En cours':'Commandes au statut « En cours » dans Nexxio (chantier commencé) et leur restant à facturer HT.','Extranet Alliade':'Commandes Alliade de l’Extranet qui demandent une action de ta part : à accepter, à livrer, à facturer, un RDV à prendre ou à saisir, ou une commande refusée ou introuvable dans Nexxio.','Par équipe':'Rendez-vous des équipes aujourd’hui, d’après leurs agendas ; en dessous, le nombre d’équipes actives cette semaine.'};
+    const k2=Object.keys(T).find(x=>l.includes(x));if(k2&&!k.title)k.title=T[k2]})},220);
+// 20/11 : définitions au survol des cases de chiffres des autres onglets (Devis, Sous-traitants, Chiffres), reposées après chaque nouveau dessin des cases
+const TT=[
+  ['Demandes à traiter','Demandes de devis reçues par mail, sans devis correspondant dans Nexxio, ni traitées ni cochées « fait » (les acceptations sont exclues).'],
+  ['En préparation','Devis au statut « En création » dans Nexxio : pas encore envoyés au client.'],
+  ['Envoyés, en attente','Devis au statut « À valider client » dans Nexxio : envoyés, le client doit encore valider.'],
+  ['Acceptés','Devis dont le statut Nexxio commence par « Accept ».'],
+  ['Sous-traitants actifs','Équipes qui ont au moins une commande affectée sur la période choisie.'],
+  ['Commandes affectées','Commandes de la période qui ont un sous-traitant affecté dans Nexxio.'],
+  ['CA affecté HT','Montant HT des lignes affectées à un sous-traitant sur la période.'],
+  ['Sans affectation','Commandes de la période déjà planifiées (ou annulées, clôturées) sans sous-traitant affecté dans Nexxio.'],
+  ['Commandé HT','Commandes lues dans Nexxio dont la date de commande est dans la période, montant HT.'],
+  ['Facturé HT','Factures émises dans Nexxio sur la période (date de facture), avoirs déduits ; si l’historique des factures ne couvre pas la période, commandes dont la date « facturée » tombe dans la période.'],
+  ['Reste à facturer','Restant à facturer des commandes ouvertes, relevé aujourd’hui (pas seulement celles avec rapport : voir À facturer à l’accueil pour celles prêtes).'],
+  ['Marge sur le facturé','Facturé moins ce qui est payé aux sous-traitants d’après le prix des agendas, sur les commandes dont le prix est connu.'],
+  ['Montant HT des BC reçus','Montant HT des vrais BC saisis dans Nexxio (en création ou pris en compte) sur la période.'],
+  ['BC reçus','Nombre de vrais BC saisis dans Nexxio sur la période (annulations, doublons, compléments et « pas pour RMS » exclus).'],
+  ['Saisis sans intervention','Part des BC vraiment saisis dont le contrôle du robot est vert.'],
+  ['À reprendre','Part des vrais BC que le robot n’a pas su saisir.'],
+  ['Total journal','Toutes les lignes du journal du robot depuis le début, y compris annulations, doublons et compléments.']];
+const poseTT=()=>document.querySelectorAll('#dtiles .kpi,#stiles .kpi,#stats .kpi,#p-chiffres .mois .kpi,#mois .kpi').forEach(k=>{if(k.title)return;const l=((k.querySelector('.l')||{}).innerText||'').trim(),d=TT.find(x=>l.startsWith(x[0]));if(d)k.title=d[1]});
+['dtiles','stiles','stats','mois'].forEach(id=>{const e=document.getElementById(id);if(e)new MutationObserver(poseTT).observe(e,{childList:true})});setTimeout(poseTT,250);
 </script></body></html>
