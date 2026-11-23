@@ -2586,7 +2586,10 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&__rech){_
 function nouvellesDonnees(){let b=document.getElementById('nouv');if(!b){b=document.createElement('button');b.id='nouv';b.className='btn nouv';
   b.onclick=()=>{store.set('y',scrollY);location.reload()};document.body.appendChild(b)}
   b.textContent='Nouvelles données du robot · Actualiser'}
-if(!FB)setTimeout(recharger,5*60*1000);     // page Firebase : rechargée seulement quand le robot envoie de nouvelles données
+// page locale (OneDrive) : le rechargement des données n'a lieu que si J n'a rien touché depuis 3 minutes (J, 23/11 : « je perds ma page »)
+var __act=Date.now();['mousemove','keydown','click','scroll','touchstart'].forEach(e=>addEventListener(e,()=>{__act=Date.now()},{passive:true}));
+function rechargerSiCalme(){if(Date.now()-__act<3*60*1000){setTimeout(rechargerSiCalme,60*1000);return}recharger()}
+if(!FB)setTimeout(rechargerSiCalme,5*60*1000);     // page Firebase : rechargée seulement quand le robot envoie de nouvelles données
 
 /* ---------- coches partagées entre les PC (12/11, J) ----------
    Les coches (imprimé, traité, facturé, devis) n'étaient gardées que dans le navigateur de chaque PC. Avec le bouton du menu,
