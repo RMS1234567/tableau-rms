@@ -2147,7 +2147,10 @@ const CEQ=D.couts_eq||{}, EQAG=D.eq_ag||{};
 const ASSO=(()=>{const c={};const ajoute=(nom,n)=>{Object.keys(EQAG[n]||{}).forEach(e=>{const k=nom+'|'+e;c[k]=(c[k]||0)+1})};
   RAP.forEach(r=>ajoute(r.par,r.n_nexxio));(D.sst||[]).forEach(x=>Object.keys(x.sst||{}).forEach(nom=>ajoute(nom,x.n_nexxio)));
   const best={};Object.entries(c).forEach(([k,v])=>{const [nom,e]=k.split('|');if(!best[nom]||v>best[nom][1])best[nom]=[e,v]});
-  return Object.fromEntries(Object.entries(best).map(([k,v])=>[k,v[0]]))})();
+  const res=Object.fromEntries(Object.entries(best).map(([k,v])=>[k,v[0]]));
+  // 23/11 (J) : liens posés à la main (« Elyess OUERGHI » = agenda « Elyes RPP »), sans tenir compte de la casse
+  Object.entries(D.agenda_de||{}).forEach(([nom,ag])=>{Object.keys(res).filter(k=>k.toLowerCase()===nom.toLowerCase()).forEach(k=>delete res[k]);res[nom]=ag});
+  return res})();
 // 16/11 (contrôle des données) : sans prix dans l'agenda de son équipe, on prenait le prix de la seule équipe de la
 // commande, même si c'était l'agenda d'un autre sous-traitant (3029 et 3270 comptés dans 2 relevés, 4589 ALI ZARAI au prix
 // de l'agenda de Mohamed ZARAI, NUANCE FACADE comparée au prix d'un autre). Ce repli ne sert plus que si cette équipe
@@ -2222,7 +2225,10 @@ const motsNom=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').t
 // 16/11 (J : « Oui, même équipe ») : le rapport d'un équipier vaut pour son équipe (factures seulement)
 const eqDe=p=>(D.meme_equipe||{})[p]||p;
 // prix de l'agenda pour une facture : celui du sous-traitant, sinon celui d'un nom de la même équipe (agenda de Hamid ZARAI)
-const prixEq=(n,nom)=>{let p=prixPour(n,nom);if(p==null)for(const a of Object.keys(D.meme_equipe||{}))if(eqDe(a)===nom&&(p=prixPour(n,a))!=null)break;return p};
+const prixEq=(n,nom)=>{const vs=Object.keys(D.facture_via||{}).filter(a=>D.facture_via[a]===nom);
+  // 22/11 : l'équipe qui refacture la plomberie d'Amar : prix de son agenda + prix de l'agenda d'Amar sur la même commande (4110 : 900 + 900)
+  if(vs.length){const ps=[nom,...vs].map(x=>prixPour(n,x)).filter(q=>q!=null);return ps.length?Math.round(ps.reduce((a,b)=>a+b,0)*100)/100:null}
+  let p=prixPour(n,nom);if(p==null)for(const a of Object.keys(D.meme_equipe||{}))if(eqDe(a)===nom&&(p=prixPour(n,a))!=null)break;return p};
 const facSst=f=>{if(f.sst)return f.sst;   // table société -> sous-traitant validée par J (societes_sous_traitants.json)
   const c={};cmdsF(f).forEach(([n])=>(RAP_N[n]||[]).forEach(r=>{const p=eqDe(r.par);c[p]=(c[p]||0)+1}));
   const b=Object.entries(c).sort((a,b)=>b[1]-a[1])[0];if(b)return b[0];
@@ -2249,7 +2255,7 @@ function controleFacture(f){
   if(sr)pb.push(sr+' sans rapport');if(dbl)pb.push(dbl+' déjà facturée(s)');if(sp)pb.push(sp+' sans prix agenda');if(ecart&&Math.abs(ecart)>=1&&!sp&&!lgE)pb.push('écart '+eur(ecart));
   // 19/11 (chantier « facturation des sous-traitants ») : une classe par facture, pour le bon à payer : conforme / écart de prix /
   // rapport manquant / autre à vérifier (illisible, aucune commande, prix absent de l'agenda, déjà facturée...)
-  const classe=!pb.length?'conforme':pb.some(p=>/sans rapport/.test(p))?'rapport':pb.some(p=>/^écart|autre prix|lignes non reconnues/.test(p))?'ecart':'autre';
+  const classe=!pb.length?'conforme':pb.some(p=>/déjà facturée|^écart|autre prix|lignes non reconnues/.test(p))?'ecart':pb.some(p=>/sans rapport/.test(p))?'rapport':'autre';   // 22/11 : une commande déjà facturée (4938 de Rabah Chafa) est un écart, pas un simple rapport manquant
   return {nom,lignes,ag,ecart,pb,classe}}
 const CLASSE={conforme:['ok','Conforme'],ecart:['bad','Écart'],rapport:['warn','Rapport manquant'],autre:['warn','À vérifier']};
 const chipClasse=c=>`<span class="chip ${CLASSE[c][0]}">${CLASSE[c][1]}</span>`;
