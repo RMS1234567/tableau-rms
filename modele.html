@@ -1034,7 +1034,7 @@ const PROP=flag('prop:'), PROPS=D.propositions||{};   // 17/11 : « Appliquer »
 const PAY=flag('pay:'), BAP=flag('bap:');   // 19/11 (J, bon à payer validé d'un clic) : clé = nom du fichier de la facture, rien ne part et rien n'est payé d'ici
    // 13/11 (J) : facture de sous-traitant payée (bon à payer), clé = nom du fichier de la facture   // env: rapport envoyé au bailleur (12/11)
 // 12/11 (J) : aussi les commentaires (« com: ») et les tentatives d'appel au locataire (« app: »), partagés de la même façon
-const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','bap:','plan:','ext:','wa:','wam:','mgr:','mnom:','prop:','suiv:','vue:'], CO_TXT=['com:','app:','plan:','ext:','wa:','wam:','mgr:','mnom:','suiv:','vue:'];   // mgr: question au manager (16/11)   // wam: WhatsApp ouvert à la main (15/11 soir)   // wa: WhatsApp RDV (15/11)   // plan: demande de planification (13/11)
+const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','bap:','plan:','ext:','wa:','wam:','mgr:','mnom:','prop:','suiv:','vue:','diag:'], CO_TXT=['com:','app:','plan:','ext:','wa:','wam:','mgr:','mnom:','suiv:','vue:','diag:'];   // mgr: question au manager (16/11)   // wam: WhatsApp ouvert à la main (15/11 soir)   // wa: WhatsApp RDV (15/11)   // plan: demande de planification (13/11)
 const NOTE={get:k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},
   set:(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k);localStorage.setItem('ts:'+k,Date.now())}catch(e){}coSave(k)}};
 // coches des autres PC, relues par le robot (D.coches) : la plus récente gagne, avant le premier affichage
@@ -1859,15 +1859,27 @@ function frise(n,s,b,pl){const F=(D.fnx||[]).filter(f=>f.n_nexxio===n&&f.type===
 const DEM_TXT='Si ta demande est claire et ne concerne que CE BC, le robot l’exécute au prochain passage (quelques minutes) ; un BC rouge pour un prix, un marché ou une lecture reste bloqué, et le résultat s’affiche ici : valider ou accepter, supprimer, annuler, ressaisir, changer le gestionnaire, le libellé, le logement vacant ou le pilote, planifier, ajouter un commentaire interne, classer le BC (doublon, pas pour RMS, traité), donner le bon devis, relire le PDF ou refaire le contrôle IA.';
 function demEtat(nbc){const a=(D.actions||{})['dem:'+nbc];if(!a)return '';const nf=/(non fait|rien fait|n[’']a pas|aucune commande|impossible|refus|bloqu)/i.test(a.message||''),ok=/^(ok|fait|faite)/i.test(a.etat||'')&&!nf,ko=/(echec|échec|refus|erreur|non)/i.test(a.etat||'')||nf;   // le robot met parfois etat=ok avec un message « non fait » : pas de pastille verte alors
   return `<div style="margin-top:6px"><span class="chip ${ok?'ok':ko?'bad':'info'}">${esc(a.etat||'')}</span> ${esc(a.message||'')}${a.ordre?` <span class="tag">ordre : ${esc(a.ordre)}</span>`:''}${a.par?` <span class="tag">demandé par ${esc(a.par)}</span>`:''}</div>`}
+// 23/11 : diagnostic IA d'un BC rouge : la cause en une phrase ; s'il y a une question, un bouton par réponse (un clic = cette décision, coche diag:<n° BC>
+// {i,label,par}) ; après le clic « Ta décision : … » puis l'état de l'atelier. Le robot (reponses_diagnostics) note la réponse et lance l'atelier sur ce BC.
+function diagBloc(nbc){const d=(D.diagnostics||{})[nbc];if(!d||!d.cause)return '';let v=null;try{v=JSON.parse(NOTE.get('diag:'+nbc)||'null')}catch(e){}
+  const rep=d.reponse||null,choix=rep||(v&&v.label?v:null),Q=(d.reponses||[]).length&&d.question;
+  return `<div class="s" id="diag" data-bc="${esc(nbc)}"><h4>Pourquoi ce BC est rouge</h4><div>${esc(d.cause)}</div>
+    ${choix?`<div style="margin-top:8px"><span class="chip ${rep?'ok':'info'}">${rep?'Décision prise':'Envoyée'}</span> <b>Ta décision : ${esc(choix.label)}</b>${rep&&rep.effet?'<div class="tag">'+esc(rep.effet)+'</div>':''}${rep&&rep.atelier?'<div class="tag">Atelier : '+esc(rep.atelier)+'</div>':(rep?'':'<div class="tag">Le robot la prend au prochain passage (quelques minutes).</div>')}</div>`
+      :Q?`<div style="margin-top:8px"><b>${esc(d.question)}</b><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">${d.reponses.map((x,i)=>`<div style="display:flex;flex-direction:column;gap:2px;max-width:220px"><button class="btn prim" data-diag="${i}">${esc(x.label)}</button><span class="tag">${esc(x.effet||'')}</span></div>`).join('')}</div>${FB?'':'<div class="tag" style="margin-top:6px;color:var(--rouge)">Page locale : une décision ne serait pas transmise au robot. Ouvre le tableau en ligne.</div>'}</div>`:''}</div>`}
+function lierDiag(){const el=document.getElementById('diag');if(!el)return;const nbc=el.dataset.bc,d=(D.diagnostics||{})[nbc]||{};
+  el.querySelectorAll('[data-diag]').forEach(b=>b.onclick=()=>{const i=+b.dataset.diag,x=(d.reponses||[])[i];if(!x)return;
+    if(!FB){toast('Page locale : cette décision ne serait PAS transmise au robot. Ouvre le tableau en ligne.');return}
+    NOTE.set('diag:'+nbc,JSON.stringify({i,label:x.label,par:WEB?webQui():''}));toast('Décision envoyée : '+x.label);
+    const f=document.getElementById('diag');if(f)f.outerHTML=diagBloc(nbc);lierDiag()})}
 function blocBC(nbc){const r=((D.manager||{}).blocages||{})[nbc];let v=null;try{v=JSON.parse(NOTE.get('mgr:bc:'+nbc)||'null')}catch(e){}
   const att=v&&v.txt&&(!r||r.texte!==v.txt), ORD={preciser:o=>'retenir le devis '+o.devis,relire_ia:()=>'refaire le contrôle IA',atelier:()=>'lancer l’agent correcteur'};
-  return `<div class="s" id="bcexp" data-bc="${esc(nbc)}"><h4>Demander au manager</h4>
+  return diagBloc(nbc)+`<div class="s" id="bcexp" data-bc="${esc(nbc)}"><h4>Demander au manager</h4>
     ${r?`<div style="margin:0 0 10px;font-size:13px"><div><b>Tu as écrit</b> <span class="tag">${fr((r.quand||'').slice(0,10))} à ${esc((r.quand||'').slice(11,16))}</span> : « ${esc(r.texte)} »</div>
       <div style="margin-top:4px;white-space:pre-wrap"><b>Le manager :</b> ${esc(r.reponse||'')}</div>${(r.ordres||[]).length?`<div class="tag" style="margin-top:4px">Ordre donné : ${r.ordres.map(o=>esc((ORD[o.type]||(()=>o.type))(o))).join(', ')}</div>`:''}</div>`:''}${demEtat(nbc)}
     <textarea id="bcexp-t" rows="3" maxlength="600" placeholder="Ex. : supprimer cette commande, ou : le bon devis est le D2610000271, ou : changer le gestionnaire pour ..." style="width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--solid);color:var(--ink)"></textarea>
     <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap"><button class="btn prim" id="bcexp-go">Envoyer au manager</button>
       <span class="tag" id="bcexp-et">${att?'<span class="chip info">Envoyée</span> « '+esc(v.txt)+' » : réponse au prochain passage du robot (quelques minutes)':DEM_TXT}</span></div></div>`}
-function lierBlocBC(){const g=document.getElementById('bcexp-go');if(!g)return;const nbc=document.getElementById('bcexp').dataset.bc;
+function lierBlocBC(){lierDiag();const g=document.getElementById('bcexp-go');if(!g)return;const nbc=document.getElementById('bcexp').dataset.bc;
   g.onclick=async()=>{const t=document.getElementById('bcexp-t').value.trim().replace(/\s+/g,' '),et=document.getElementById('bcexp-et');
     if(t.length<5){et.textContent='Écris au moins quelques mots.';return}
     if(!confirm('Envoyer cette demande ? Le robot l’exécutera sur ce BC au prochain passage (y compris supprimer, annuler ou ressaisir si tu le demandes) :\n\n« '+t+' »'))return;
