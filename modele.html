@@ -763,6 +763,10 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 .pe{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin:0;padding:11px 18px;font-size:14px;border-bottom:1px solid var(--line);background:var(--soft)}.pe.warn{background:var(--orange-bg);color:var(--orange)}.pe.info{background:var(--accent-bg);color:var(--accent)}.pe.ok{color:var(--muted)}.pe b{white-space:nowrap}
 .surv{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 16px}.svt{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)}
 .sv{display:inline-flex;align-items:center;gap:10px;padding:9px 16px;border:1px solid var(--line);border-radius:999px;background:var(--card);font:inherit;font-size:14px;color:var(--ink);cursor:pointer}.sv b{font-size:18px;font-variant-numeric:tabular-nums}.sv.niv0 b{color:var(--rouge)}.sv:hover{border-color:var(--accent)}.surv[hidden]{display:none}
+/* signe de vie du robot et alerte de transmission (23/11) */
+.vie{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:12.5px;color:var(--muted)}.vie i{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
+.vie.ok,.vie.ok i{color:var(--vert)}.vie.ok i{background:var(--vert)}.vie.bad{padding:10px 14px;border-radius:12px;background:var(--rouge-bg);color:var(--rouge);font-weight:600;font-size:13.5px;border:1px solid color-mix(in srgb,var(--rouge) 30%,transparent)}.vie.bad i{background:var(--rouge)}
+.alerte-co.rouge{background:var(--rouge-bg);color:var(--rouge);border:1px solid color-mix(in srgb,var(--rouge) 30%,transparent)}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -773,7 +777,7 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 </aside>
 <div class="contenu">
 <div class="entete"><div><h1 id="bonjour">Bonjour</h1><p id="resume"></p></div><div class="gsearch"><input type="search" id="gq" placeholder="Rechercher partout : n° Nexxio, BC, adresse, locataire, équipe…" autocomplete="off"><div id="gres" hidden></div></div><button class="theme" id="theme" title="Clair, sombre ou automatique"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span></span></button><button class="theme" id="verre" title="Style verre dépoli : cartes translucides sur fond en halos de couleur"><span>Verre</span></button><button class="theme" id="dens" title="Densité des listes : confortable ou compacte"><span>Confort</span></button></div>
-<div id="alerte"></div><div id="alerte-cx" class="alerte-cx"></div><div id="alerte-co" class="alerte-co"></div><div id="ptitre"></div>
+<div id="vie" class="vie"></div><div id="alerte"></div><div id="alerte-cx" class="alerte-cx"></div><div id="alerte-co" class="alerte-co"></div><div id="ptitre"></div>
 <div id="fiche" hidden><div class="in" id="fichein"></div></div><button class="btn" id="haut" hidden title="Haut de page">↑</button>
 <main>
 <!-- EXPLOITATION -->
@@ -2582,21 +2586,28 @@ function coSnap(){const c={};
   return c}
 async function coEtat(){if(WEB)return 'on';return !coDir?'off':(await coDir.queryPermission({mode:'readwrite'}))==='granted'?'on':'pause'}
 async function coBouton(err){const b=document.getElementById('partage');if(!b)return;const e=await coEtat().catch(()=>'off');b.hidden=false;b.className='btn partage '+(err?'pause':e);
-  b.textContent=err?'Partage des coches : réessayer':FB?'Coches en direct ✓':{off:'Partager mes coches entre les PC',on:'Coches partagées entre les PC ✓',pause:'Réactiver le partage des coches'}[e];
+  if(!FB)b.className='btn partage pause';   // 23/11 : hors Firebase, aucun clic ne part
+  b.textContent=err?'Partage des coches : réessayer':FB?'Coches en direct ✓':'Page locale : clics non transmis';
   if(FB){b.title=err?'Écriture refusée : '+(err.message||err):'Chaque coche est enregistrée en ligne et s\'affiche chez les autres en quelques secondes.';return}
-  b.title=e==='on'?'Vos coches sont écrites dans BC CLIENTS\\COCHES TABLEAU (OneDrive) et reprises par les autres PC à la prochaine mise à jour du tableau.':'Choisir le dossier OneDrive - RMS BATIMENT\\BC CLIENTS\\COCHES TABLEAU'}
+  b.title='Ce tableau est ouvert hors ligne : vos clics ne sont pas envoyés au robot. Ouvrez le tableau en ligne pour agir.'}
 async function coEcrire(){if(await coEtat()!=='on'){coBouton();return}
   // 14/11 (Firebase) : seulement les clés changées ici, chacune avec son heure ; les autres restent telles quelles en ligne
   if(FB){const ks=[...(coSale||[])];coSale=new Set();if(!ks.length)return;const c={},q=webQui();
     for(const k of ks){const v=localStorage.getItem(k);c[k]=[v==null?0:CO_TXT.some(p=>k.startsWith(p))?v:1,+localStorage.getItem('ts:'+k)||Date.now(),q]}
-    try{await FB.ecrire(c)}catch(e){ks.forEach(k=>coSale.add(k));throw e}coBouton();return}
+    try{await FB.ecrire(c)}catch(e){ks.forEach(k=>coSale.add(k));throw e}coErr=null;coBouton();coBandeau();return}
   const corps=JSON.stringify({maj:new Date().toISOString(),qui:WEB?webQui():'',coches:coSnap()});
   // 13/11 (J) : version web (page GitHub + compte Microsoft) : même fichier par navigateur, écrit dans OneDrive par Graph
   if(WEB){await webG(':/COCHES TABLEAU/coches-web-'+coId+'.json:/content',{method:'PUT',body:corps,headers:{'Content-Type':'application/json'}});coBouton();return}
   const f=await coDir.getFileHandle('coches-'+coId+'.json',{create:true}),w=await f.createWritable();
   await w.write(corps);await w.close();coBouton()}
 var coSale;   // clés changées depuis le dernier envoi (Firebase)
-function coSave(k){if(k&&CO_P.some(p=>k.startsWith(p)))(coSale=coSale||new Set()).add(k);if(!coDir&&!WEB)return;clearTimeout(coT);coT=setTimeout(()=>coEcrire().catch(e=>coBouton(e)),400)}
+var coErr=null,coR=null,coMsgT=0;
+// 23/11 (J, décision du manager : « clics par Firebase seul », OneDrive a eu jusqu'à 2 h de retard) : un clic ne part que par Firebase.
+// Page locale (ouverte depuis OneDrive) : rien n'est écrit dans COCHES TABLEAU, on le dit clairement. Les anciens fichiers restent lus par le robot.
+function coHorsLigne(){if(Date.now()-coMsgT<4000)return;coMsgT=Date.now();toast('Page locale : ce clic n’est PAS transmis au robot. Ouvrez le tableau en ligne pour agir.')}
+function coSave(k){const cle=k&&CO_P.some(p=>k.startsWith(p));if(cle)(coSale=coSale||new Set()).add(k);
+  if(!FB){if(cle)coHorsLigne();return}
+  clearTimeout(coT);coT=setTimeout(()=>coEcrire().catch(e=>{coErr=e;coBouton(e);coBandeau();clearTimeout(coR);coR=setTimeout(()=>coSave(),15000)}),400)}
 // 13/11 (J) : « une solution pour les coches, un truc plus clair ». Bandeau en haut tant que le partage n'est pas actif sur ce
 // PC (un clic pour l'activer) ; une fois actif, les coches des autres PC sont relues toutes les 30 s dans le dossier partagé,
 // sans attendre que le robot refasse le tableau.
@@ -2630,22 +2641,27 @@ function coFB(c){const prem=!coLu,chg=coFusion({coches:c});coLu=Date.now();
   if(prem){for(const [k,x] of Object.entries(coSnap()))if(!c[k]||+x[1]>+c[k][1])(coSale=coSale||new Set()).add(k);if(coSale&&coSale.size)coSave()}
   if(chg)coRedessiner();coBandeau()}
 async function coBandeau(){const el=document.getElementById('alerte-co');if(!el)return;
+  if(FB&&coErr){el.className='alerte-co rouge';el.innerHTML=`<span>⚠ Firebase injoignable : vos derniers clics ne sont pas encore envoyés au robot (nouvel essai toutes les 15 s). ${esc(coErr.message||String(coErr))}</span><button class="btn" id="co-re">Réessayer</button>`;document.getElementById('co-re').onclick=()=>coSave();return}
   if(FB){const vieux=D.genere_iso&&(Date.now()-new Date(D.genere_iso))>45*60000;el.className='alerte-co '+(vieux?'pause':'on');
     el.innerHTML=`<span>✓ Connecté (${esc(webQui())}) · coches en direct${coLu?'':' (connexion…)'} · données du robot du ${esc(D.genere||'?')}${vieux?' : <b>le PC du bureau n\'a rien envoyé depuis</b>':''}</span><button class="btn" id="co-sortir">Se déconnecter</button>`;
     document.getElementById('co-sortir').onclick=()=>FB.sortir();return}
-  if(WEB){el.className='alerte-co on';el.innerHTML=`<span>✓ Connecté (${esc(webQui())}) · coches partagées${coAutres?' avec '+coAutres+' autre(s) navigateur(s)':''} · relues ${coLu?'à '+new Date(coLu).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'dans un instant'}</span><button class="btn" onclick="location.reload()">Actualiser les données</button>`;return}
-  if(!('showDirectoryPicker' in window)){el.className='alerte-co off';el.innerHTML='<span>Les coches de ce navigateur ne sont pas partagées : ouvrir le tableau avec <b>Edge</b> ou <b>Chrome</b> sur ordinateur pour les partager.</span>';return}
-  // 16/11 (J, « bandeau des coches discret ») : il occupait le haut de chaque onglet ; l'état reste sur le bouton du menu
-  // (orange tant que le partage n'est pas actif, « Coches partagées ✓ » sinon)
-  el.className='alerte-co';el.innerHTML=''}
+  // 23/11 : hors Firebase, alerte rouge permanente : les boutons et coches ne partent pas vers le robot
+  el.className='alerte-co rouge';el.innerHTML='<span>⚠ Page locale : vos clics et coches ne sont <b>pas transmis au robot</b> (rien n’est écrit dans OneDrive). Pour agir, ouvrez le tableau en ligne.</span>'}
 if(FB){coBouton();coBandeau();FB.ecouter(coFB,e=>coBouton(e));
-  FB.meta(m=>{if(m.v&&m.v!==FB.v)recharger()})}      // nouvelles données du robot : rechargé dès que la page est libre
-else if(WEB){coBouton();coLire().catch(e=>coBandeau());setInterval(()=>coLire().catch(()=>{}),30000)}
-else if('showDirectoryPicker' in window&&'indexedDB' in window){
-  document.getElementById('partage').onclick=coActiver;
-  coIDB().then(d=>{coDir=d||null;coBouton();coSave();coLire();coBandeau()}).catch(()=>{coBouton();coBandeau()});
-  setInterval(()=>coLire().catch(()=>{}),30000)}
-else coBandeau();
+  FB.meta(m=>{const b=m.battement;coVieISO=b&&b.toDate?b.toDate().toISOString():(b||null);vie();if(m.v&&m.v!==FB.v)recharger()})}      // nouvelles données du robot : rechargé dès que la page est libre
+else{coBouton();coBandeau();document.getElementById('partage').onclick=coHorsLigne;
+  if(!WEB&&'showDirectoryPicker' in window&&'indexedDB' in window){coIDB().then(d=>{coDir=d||null;coBouton();coLire()}).catch(()=>{});setInterval(()=>coLire().catch(()=>{}),30000)}}   // lecture seule des coches d'avant
+// 23/11 (J : « signe de vie en direct ») : le robot écrit l'heure de son dernier battement dans tableau/meta (champ battement) ; alerte rouge au-delà de 30 min
+var coVieISO=null;
+function vie(){const el=document.getElementById('vie');if(!el)return;
+  const t=coVieISO?new Date(coVieISO):null,ok0=t&&!isNaN(t);
+  if(!FB){el.className='vie off';el.innerHTML='<i></i>Signe de vie du robot : indisponible sur la page locale';return}
+  if(!ok0){el.className='vie off';el.innerHTML='<i></i>Signe de vie du robot : en attente de la première information…';return}
+  const min=Math.max(0,Math.round((Date.now()-t)/60000)),du=min<60?min+' min':Math.floor(min/60)+' h '+String(min%60).padStart(2,'0'),
+    hh=t.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),jj=t.toDateString()===new Date().toDateString()?'':t.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' à ';
+  el.className='vie '+(min<=30?'ok':'bad');
+  el.innerHTML='<i></i>'+(min<=30?'Robot en vie : dernier signe à '+hh+' (il y a '+du+')':'Le robot n’a pas donné signe de vie depuis '+du+' : dernier signe '+jj+hh)}
+vie();setInterval(vie,30000);
 
 /* ---------- Ma journée (12/11, J) ----------
    En arrivant le matin, dans l'ordre : commandes reçues depuis la veille à planifier (appeler ou clés), rapports arrivés
