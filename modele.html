@@ -2648,19 +2648,20 @@ async function coBandeau(){const el=document.getElementById('alerte-co');if(!el)
   // 23/11 : hors Firebase, alerte rouge permanente : les boutons et coches ne partent pas vers le robot
   el.className='alerte-co rouge';el.innerHTML='<span>⚠ Page locale : vos clics et coches ne sont <b>pas transmis au robot</b> (rien n’est écrit dans OneDrive). Pour agir, ouvrez le tableau en ligne.</span>'}
 if(FB){coBouton();coBandeau();FB.ecouter(coFB,e=>coBouton(e));
-  FB.meta(m=>{const b=m.battement;coVieISO=b&&b.toDate?b.toDate().toISOString():(b||null);vie();if(m.v&&m.v!==FB.v)recharger()})}      // nouvelles données du robot : rechargé dès que la page est libre
+  FB.meta(m=>{if(m.v&&m.v!==FB.v)recharger()});
+  if(FB.vie)FB.vie(x=>{coVie=x;coVieISO=x.quand&&x.quand.toDate?x.quand.toDate().toISOString():(x.quand||null);vie()})}      // nouvelles données du robot : rechargé dès que la page est libre
 else{coBouton();coBandeau();document.getElementById('partage').onclick=coHorsLigne;
   if(!WEB&&'showDirectoryPicker' in window&&'indexedDB' in window){coIDB().then(d=>{coDir=d||null;coBouton();coLire()}).catch(()=>{});setInterval(()=>coLire().catch(()=>{}),30000)}}   // lecture seule des coches d'avant
 // 23/11 (J : « signe de vie en direct ») : le robot écrit l'heure de son dernier battement dans tableau/meta (champ battement) ; alerte rouge au-delà de 30 min
-var coVieISO=null;
+var coVieISO=null,coVie={};
 function vie(){const el=document.getElementById('vie');if(!el)return;
   const t=coVieISO?new Date(coVieISO):null,ok0=t&&!isNaN(t);
   if(!FB){el.className='vie off';el.innerHTML='<i></i>Signe de vie du robot : indisponible sur la page locale';return}
   if(!ok0){el.className='vie off';el.innerHTML='<i></i>Signe de vie du robot : en attente de la première information…';return}
   const min=Math.max(0,Math.round((Date.now()-t)/60000)),du=min<60?min+' min':Math.floor(min/60)+' h '+String(min%60).padStart(2,'0'),
     hh=t.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),jj=t.toDateString()===new Date().toDateString()?'':t.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' à ';
-  el.className='vie '+(min<=30?'ok':'bad');
-  el.innerHTML='<i></i>'+(min<=30?'Robot en vie : dernier signe à '+hh+' (il y a '+du+')':'Le robot n’a pas donné signe de vie depuis '+du+' : dernier signe '+jj+hh)}
+  el.className='vie '+(min>30||(coVie.code&&coVie.code!=='à jour')?'bad':'ok');
+  el.innerHTML='<i></i>'+(min<=30?'Robot vu il y a '+du+' ('+esc(coVie.tache||'passage')+(coVie.pc?' sur '+esc(coVie.pc):'')+', '+hh+')':'Le robot n’a pas donné signe de vie depuis '+du+' : dernier signe '+jj+hh)+(coVie.version?' · version '+esc(coVie.version):'')+(coVie.code&&coVie.code!=='à jour'?' · <b>⚠ code : '+esc(coVie.code)+'</b>':'')}
 vie();setInterval(vie,30000);
 
 /* ---------- Ma journée (12/11, J) ----------

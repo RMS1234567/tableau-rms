@@ -37,6 +37,7 @@ async function charger(){m.innerHTML='Chargement du tableau…<div class="sk"><i
     ecrire:c=>setDoc(ref,{c},{merge:true}),
     ecouter:(cb,err)=>onSnapshot(ref,s=>cb((s.data()||{}).c||{}),err),
     meta:cb=>onSnapshot(doc(db,'tableau','meta'),s=>cb(s.data()||{}),()=>{}),
+    vie:cb=>onSnapshot(doc(db,'tableau','vie'),s=>cb(s.data()||{}),()=>{}),   // 23/11 : signe de vie du robot (quand, pc, tache, version, code)
     pdf:async ch=>{   // PDF copié par le robot : pdf/<sha1 du chemin> puis ses morceaux pdf/<clé>-<i>
       const k=[...new Uint8Array(await crypto.subtle.digest('SHA-1',new TextEncoder().encode(ch)))].map(x=>x.toString(16).padStart(2,'0')).join('');
       const m=(await getDoc(doc(db,'pdf',k))).data();if(!m)throw new Error('absent');
