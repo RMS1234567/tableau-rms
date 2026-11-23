@@ -1956,9 +1956,10 @@ function lierPlanif(n){const go=document.getElementById('pf-go');if(!go)return;c
   go.onclick=async()=>{const d=document.getElementById('pf-d').value,h=document.getElementById('pf-h').value;
     if(!d||!h){et.innerHTML='<span class="chip warn">Choisir la date et l\'heure du RDV.</span>';return}
     if(d<today){et.innerHTML='<span class="chip warn">La date est passée.</span>';return}
-    // vu le 21/11 (5304, 5306 : 13:00 annoncé « Matin ») : Nexxio refuse une heure qui ne va pas avec l'annonce
-    const an=document.getElementById('pf-a').value;
-    if((an==='morning'&&h>='12:00')||(an==='afternoon'&&h<'12:00')){et.innerHTML=`<span class="chip warn">${esc(h)} ne va pas avec « ${ANN[an]} » : Nexxio refuserait. Changer l'heure ou l'annonce.</span>`;return}
+    // vu le 21/11 (5304, 5306 : 13:00 annoncé « Matin ») : Nexxio refuse une heure qui ne va pas avec l'annonce ;
+    // J le 23/11 (« Le robot corrige seul l'heure ») : l'annonce suit l'heure, la confirmation montre l'annonce retenue
+    const pa=document.getElementById('pf-a'), an=pa.value;
+    if(an==='morning'&&h>='12:00')pa.value='afternoon';else if(an==='afternoon'&&h<'12:00')pa.value='morning';
     const part=await coEtat().catch(()=>'off');
     if(part!=='on'){et.innerHTML='<span class="chip bad">Demande non envoyée</span> Le partage des coches n\'est pas actif sur ce PC : le robot ne verrait pas la demande. Cliquer « Activer le partage » en haut du tableau, puis recommencer.';return}
     const sms=document.getElementById('pf-sms').checked, mail=document.getElementById('pf-mail').checked, sst=document.getElementById('pf-s').value.trim();
