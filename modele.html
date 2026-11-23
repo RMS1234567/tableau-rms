@@ -1941,7 +1941,7 @@ function lierFact(n){const b=document.getElementById('fact-copie');if(!b)return;
   try{navigator.clipboard.writeText(t).then(fin,()=>{prompt('Copier :',t)})}catch(e){prompt('Copier :',t)}}}
 function planifBloc(n,pl,s){const st=(pl&&pl.statut)||'';if(!/^(Prise en compte|Planifi)/.test(st))return '';
   const g=(D.logements||{})[n]||{}, occ=!!(g.nom&&!g.vacant), act=Object.keys((s&&s.sst)||{}).filter(x=>!/lakchiri|gestion bureau/i.test(x));
-  const noms=[...new Set((D.sst||[]).flatMap(x=>Object.keys(x.sst||{})))].filter(x=>!/lakchiri|gestion bureau/i.test(x)).sort((a,b)=>a.localeCompare(b,'fr'));
+  const noms=[...new Set([...(D.sst||[]).flatMap(x=>Object.keys(x.sst||{})),...(D.techniciens||[])])].filter(x=>!/lakchiri|gestion bureau/i.test(x)).sort((a,b)=>a.localeCompare(b,'fr'));
   const re=/^Planifi/.test(st);
   return `<div class="s planif"><h4>${re?'Re-planifier':'Planifier'} dans Nexxio</h4>
     <div class="pf"><label>Date<input type="date" id="pf-d" min="${today}"></label><label>Heure<input type="time" id="pf-h" value="08:00" step="900"></label>
