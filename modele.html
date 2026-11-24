@@ -789,6 +789,7 @@ details.det>summary::-webkit-details-marker{display:none}details.det>summary::be
 @media (max-width:700px){.bar select{flex:1 1 44%;min-width:130px;text-overflow:ellipsis}.btn{min-height:40px}.entete>div:first-child{display:none}}
 .ou-r{display:flex;justify-content:space-between;gap:16px;padding:12px 6px;border-top:1px solid var(--line);cursor:pointer;border-radius:8px;font-size:14.5px}.ou-r:hover{background:var(--soft)}.ou-r b{font-weight:600;white-space:nowrap;color:var(--accent)}
 @media (max-width:700px){.ou-r{flex-direction:column;gap:2px}.ou-r b{white-space:normal}}
+.vues{display:none!important}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -1456,8 +1457,8 @@ function planning(){
   // 13/11 (J, 3764) : facture puis avoir dans Nexxio, rien de refacturé depuis : Nexxio la remet « à facturer ». À refacturer
   // (erreur sur la 1re facture) ou annulée (le client ne paie pas) : J choisit, « Non, annulée » la sort de la liste.
   const AVF={};(D.sst||[]).forEach(y=>{const f=y.factures||[],av=f.filter(z=>z.type==='avoir');
-    if(av.length&&Math.abs(f.reduce((t,z)=>t+(z.ht||0),0))<1)AVF[y.n_nexxio]={av:av[0],f}});
-  const chipAv=n=>{const a=AVF[n];return a?`<span class="b2"><span class="chip warn" title="${esc(a.f.map(z=>(z.type==='avoir'?'Avoir ':'Facture ')+z.numero+' du '+fr(z.date)+' : '+eur(z.ht)).join('\n'))}">Avoir du ${fr(a.av.date)} : à refacturer ?</span> <button class="btn" data-annule="${esc(n)}" title="Facture annulée, on ne refacture pas : la commande sort de la liste (coche partagée)">Non, annulée</button></span>`:''};
+    if(av.length&&Math.abs(f.reduce((t,z)=>t+(z.ht||0),0))<1)AVF[y.n_nexxio]={av:av[0],f,anc:Math.round((new Date(today)-new Date(av[av.length-1].date))/864e5)>365}});   // anc : avoir de plus d'un an (24/11, J : « sort les ») : plus « à refacturer ? », visible seulement dans le filtre « Avoir édité »
+  const chipAv=n=>{const a=AVF[n];if(a&&a.anc)return `<span class="b2"><span class="chip" title="Avoir de plus d’un an : affaire sans doute close, plus signalé à refacturer">Avoir du ${fr(a.av.date)} · ancien</span></span>`;return a?`<span class="b2"><span class="chip warn" title="${esc(a.f.map(z=>(z.type==='avoir'?'Avoir ':'Facture ')+z.numero+' du '+fr(z.date)+' : '+eur(z.ht)).join('\n'))}">Avoir du ${fr(a.av.date)} : à refacturer ?</span> <button class="btn" data-annule="${esc(n)}" title="Facture annulée, on ne refacture pas : la commande sort de la liste (coche partagée)">Non, annulée</button></span>`:''};
   const FF={toutes:['Toutes',()=>true],pretes:['Facture SST reçue',x=>fsst(x.n_nexxio).length>0],sans:['Sans facture SST',x=>!fsst(x.n_nexxio).length],avoir:['Avoir édité',x=>!!AVF[x.n_nexxio]]};
   let ff=store.get('ffact','toutes');if(!FF[ff])ff='toutes';
   document.getElementById('ffact').innerHTML=Object.entries(FF).map(([k,[t,f]])=>`<button class="${k===ff?'on':''}" data-ff="${k}">${t} <b>${tousFact.filter(x=>!FACT.get(x.n_nexxio)).filter(f).length}</b></button>`).join('');
@@ -2570,7 +2571,7 @@ function telPage(tb){const lim=tb._lim||PAGE,rows=[...tb.rows],n=rows.length,on=
 document.querySelectorAll('.wrap tbody[id]').forEach(tb=>{new MutationObserver(()=>telPage(tb)).observe(tb,{childList:true});telPage(tb)});
 matchMedia('(max-width:700px)').addEventListener('change',()=>document.querySelectorAll('.wrap tbody[id]').forEach(telPage));
 const onglet=t=>{if(t==='manager'){t='chiffres';CVU='rob'};['exploitation','planning','devis','sst','chiffres','manager'].forEach(k=>document.getElementById('p-'+k).hidden=t!==k);
-  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));store.set('onglet',t);document.body.dataset.onglet=t;ptitre(t);if(t==='chiffres')cvue()};
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));store.set('onglet',t);document.body.dataset.onglet=t;ptitre(t);if(t==='chiffres')cvue();if(t==='devis')dvTri();if(t==='planning')ptTri()};
 // 24/11 (J, cases cochées) : Chiffres en trois vues (Résultats, Argent, Robot) ; le compte rendu du Manager est dans « Robot », plus d'onglet Manager
 var CVU=store.get('cv','res');
 function cvue(v){if(v)CVU=v;store.set('cv',CVU);const p=document.getElementById('p-chiffres');if(!p)return;[...p.children].forEach(el=>{if(el.id==='cvues')return;el.style.display=(el.dataset.cvg||'res')===CVU?'':'none'});document.querySelectorAll('#cvues button').forEach(b=>b.classList.toggle('on',b.dataset.v===CVU))}
@@ -3016,6 +3017,14 @@ function epurer(){document.querySelectorAll('#p-devis table').forEach(t=>{const 
   document.querySelectorAll('#sv-prix table').forEach(t=>{const hs=t.tHead?[...t.tHead.rows[0].cells]:[],k=hs.findIndex(h=>/équipe/i.test(h.textContent));if(k<0)return;
     [...t.tBodies[0].rows].forEach(r=>{const c=r.cells[k];if(c&&c.innerHTML.indexOf('<br')>=0){c.innerHTML=c.innerHTML.replace(/<br\s*\/?>/gi,' · ');c.style.whiteSpace='normal'}})})}
 document.querySelectorAll('#p-devis tbody,#sv-prix tbody').forEach(tb=>new MutationObserver(()=>setTimeout(epurer,0)).observe(tb,{childList:true}));setTimeout(epurer,400);
+/* 24/11 (J, cases cochées) : Planning = 5 tuiles visibles + « Autres vues » (RDV aujourd'hui, En cours, Qui dorment, Par équipe) ; Devis : tuile à zéro masquée */
+const PT_PLUS=['venir','cours','dort','equipe'];
+function ptTri(){const box=document.getElementById('ptiles');if(!box)return;const ouv=store.get('ptplus',false);
+  box.querySelectorAll('button[data-v]').forEach(b=>{b.style.display=PT_PLUS.includes(b.dataset.v)&&!ouv&&!b.classList.contains('on')?'none':''});
+  let t=document.getElementById('pt-plus');if(!t){t=document.createElement('button');t.id='pt-plus';t.className='btn';t.style.margin='0 0 12px';box.insertAdjacentElement('afterend',t);t.onclick=()=>{store.set('ptplus',!store.get('ptplus',false));ptTri()}}
+  t.textContent=ouv?'Moins de vues ▾':'Autres vues ▸'}
+function dvTri(){document.querySelectorAll('#dtiles button[data-v]').forEach(b=>{const n=b.querySelector('b'),z=n&&n.textContent.trim()==='0';b.style.display=z&&!b.classList.contains('on')?'none':''})}
+{const pb=document.getElementById('ptiles'),db=document.getElementById('dtiles');if(pb)new MutationObserver(ptTri).observe(pb,{childList:true});if(db)new MutationObserver(dvTri).observe(db,{childList:true});setTimeout(()=>{ptTri();dvTri()},300)}
 /* 24/11 (J : « bandeaux réduits à un seul ») : un seul bandeau d'état à la fois, le plus important, et seulement s'il y a un problème */
 function unBandeau(){let vu=false;
   [['alerte-co',e=>/rouge|pause|off/.test(e.className)],['vie',e=>/bad/.test(e.className)],['clics',e=>/bad/.test(e.className)],['alerte',e=>true],['alerte-cx',e=>true]].forEach(([id,pb])=>{
@@ -3248,7 +3257,8 @@ function vueApplique(pan,v){vueSegs(pan).forEach(({k,e})=>{const b=e.querySelect
   setTimeout(()=>{vueCtrls(pan).forEach(({k,e})=>{if(!(k in (v.c||{}))||e.value===v.c[k])return;e.value=v.c[k];e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))})},150)}
 function vuesListe(id){const L=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('vue:'+id+':')){try{const o=JSON.parse(localStorage.getItem(k)||'null');if(o)L.push({nom:k.slice(5+id.length),o})}catch(e){}}}}catch(e){}
   return L.sort((a,b)=>a.nom.localeCompare(b.nom,'fr'))}
-function vuesBarre(id){const pan=document.getElementById(id);if(!pan)return;let bar=pan.querySelector(':scope>.vues');
+function vuesBarre(id){return;   // 24/11 (J, case cochée « la supprimer ») : la barre « Vues · Enregistrer cette vue » n'est plus affichée (les vues déjà enregistrées restent dans le navigateur)
+  const pan=document.getElementById(id);if(!pan)return;let bar=pan.querySelector(':scope>.vues');
   if(!bar){bar=document.createElement('div');bar.className='vues';pan.insertAdjacentElement('afterbegin',bar)}
   const V=vuesListe(id);
   bar.innerHTML=`<span class="tag">Vues</span> ${V.map(v=>`<span class="vchip"><button class="btn" data-vapp="${esc(v.nom)}">${esc(v.nom)}</button><button class="vx" data-vdel="${esc(v.nom)}" title="Supprimer cette vue" aria-label="Supprimer la vue ${esc(v.nom)}">×</button></span>`).join(' ')} <button class="btn" data-vnew="1" title="Garde les filtres actuels de cet onglet sous un nom">＋ Enregistrer cette vue</button>`;
