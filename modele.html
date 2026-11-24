@@ -767,7 +767,7 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 .vie{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:12.5px;color:var(--muted)}.vie i{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
 .vie.ok,.vie.ok i{color:var(--vert)}.vie.ok i{background:var(--vert)}.vie.bad{padding:10px 14px;border-radius:12px;background:var(--rouge-bg);color:var(--rouge);font-weight:600;font-size:13.5px;border:1px solid color-mix(in srgb,var(--rouge) 30%,transparent)}.vie.bad i{background:var(--rouge)}
 .alerte-co.rouge{background:var(--rouge-bg);color:var(--rouge);border:1px solid color-mix(in srgb,var(--rouge) 30%,transparent)}
-.nouv{position:fixed;right:16px;bottom:16px;z-index:60;padding:12px 18px;border-radius:999px;background:var(--accent);color:var(--card);border:0;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.25);cursor:pointer}
+.nouv{position:fixed;right:16px;bottom:16px;z-index:95;padding:12px 18px;border-radius:999px;background:var(--accent);color:var(--card);border:0;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.25);cursor:pointer}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -1904,7 +1904,7 @@ function prochaineEtape(n,pl){pl=pl||{};const ap=aPlanifier().some(x=>x.n_nexxio
   else if(pl.statut==='En création'){t='En création : à prendre en compte dans Nexxio.';c='warn'}
   else t=pl.statut?`Rien à faire pour l’instant (statut ${esc(pl.statut)}).`:'';
   return t?`<div class="pe ${c}"><b>Prochaine étape</b> <span>${t}</span></div>`:''}
-function fiche(n){const o=NX[n];if(!o)return;recentAjout(n);const pl=o.pl||{},s=o.sst||{},b=o.bc||{},dvx=o.dv||{},x=Object.assign({},dvx,b,s,pl);
+function fiche(n){const o=NX[n];if(!o)return;__fi=n;recentAjout(n);const pl=o.pl||{},s=o.sst||{},b=o.bc||{},dvx=o.dv||{},x=Object.assign({},dvx,b,s,pl);
   const cout=D.couts&&D.couts[n]!=null?D.couts[n]:null, ht=x.ht!=null&&x.ht!==''?+x.ht:null;
   const c=(l,v)=>v||v===0?`<div><small>${l}</small>${v}</div>`:'';
   document.getElementById('fichein').innerHTML=`<h3><span>${o.dv&&!o.pl&&!o.sst?'Devis':'Commande'} ${esc(n)} ${bai(x.client||x.bailleur)}</span><button class="btn" id="ffermer">Fermer</button></h3>${o.pl||o.sst||o.bc?frise(n,s,b,pl):''}${prochaineEtape(n,pl)}
@@ -2576,6 +2576,7 @@ rendre();planning();devisVue();sstVue();chiffres();svues();onglet(store.get('ong
 // le robot réécrit la page à chaque passage : rechargement toutes les 5 min en gardant onglet, filtres et position
 addEventListener('beforeunload',()=>store.set('y',scrollY));
 {const y=store.get('y',0);if(y)setTimeout(()=>scrollTo(0,y),50);store.set('y',0)}
+setTimeout(()=>{const n=store.get('rf',null);if(n){store.set('rf',null);try{fiche(n)}catch(e){}}},150);   // fiche rouverte après une mise à jour (24/11)
 // vu le 11/11 : le rechargement coupait une recherche en cours ou une fiche ouverte. On attend que la page soit libre
 // (rien en cours de frappe, fiche et résultats fermés) ; onglet caché : rechargé au retour.
 const occupe=()=>/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)||!document.getElementById('fiche').hidden||!document.getElementById('gres').hidden||String(getSelection()).length>0;
@@ -2583,9 +2584,14 @@ let __rech=false;const recharger=()=>{if(document.hidden){__rech=true;return}if(
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&__rech){__rech=false;recharger()}});
 // 23/11 (J : « dès qu'il y a un nouveau truc il se recharge et je perds ma page ») : page en ligne, plus de rechargement automatique ;
 // un bouton discret « Nouvelles données · Actualiser » : J actualise quand il est prêt (onglet, vue et défilement sont repris)
+// 24/11 (J : « que sur le dashboard ça soit mis à jour rapidement ») : les nouvelles données du robot sont prises toutes seules dès que J ne fait rien (ni geste depuis
+// 60 s, aucun champ ni fiche ouvert, page visible) ; sinon le bouton reste affiché et J actualise quand il veut. Onglet, vue, défilement et fiche ouverte sont repris.
+var __fi=null;
+function rechargerSansPerdre(){store.set('y',scrollY);const f=document.getElementById('fiche');store.set('rf',f&&!f.hidden&&__fi?__fi:null);location.reload()}
 function nouvellesDonnees(){let b=document.getElementById('nouv');if(!b){b=document.createElement('button');b.id='nouv';b.className='btn nouv';
-  b.onclick=()=>{store.set('y',scrollY);location.reload()};document.body.appendChild(b)}
+  b.onclick=rechargerSansPerdre;document.body.appendChild(b);setTimeout(tenteMaj,20000)}
   b.textContent='Nouvelles données du robot · Actualiser'}
+function tenteMaj(){if(document.hidden||occupe()||Date.now()-__act<60000){setTimeout(tenteMaj,15000);return}rechargerSansPerdre()}
 // page locale (OneDrive) : le rechargement des données n'a lieu que si J n'a rien touché depuis 3 minutes (J, 23/11 : « je perds ma page »)
 var __act=Date.now();['mousemove','keydown','click','scroll','touchstart'].forEach(e=>addEventListener(e,()=>{__act=Date.now()},{passive:true}));
 function rechargerSiCalme(){if(Date.now()-__act<3*60*1000){setTimeout(rechargerSiCalme,60*1000);return}recharger()}
