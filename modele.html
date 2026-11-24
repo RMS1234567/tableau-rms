@@ -2413,7 +2413,8 @@ function retardVue(){
   const par={};
   for(const pl of aRetard()){const n=pl.n_nexxio,der=pl._der,x=NX[n]||{},s=(D.sst||[]).find(y=>y.n_nexxio===n)||{};
     if(der>lim||!dansP(der,P))continue;
-    const ev=((D.ag_rdv||{})[n]||[]).filter(e=>e[1]===der).map(e=>e[0]).sort(),e=ev[0]||Object.keys((s.sst&&typeof s.sst==='object')?s.sst:{}).sort()[0]||'Équipe non précisée';   // une seule équipe par commande : plus de double compte
+    const NOMNX={'ALA GADDOUR PEINTRE':'ALA GADDOUR','Yassine khay':'Yassine KHAY'};   // 24/11 (J, cases cochées) : les noms d'agenda « ALA GADDOUR PEINTRE » et « Yassine khay » sont les équipes « ALA GADDOUR » et « Yassine KHAY » de Nexxio (ASSO, deviné par comptage, associe parfois une équipe à un pilote : non utilisé ici)
+    const ev=((D.ag_rdv||{})[n]||[]).filter(e=>e[1]===der).map(e=>NOMNX[e[0]]||e[0]).sort(),e=ev[0]||Object.keys((s.sst&&typeof s.sst==='object')?s.sst:{}).sort()[0]||'Équipe non précisée';   // une seule équipe par commande : plus de double compte
     (par[e]=par[e]||[]).push({n,der,st:pl.statut,jours:Math.round((new Date(today)-new Date(der))/864e5),bc:pl.n_bc||s.n_bc||'',commune:pl.commune||s.commune||''})}
   const eqs=Object.keys(par).sort((a,b)=>a.localeCompare(b,'fr'));
   const se=document.getElementById('rt-eq');if(se.options.length!==eqs.length+1){se.innerHTML='<option value="">Toutes les équipes</option>'+eqs.map(e=>`<option>${esc(e)}</option>`).join('');se.value=eqSel}
