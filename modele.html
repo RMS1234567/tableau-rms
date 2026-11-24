@@ -768,6 +768,21 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 .vie.ok,.vie.ok i{color:var(--vert)}.vie.ok i{background:var(--vert)}.vie.bad{padding:10px 14px;border-radius:12px;background:var(--rouge-bg);color:var(--rouge);font-weight:600;font-size:13.5px;border:1px solid color-mix(in srgb,var(--rouge) 30%,transparent)}.vie.bad i{background:var(--rouge)}
 .alerte-co.rouge{background:var(--rouge-bg);color:var(--rouge);border:1px solid color-mix(in srgb,var(--rouge) 30%,transparent)}
 .nouv{position:fixed;right:16px;bottom:16px;z-index:95;padding:12px 18px;border-radius:999px;background:var(--accent);color:var(--card);border:0;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.25);cursor:pointer}
+/* accueil en 4 cartes (24/11) */
+#acc{margin:6px 4px 28px}#acc h2{margin:0 0 18px;font-size:26px;letter-spacing:-.5px;font-weight:650}
+#acc .c-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+#acc .c{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 26px 20px;display:flex;flex-direction:column;min-height:230px}
+#acc .c-t h3{margin:0;font-size:20px;letter-spacing:-.3px}#acc .c-h{color:var(--muted);font-size:13.5px;margin:3px 0 12px}
+#acc .c-l{flex:1}
+#acc .c-r{display:flex;align-items:baseline;gap:12px;padding:11px 4px;border-top:1px solid var(--line);cursor:pointer;border-radius:8px}
+#acc .c-r:hover{background:var(--soft)}#acc .c-r b{min-width:42px;text-align:right;font-size:20px;font-variant-numeric:tabular-nums}
+#acc .c.u .c-r b{color:var(--rouge)}#acc .c-r span{font-size:15px}#acc .c-r small{color:var(--muted);margin-left:auto}
+#acc .c-b{margin-top:14px;padding:11px 16px;border-radius:11px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:14.5px;font-weight:600;cursor:pointer}
+#acc .c-b:hover{border-color:var(--accent);color:var(--accent)}#acc .c.u .c-b{background:var(--accent);border-color:var(--accent);color:var(--card)}
+#acc .c-vide{color:var(--muted);padding:16px 4px;font-size:15px}
+details.det{margin:8px 0 0}details.det>summary{cursor:pointer;color:var(--muted);font-size:14px;padding:12px 4px;list-style:none}
+details.det>summary::-webkit-details-marker{display:none}details.det>summary::before{content:"▸ "}details.det[open]>summary::before{content:"▾ "}
+@media (max-width:860px){#acc .c-g{grid-template-columns:1fr}#acc .c{min-height:0}}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -783,13 +798,14 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 <main>
 <!-- EXPLOITATION -->
 <div id="p-exploitation">
+  <div id="acc"></div>
+  <div id="rangee" style="display:none">
+    <div class="surv" id="surv"></div>
+    <div class="trois" id="trois"></div>
+    <section class="card journee" id="journee" hidden></section>
+  </div>
+  <details class="det" id="det"><summary>Détails : journal des BC, à imprimer, blocages</summary>
   <div id="recents" hidden style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center"></div>
-  <div class="treso" id="treso"></div>
-  <div class="surv" id="surv"></div>
-  <div class="trois" id="trois"></div>
-  <section class="card" id="cj" hidden style="margin-bottom:16px"></section>
-  <section class="card" id="relb" hidden style="margin-bottom:18px"></section>
-  <section class="card journee" id="journee" hidden></section>   <!-- 20/11 (J : « Ma journée ne sert plus à rien ») : masquée ; ses 4 éléments uniques sont dans la bande « À surveiller » -->
   <section class="hero" id="hero"></section>
   <div class="kpis" id="kpis"></div>
   <div class="minis" id="minis"></div>
@@ -817,9 +833,12 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
   <section class="card" id="blocages"><h2><span>Blocages et corrections</span><span class="tag" id="nbloc"></span></h2>
     <p class="sub">Ce qui a bloqué, ce qui a été corrigé dans le code du robot, et la reprise. 30 derniers jours. Cliquer pour dérouler.</p>
     <div id="bloc" style="margin-top:8px"></div></section>
+  </details>
 </div>
 <!-- PLANNING -->
 <div id="p-planning" hidden>
+  <section class="card" id="cj" hidden style="margin-bottom:16px"></section>
+  <section class="card" id="relb" hidden style="margin-bottom:18px"></section>
   <p class="maj" id="psuivi"></p>
   <div id="proul" style="margin:0 0 12px"></div>
   <div class="kpis" id="ptiles" style="grid-template-columns:repeat(auto-fit,minmax(128px,1fr))"></div>
@@ -955,6 +974,7 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
   <section class="card" id="manager" hidden style="margin-bottom:14px"></section>
   <section class="card" id="corrauto" hidden style="margin-bottom:14px"></section></div>
 <div id="p-chiffres" hidden>
+  <div class="treso" id="treso"></div>
   <section class="card" id="etatrobot" style="margin-bottom:14px"><h2><span>État du robot</span><span class="tag" id="netat"></span></h2><div id="etat-l"></div></section>
   <section class="card" id="sante" style="margin-bottom:14px"><h2><span>Santé des données</span><span class="tag" id="nsante"></span></h2><div id="sante-l"></div></section>
   <div class="bar" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px">
@@ -2910,7 +2930,41 @@ function relancesBailleurs(){const sec=document.getElementById('relb');if(!sec)r
     <div class="wrap"><table><thead><tr><th></th><th>Reçue</th><th>Bailleur</th><th>BC</th><th>Commande Nexxio</th><th>Résumé</th></tr></thead><tbody>${[...att,...fait].map(lig).join('')}</tbody></table></div>`;
   sec.querySelectorAll('[data-relb]').forEach(c=>c.onchange=()=>{const k=c.dataset.relb,v=c.checked;ENV.set(k,v);relancesBailleurs();journee();toast(v?'Relance traitée':'Relance rouverte',()=>{ENV.set(k,!v);relancesBailleurs();journee()})});
   sec.querySelectorAll('[data-fiche]').forEach(a=>a.onclick=e=>{e.preventDefault();fiche(a.dataset.fiche)})}
-function journee(){
+/* 24/11 (J : « le dashboard a trop d'info dans tous les sens, pas assez épuré » ; cases cochées : seulement ce que je dois faire, 4 cartes, grand nombre retiré) :
+   l'accueil n'est plus que quatre cartes d'actions, une ligne par action (nombre, quoi), un bouton par carte ; tout le reste est rangé dans « Détails » ou dans
+   les onglets. Les nombres viennent des mêmes listes que « Ma journée » (FOCG, rempli par journee0()). Lecture seule. */
+function accueil(){const el=document.getElementById('acc');if(!el)return;
+  const F=window.FOCG||[],get=t=>F.find(f=>f.titre===t),relb=(typeof RELB!=='undefined'?RELB:[]).filter(r=>(r.jour||'')>=jr(60)&&!ENV.get(r.id)).length;
+  const CARTES=[
+   {u:1,t:'À décider',h:'Ce qui attend ta décision',L:[['BC à décider','BC bloqués'],['Corrections proposées par le robot','Corrections à valider'],['Alertes du robot','Alertes du robot et des données'],['Commandes à terminer dans Nexxio','À terminer dans Nexxio']]},
+   {t:'Rendez-vous',h:'Commandes à caler, rapports à attendre',b:'Ouvrir le planning',go:'planning',L:[['Commandes à planifier','Commandes à planifier'],['Rendez-vous sans rapport','Relances']]},
+   {t:'À facturer',h:'Du rapport à la facture',b:'Ouvrir la facturation',go:'fact',L:[['Factures à faire','Factures à faire'],['Terminées sans facture','Terminées, pas encore facturées'],['Rapports à envoyer au bailleur','Rapports à envoyer au bailleur']]},
+   {t:'À relancer',h:'Argent et suivis en attente',b:'Voir les relances',go:'relf',L:[['Factures impayées (plus de 60 jours)','Factures impayées en retard'],['Relances des bailleurs','Relances des bailleurs'],['À suivre (mises de côté)','À suivre']]}];
+  el.innerHTML='<h2>Aujourd’hui</h2><div class="c-g">'+CARTES.map((c,i)=>{const L=c.L.map(([n,s])=>{const f=get(s);return [n,f?f.n:0,s]}).filter(x=>x[1]);
+    const bt=c.u?(L.length?'Ouvrir la première':''):c.b;
+    return `<section class="c ${c.u&&L.length?'u':''}"><div class="c-t"><h3>${c.t}</h3></div><div class="c-h">${c.h}</div><div class="c-l">${L.length?L.map(x=>`<div class="c-r" data-ac="${esc(x[2])}"><b>${x[1]}</b><span>${x[0]}</span><small>›</small></div>`).join(''):'<div class="c-vide">Rien à faire ici.</div>'}</div>${bt?`<button class="c-b" data-card="${i}">${bt}</button>`:''}</section>`}).join('')+'</div>';
+  const va=f=>{const g=f.go;
+    if(f.titre==='Relances des bailleurs'){onglet('planning');setTimeout(()=>{const x=document.getElementById('relb');if(x)x.scrollIntoView({behavior:'smooth'})},50);return}
+    if(g==='faire'||f.titre==='À suivre'){const d=document.getElementById('det');if(d)d.open=true;const x=document.getElementById(g==='faire'?'faire':'suivi');if(x)x.scrollIntoView({behavior:'smooth'});return}
+    if(g==='rel'){onglet('sst');svue='rel';svues();window.scrollTo(0,0);return}
+    if(g==='relf'){onglet('planning');actionsFact();const e=document.getElementById('frel');if(e){e.classList.remove('ferme');e.scrollIntoView({behavior:'smooth'})}return}
+    if(g==='etat'){onglet('chiffres');const er=document.getElementById('etatrobot');if(er){er._ouv=true;document.getElementById('etat-l').hidden=false;er.scrollIntoView()}return}
+    if(g){pv=g;store.set('pv',g);if(g==='fact')store.set('ffact','toutes');onglet('planning');planning();window.scrollTo(0,0);telListe();return}
+    const m=/data-fiche="([^"]+)"/.exec((f.liste||[])[0]||'');if(m&&NX[m[1]])fiche(m[1])};
+  el.querySelectorAll('.c-r').forEach(r=>r.onclick=()=>{const f=get(r.dataset.ac)||(r.dataset.ac==='Relances des bailleurs'?{titre:'Relances des bailleurs'}:null);if(f)va(f)});
+  el.querySelectorAll('.c-b').forEach(b=>b.onclick=()=>{const c=CARTES[+b.dataset.card];
+    if(c.u){const x=c.L.map(([n,s])=>get(s)).find(Boolean);if(x)va(x);return}
+    if(c.go==='planning'){onglet('planning');window.scrollTo(0,0);return}
+    if(c.go==='fact'){pv='fact';store.set('pv','fact');store.set('ffact','toutes');onglet('planning');planning();window.scrollTo(0,0);telListe();return}
+    va({go:c.go,titre:c.t})})}
+/* 24/11 (J : « bandeaux réduits à un seul ») : un seul bandeau d'état à la fois, le plus important, et seulement s'il y a un problème */
+function unBandeau(){let vu=false;
+  [['alerte-co',e=>/rouge|pause|off/.test(e.className)],['vie',e=>/bad/.test(e.className)],['clics',e=>/bad/.test(e.className)],['alerte',e=>true],['alerte-cx',e=>true]].forEach(([id,pb])=>{
+    const e=document.getElementById(id);if(!e)return;const ok=(e.textContent||'').trim()&&pb(e);
+    if(ok&&!vu){vu=true;e.style.display=''}else e.style.display='none'})}
+setInterval(unBandeau,1500);setTimeout(unBandeau,300);
+function journee(){journee0();try{accueil()}catch(e){console.error('Accueil',e)}}
+function journee0(){
   const d=new Date(today+'T12:00:00'), recul=d.getDay()===1?3:d.getDay()===0?2:1;
   const debut=jr(recul), nomJ=new Date(debut+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long'});
   const P=D.planning||[], NXP={};P.forEach(x=>NXP[x.n_nexxio]=x);
@@ -2924,7 +2978,7 @@ function journee(){
   const VIS=TEL()?0:3;   // 19/11 : sur téléphone, une étape de Ma journée tient sur son titre (un toucher montre les commandes)
   const NIV0=new Set(['Factures impayées en retard','À terminer dans Nexxio','BC bloqués','Corrections à valider','Relances des bailleurs','Alertes du robot et des données']), NIV2=new Set(['Relances']);
   const niv=t=>NIV0.has(t)||(t==='À suivre'&&suivA.some(suivEchu))?0:NIV2.has(t)||t==='À suivre'?2:1;
-  const FOC=[];   // 19/11 (J : « Ma journée trop bourrée ») : chaque étape est aussi gardée pour la vue épurée « Focus »
+  const FOC=window.FOCG=[];   // 19/11 (J : « Ma journée trop bourrée ») : chaque étape est aussi gardée pour la vue épurée « Focus »
   const etape=(n,titre,sous,liste,bouton,go)=>{if(n)FOC.push({n,titre,sous,liste,bouton,go,v:niv(titre)});return etape0(n,titre,sous,liste,bouton,go)};
   const etape0=(n,titre,sous,liste,bouton,go)=>!n?'':`<div class="etape niv${niv(titre)}"><div class="et-t"${liste.length>VIS?` data-pli="${esc(titre)}" style="cursor:pointer"`:''}><b class="n">${n}</b><div><b>${titre}</b>${liste.length>VIS?` <span class="tag pli">${OUV.has(titre)?'▾ replier':'▸ voir les '+Math.min(liste.length,6)}</span>`:''}<div class="tag">${sous}</div></div>${bouton?`<button class="btn prim" data-go="${go}">${bouton}</button>`:''}</div>${liste.length?`<ul>${liste.slice(0,6).map((x,k)=>k<VIS?x:x.replace('<li','<li class="plus"'+(OUV.has(titre)?'':' hidden'))).join('')}${liste.length>6?`<li class="tag plus"${OUV.has(titre)?'':' hidden'}>… et ${liste.length-6} autre(s)</li>`:''}</ul>`:''}</div>`;
   // 1. commandes à planifier (même liste que la tuile du Planning : toutes, les plus anciennes d'abord)
