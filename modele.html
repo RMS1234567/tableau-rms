@@ -743,12 +743,11 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 .cjh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.cjt{font-size:22px;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
 .cja{margin-top:4px;font-size:15px;font-weight:600}.cjl{margin-top:2px;font-size:14px}.cjw{margin-top:4px;font-size:13px;color:var(--muted)}
 .cjb{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}.cjbt{min-height:46px;padding:10px 18px!important;font-size:15px!important;flex:0 1 auto}
-.bt.cjbt:first-child{background:var(--accent);border-color:var(--accent);color:var(--card)!important}
 @media (max-width:700px){.cjt{font-size:24px}.cjb{display:grid;grid-template-columns:1fr 1fr}.cjb .cjbt:last-child{grid-column:1/-1}.cjbt{min-height:52px}}
 .cjban{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:8px 16px 0;padding:10px 14px;border-radius:14px;background:var(--orange-bg);color:var(--orange);font-size:14px}.cjopt{padding:8px 16px 0}.cjg{margin:14px 0 0;font-size:15px;padding-top:10px;border-top:2px solid var(--line)}
 .cjres{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px 0}
 /* chantiers du jour, version compacte (20/11) */
-.cjl2{padding:0 16px 10px}.cjr{display:flex;align-items:center;gap:12px;padding:9px 0}.cjm{flex:1 1 auto;min-width:0}
+.cjl2{padding:0 16px 10px}.cjr{display:flex;align-items:center;gap:12px;padding:7px 0}.cjm{flex:1 1 auto;min-width:0}
 .cjt{font-size:17px}.cjh{gap:8px}.cja{margin-top:1px;font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cjl{font-weight:400;color:var(--muted)}
 .cjw{margin-top:1px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cjb{flex:none;margin:0;gap:8px}.cjbt{min-height:36px!important;padding:6px 14px!important;font-size:13.5px!important}
@@ -784,6 +783,7 @@ details.det{margin:8px 0 0}details.det>summary{cursor:pointer;color:var(--muted)
 details.det>summary::-webkit-details-marker{display:none}details.det>summary::before{content:"▸ "}details.det[open]>summary::before{content:"▾ "}
 @media (max-width:860px){#acc .c-g{grid-template-columns:1fr}#acc .c{min-height:0}}
 .sv-h{margin:6px 4px 10px;font-size:15px;font-weight:650;letter-spacing:-.2px}
+#cj-seg button.on .tag{color:inherit;opacity:.85}   /* le nombre du bouton actif était illisible (24/11) */
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -2864,6 +2864,7 @@ function actionsFact(){const sec=document.getElementById('frel');if(!sec)return;
    les rendez-vous des équipes (agendas) aujourd'hui, demain ou sur 7 jours, avec ce qu'il lui faut sur place : heure, équipe, adresse, locataire et étage,
    travaux à faire, et de gros boutons Appeler, Itinéraire (Google Maps) et Fiche. Lecture seule : rien n'est envoyé. */
 let CJ=(()=>{try{return sessionStorage.getItem('cj')||'j'}catch(e){return 'j'}})(), CJG=(()=>{try{return sessionStorage.getItem('cjg')||'h'}catch(e){return 'h'}})();   // CJG : tournée par heure (h) ou par commune (c)
+var CJALL=false;   // « Voir les autres » (24/11 : la liste prenait trop de place)
 function chantiersJour(){const sec=document.getElementById('cj');if(!sec)return;
   const dem=jr(-1),fin=jr(-7),A=(D.agenda||[]).filter(e=>e.debut&&e.n_nexxio),tel=t=>String(t||'').replace(/[^0-9+]/g,'');
   const dans=e=>{const d=e.debut.slice(0,10);return CJ==='j'?d===today:CJ==='d'?d===dem:(d>=today&&d<=fin)};
@@ -2875,7 +2876,7 @@ function chantiersJour(){const sec=document.getElementById('cj');if(!sec)return;
     const loc=g.nom&&!g.vacant?esc(g.nom)+(g.etage?' · ét. '+esc(g.etage):'')+(g.porte?' · porte '+esc(g.porte):''):g.vacant?'<b>vacant</b> : clés à l’agence':'';
     return `<div class="cjr"><div class="cjm"><div class="cjh"><b class="cjt">${CJ==='s'?JOUR[d.getDay()]+' '+e.debut.slice(8,10)+' · ':''}${esc(e.debut.slice(11,16))}</b><span class="chip info">${esc(e.equipe||'équipe ?')}</span><span class="tag">${esc(pl.commune||'')}</span></div>
       <div class="cja">${esc(adr)}${loc?' <span class="cjl">· '+loc+'</span>':''}</div>
-      ${g.topo?`<div class="cjw">${esc(g.topo)}</div>`:''}</div>
+      </div>
       <div class="cjb">${t0&&!g.vacant?`<a class="bt cjbt" href="tel:${esc(tel(t0))}">Appeler</a>`:''}<button class="bt cjbt" data-cjf="${esc(n)}">Fiche</button></div></div>`};
   const RET=aRetard();
   const CLES_J=R.filter(e=>((D.logements||{})[e.n_nexxio]||{}).vacant).length;
@@ -2883,11 +2884,10 @@ function chantiersJour(){const sec=document.getElementById('cj');if(!sec)return;
     return Object.entries(g).sort((a,b)=>a[1][0].debut<b[1][0].debut?-1:1).map(([c,l])=>`<h3 class="cjg">${esc(c)} <span class="tag">${l.length} rdv</span></h3>${l.map(ligne).join('')}`).join('')};
   sec.hidden=false;
   sec.innerHTML=`<h2><span>Chantiers du jour</span><div class="seg" id="cj-seg"><button data-s="j" class="${CJ==='j'?'on':''}">Aujourd’hui <span class="tag">${nb.j}</span></button><button data-s="d" class="${CJ==='d'?'on':''}">Demain <span class="tag">${nb.d}</span></button><button data-s="s" class="${CJ==='s'?'on':''}">7 jours <span class="tag">${nb.s}</span></button></div></h2>
-    <div class="cjres"><span class="chip info">${new Set(R.map(e=>e.equipe)).size} équipe(s) sur site</span><span class="chip ${CLES_J?'warn':'ok'}">${CLES_J} clé(s) à récupérer à l’agence</span><span class="chip">${R.length} rendez-vous</span></div>
-    ${RET.length?`<div class="cjban"><span><b>${RET.length} rendez-vous passé${RET.length>1?'s':''} sans rapport</b> : à relancer auprès des équipes</span><button class="btn" id="cj-ret">Relancer les équipes</button></div>`:''}
     <div class="cjopt"><button class="btn" id="cj-g">${CJG==='c'?'Par heure':'Par commune (tournée)'}</button></div>
-    <div class="cjl2">${R.length?(CJG==='c'?GRP(R):R.map(ligne).join('')):'<div class="vide">Aucun rendez-vous d’équipe '+(CJ==='j'?'aujourd’hui':CJ==='d'?'demain':'cette semaine')+'.</div>'}</div>`;
-  sec.querySelectorAll('#cj-seg button').forEach(b=>b.onclick=()=>{CJ=b.dataset.s;try{sessionStorage.setItem('cj',CJ)}catch(e){}chantiersJour()});
+    <div class="cjl2">${R.length?(CJG==='c'?GRP(R):R.slice(0,CJALL?999:5).map(ligne).join('')+(R.length>5&&!CJALL?`<button class="btn" id="cj-tous" style="margin:8px 0 2px">Voir les ${R.length-5} autres</button>`:'')):'<div class="vide">Aucun rendez-vous d’équipe '+(CJ==='j'?'aujourd’hui':CJ==='d'?'demain':'cette semaine')+'.</div>'}</div>`;
+  sec.querySelectorAll('#cj-seg button').forEach(b=>b.onclick=()=>{CJALL=false;CJ=b.dataset.s;try{sessionStorage.setItem('cj',CJ)}catch(e){}chantiersJour()});
+  const tb=document.getElementById('cj-tous');if(tb)tb.onclick=()=>{CJALL=true;chantiersJour()};
   const gb=document.getElementById('cj-g');if(gb)gb.onclick=()=>{CJG=CJG==='c'?'h':'c';try{sessionStorage.setItem('cjg',CJG)}catch(e){}chantiersJour()};
   const rb=document.getElementById('cj-ret');if(rb)rb.onclick=()=>{onglet('sst');svue='ret';svues();window.scrollTo(0,0)};
   sec.querySelectorAll('[data-cjf]').forEach(b=>b.onclick=()=>{if(NX[b.dataset.cjf])fiche(b.dataset.cjf)})}
