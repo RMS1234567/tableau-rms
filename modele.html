@@ -2411,17 +2411,10 @@ let RETTXT={};
 function retardVue(){
   const eqSel=document.getElementById('rt-eq').value, j=+document.getElementById('rt-j').value, P=PER_RT.get(), lim=jr(j);
   const par={};
-  for(const [n,ev] of Object.entries(D.ag_rdv||{})){
-    const x=NX[n]||{}, s=(D.sst||[]).find(y=>y.n_nexxio===n)||{}, st=(x.pl||{}).statut||s.statut||'';
-    if(!st||FINI(st)||s.facturee)continue;   // statut inconnu (commande trop ancienne) : ignorée
-    const eqs={};ev.forEach(([e,d])=>{(eqs[e]=eqs[e]||[]).push(d)});
-    for(const [e,ds] of Object.entries(eqs)){
-      const der=ds.filter(d=>d<=today).sort().pop();if(!der||der>lim||der<jr(180)||!dansP(der,P))continue;
-      // début de la série de RDV de cette équipe (RDV à moins de 30 jours du dernier)
-      const deb=ds.filter(d=>d<=der&&d>=(()=>{const t=new Date(der);t.setDate(t.getDate()-30);return t.toISOString().slice(0,10)})()).sort()[0];
-      if((RAP_N[n]||[]).some(r=>r.date>=deb))continue;
-      (par[e]=par[e]||[]).push({n,der,st,jours:Math.round((new Date(today)-new Date(der))/864e5),bc:(x.pl||x.sst||{}).n_bc||s.n_bc||'',commune:(x.pl||x.sst||{}).commune||s.commune||''});
-    }}
+  for(const pl of aRetard()){const n=pl.n_nexxio,der=pl._der,x=NX[n]||{},s=(D.sst||[]).find(y=>y.n_nexxio===n)||{};
+    if(der>lim||!dansP(der,P))continue;
+    const ev=((D.ag_rdv||{})[n]||[]).filter(e=>e[1]===der).map(e=>e[0]).sort(),e=ev[0]||Object.keys((s.sst&&typeof s.sst==='object')?s.sst:{}).sort()[0]||'Équipe non précisée';   // une seule équipe par commande : plus de double compte
+    (par[e]=par[e]||[]).push({n,der,st:pl.statut,jours:Math.round((new Date(today)-new Date(der))/864e5),bc:pl.n_bc||s.n_bc||'',commune:pl.commune||s.commune||''})}
   const eqs=Object.keys(par).sort((a,b)=>a.localeCompare(b,'fr'));
   const se=document.getElementById('rt-eq');if(se.options.length!==eqs.length+1){se.innerHTML='<option value="">Toutes les équipes</option>'+eqs.map(e=>`<option>${esc(e)}</option>`).join('');se.value=eqSel}
   const tot=Object.values(par).reduce((t,l)=>t+l.length,0);document.getElementById('nret').textContent=tot||'';
@@ -2901,7 +2894,13 @@ function chantiersJour(){const sec=document.getElementById('cj');if(!sec)return;
    à encaisser (dont en retard), à payer aux sous-traitants, et ce qu'il reste entre les deux. Une ligne en haut de l'accueil, chaque chiffre mène à sa liste. Lecture seule. */
 /* 20/11 (J : « connecter les briques entre elles pour que les données soient le plus fiables possible ») : UNE seule définition de chaque liste, utilisée partout
    (tuile et vue du Planning, trois colonnes, Ma journée, Chantiers du jour) ; avant, « à planifier » valait 68 ici et 13 là, « RDV passés sans rapport » 53 et 42. */
-function aRetard(){return (D.planning||[]).filter(x=>x.rdv_iso&&x.rdv_iso.slice(0,10)<jr(3)&&!x.rapports&&['Planifiée','Planifié','En cours'].includes(x.statut))}
+function aRetard(){return (D.planning||[]).filter(x=>{   // 24/11 (J : « si des chiffres s'emmêlent ou font double, tu peux y toucher ») : UNE seule définition, partout (accueil, Planning, Chantiers, Écarts par équipe : 39 et 40 avant)
+  if(!['Planifiée','Planifié','En cours'].includes(x.statut))return false;
+  const n=x.n_nexxio,ds=((D.ag_rdv||{})[n]||[]).map(e=>e[1]).filter(d=>d<=today),rd=x.rdv_iso?x.rdv_iso.slice(0,10):'';if(rd&&rd<=today)ds.push(rd);
+  ds.sort();const der=ds[ds.length-1];if(!der||der>=jr(3))return false;
+  const t=new Date(der);t.setDate(t.getDate()-30);const lo=t.toISOString().slice(0,10),deb=ds.filter(d=>d>=lo)[0]||der,R=RAP_N[n]||[];
+  if(R.some(r=>r.date>=deb)||(!R.length&&x.rapports))return false;   // un rapport daté du dernier passage (ou connu sans date) : plus en retard
+  x._der=der;return true})}
 function aPlanifier(){const DC=Object.fromEntries((D.sst||[]).map(x=>[x.n_nexxio,x.date])),dc=x=>DC[x.n_nexxio]||(L.find(l=>l.n_nexxio===x.n_nexxio)||{}).jour||'';   // moins de 3 mois, sans rapport ni RDV d'agenda
   return (D.planning||[]).filter(x=>x.statut==='Prise en compte'&&!x.rdv&&!x.rapports&&!AG_N[x.n_nexxio]&&!(dc(x)&&dc(x)<jr(90))).sort((a,b)=>(dc(a)||'9')<(dc(b)||'9')?-1:1)}
 function tresorerie(){const el=document.getElementById('treso');if(!el)return;
@@ -2958,10 +2957,10 @@ function accueil(){const el=document.getElementById('acc');if(!el)return;
   const F=window.FOCG||[],get=t=>F.find(f=>f.titre===t),relb=(typeof RELB!=='undefined'?RELB:[]).filter(r=>(r.jour||'')>=jr(60)&&!ENV.get(r.id)).length;
   const CARTES=[
    {u:1,t:'À décider',h:'Ce qui attend ta décision',L:[['BC à décider','BC bloqués'],['Corrections proposées par le robot','Corrections à valider'],['Alertes du robot','Alertes du robot et des données'],['Commandes à terminer dans Nexxio','À terminer dans Nexxio']]},
-   {t:'Rendez-vous',h:'Commandes à caler, rapports à attendre',b:'Ouvrir le planning',go:'planning',L:[['Commandes à planifier','Commandes à planifier'],['Rendez-vous sans rapport','Relances']]},
+   {t:'Rendez-vous',h:'Commandes à caler, rapports à attendre',b:'Ouvrir le planning',go:'planning',L:[['Commandes à planifier','Commandes à planifier'],['Rendez-vous sans rapport','Relances'],['Rendez-vous pris à noter dans Nexxio','@rdvnx']]},
    {t:'À facturer',h:'Du rapport à la facture',b:'Ouvrir la facturation',go:'fact',L:[['Factures à faire','Factures à faire'],['Terminées sans facture','Terminées, pas encore facturées'],['Rapports à envoyer au bailleur','Rapports à envoyer au bailleur']]},
    {t:'À relancer',h:'Argent et suivis en attente',b:'Voir les relances',go:'relf',L:[['Factures impayées (plus de 60 jours)','Factures impayées en retard'],['Relances des bailleurs','Relances des bailleurs'],['À suivre (mises de côté)','À suivre']]}];
-  el.innerHTML='<h2>Aujourd’hui</h2><div class="c-g">'+CARTES.map((c,i)=>{const L=c.L.map(([n,s])=>{const f=get(s);return [n,f?f.n:0,s]}).filter(x=>x[1]);
+  el.innerHTML='<h2>Aujourd’hui</h2><div class="c-g">'+CARTES.map((c,i)=>{const L=c.L.map(([n,s])=>{const f=get(s);return [n,s==='Relances'?aRetard().length:s==='@rdvnx'?(D.planning||[]).filter(x=>etatAppels(x.n_nexxio).rdv&&!x.rdv).length:(f?f.n:0),s]}).filter(x=>x[1]);
     const bt=c.u?(L.length?'Ouvrir la première':''):c.b;
     return `<section class="c ${c.u&&L.length?'u':''}"><div class="c-t"><h3>${c.t}</h3></div><div class="c-h">${c.h}</div><div class="c-l">${L.length?L.map(x=>`<div class="c-r" data-ac="${esc(x[2])}"><b>${x[1]}</b><span>${x[0]}</span><small>›</small></div>`).join(''):'<div class="c-vide">Rien à faire ici.</div>'}</div>${bt?`<button class="c-b" data-card="${i}">${bt}</button>`:''}</section>`}).join('')+'</div>';
   const va=f=>{const g=f.go;
@@ -2972,7 +2971,7 @@ function accueil(){const el=document.getElementById('acc');if(!el)return;
     if(g==='etat'){onglet('chiffres');cvue('rob');const er=document.getElementById('etatrobot');if(er){er._ouv=true;document.getElementById('etat-l').hidden=false;er.scrollIntoView()}return}
     if(g){pv=g;store.set('pv',g);if(g==='fact')store.set('ffact','toutes');onglet('planning');planning();window.scrollTo(0,0);telListe();return}
     const m=/data-fiche="([^"]+)"/.exec((f.liste||[])[0]||'');if(m&&NX[m[1]])fiche(m[1])};
-  el.querySelectorAll('.c-r').forEach(r=>r.onclick=()=>{const f=get(r.dataset.ac)||(r.dataset.ac==='Relances des bailleurs'?{titre:'Relances des bailleurs'}:null);if(f)va(f)});
+  el.querySelectorAll('.c-r').forEach(r=>r.onclick=()=>{const f=r.dataset.ac==='@rdvnx'?{go:'aplan',titre:'rdvnx'}:r.dataset.ac==='Relances'?{go:'retard',titre:'Relances'}:get(r.dataset.ac)||(r.dataset.ac==='Relances des bailleurs'?{titre:'Relances des bailleurs'}:null);if(f)va(f)});
   el.querySelectorAll('.c-b').forEach(b=>b.onclick=()=>{const c=CARTES[+b.dataset.card];
     if(c.u){const x=c.L.map(([n,s])=>get(s)).find(Boolean);if(x)va(x);return}
     if(c.go==='planning'){onglet('planning');window.scrollTo(0,0);return}
