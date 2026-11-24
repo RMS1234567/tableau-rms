@@ -783,12 +783,13 @@ body[data-onglet="sst"]{--tic:var(--i-users)}body[data-onglet="chiffres"]{--tic:
 details.det{margin:8px 0 0}details.det>summary{cursor:pointer;color:var(--muted);font-size:14px;padding:12px 4px;list-style:none}
 details.det>summary::-webkit-details-marker{display:none}details.det>summary::before{content:"▸ "}details.det[open]>summary::before{content:"▾ "}
 @media (max-width:860px){#acc .c-g{grid-template-columns:1fr}#acc .c{min-height:0}}
+.sv-h{margin:6px 4px 10px;font-size:15px;font-weight:650;letter-spacing:-.2px}
 </style></head><body>
 <div class="app">
 <aside class="side">
   <div class="brand"><div class="logo">RMS</div><div><b>RMS BATIMENT</b><small>Bons de commande</small></div></div>
   <div class="rub">Menu</div>
-  <nav class="tabs"><button class="on" data-t="exploitation"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Exploitation<span class="nb" id="nb-exp" hidden></span></button><button data-t="planning"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg><span>Planning<span class="lab-long"> et facturation</span></span><span class="nb" id="nb-pla" hidden></span></button><button data-t="devis"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>Devis<span class="nb" id="nb-dev" hidden></span></button><button data-t="sst"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14c2.6.1 4.1 1.8 4.5 4.5"/></svg><span><span class="l-d">Sous-traitants</span><span class="l-m">Équipes</span></span></button><button data-t="chiffres"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Chiffres</button><button data-t="manager"><svg viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21c.7-4.2 3.4-6.5 7-6.5s6.3 2.3 7 6.5M12 14.5l-1.2 3 1.2 2.5 1.2-2.5z"/></svg>Manager<span class="nb" id="nb-mgr" hidden></span></button></nav>
+  <nav class="tabs"><button class="on" data-t="exploitation"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Exploitation<span class="nb" id="nb-exp" hidden></span></button><button data-t="planning"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg><span>Planning<span class="lab-long"> et facturation</span></span><span class="nb" id="nb-pla" hidden></span></button><button data-t="devis"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>Devis<span class="nb" id="nb-dev" hidden></span></button><button data-t="sst"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14c2.6.1 4.1 1.8 4.5 4.5"/></svg><span><span class="l-d">Sous-traitants</span><span class="l-m">Équipes</span></span></button><button data-t="chiffres"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Chiffres</button></nav>
   <div class="pied"><span class="etat-robot" id="robot"><i></i><span></span></span><button class="btn partage" id="partage" hidden></button><small id="maj"></small></div>
 </aside>
 <div class="contenu">
@@ -901,7 +902,7 @@ details.det>summary::-webkit-details-marker{display:none}details.det>summary::be
 </div>
 <!-- SOUS-TRAITANTS -->
 <div id="p-sst" hidden>
-  <div class="seg" id="svue" style="margin-bottom:14px"><button data-v="par">Par sous-traitant</button><button data-v="prix">Prix manquants <span class="tag" id="nprixm"></span></button><button data-v="rel">Relevés</button><button data-v="fac">Factures <span class="tag" id="nfacs"></span></button><button data-v="ret">Rapports en retard <span class="tag" id="nret"></span></button><button data-v="coh">Agenda / Nexxio <span class="tag" id="ncoh"></span></button></div>
+  <div class="seg" id="svue" style="margin-bottom:14px"><button data-v="par">Par sous-traitant</button><button data-v="prix">Prix manquants <span class="tag" id="nprixm"></span></button><button data-v="fac">Factures et relevés <span class="tag" id="nfacs"></span></button><button data-v="ret">Écarts <span class="tag" id="nret"></span> <span class="tag" id="ncoh"></span></button></div>
   <div id="sv-prix" hidden>
     <div class="bar" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px">
       <select id="pm-eq"><option value="">Toutes les équipes</option></select>
@@ -914,6 +915,7 @@ details.det>summary::-webkit-details-marker{display:none}details.det>summary::be
       <div class="wrap"><table><thead><tr><th>Commande</th><th>Client · commune</th><th>Statut</th><th>Équipe</th><th>RDV agenda</th><th>Rapport reçu</th><th class="num" title="Montant facturé par le sous-traitant pour cette commande (factures reçues sur mlakchiri@)">Facturé SST</th><th class="num">HT</th></tr></thead><tbody id="tpm"></tbody></table></div></section>
   </div>
   <div id="sv-rel" hidden>
+  <h3 class="sv-h">Relevés du mois</h3>
     <div class="bar" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px">
       <select id="rl-eq"></select><span id="per-rl"></span>
       <button class="btn" id="rl-print">Imprimer / PDF</button><button class="btn" id="rl-copy">Copier le texte</button><a class="btn" id="rl-wa" target="_blank" rel="noopener" href="#" title="WhatsApp s'ouvre avec le relevé écrit : choisir le sous-traitant, relire, envoyer">Ouvrir dans WhatsApp</a><a class="btn" id="rl-mail" href="#" title="Ouvre un nouveau mail avec le relevé écrit, dans ta messagerie : ajouter le destinataire, relire, envoyer">Préparer le mail</a><span class="tag" id="rl-ok"></span></div>
@@ -921,6 +923,7 @@ details.det>summary::-webkit-details-marker{display:none}details.det>summary::be
     <p class="sub" style="padding:10px 4px">Une commande compte à la date où le rapport de l'équipe est arrivé dans Nexxio (travail fait en septembre, rapport envoyé en octobre : octobre). Prix = prix écrit dans l'agenda de l'équipe.</p>
   </div>
   <div id="sv-fac" hidden>
+  <h3 class="sv-h">Factures</h3>
     <div class="bar" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px">
       <select id="fc-eq"><option value="">Tous les sous-traitants</option></select><span id="per-fc"></span>
       <select id="fc-etat"><option value="">Toutes les factures</option><option value="pb">À vérifier</option><option value="ok">Conformes</option></select></div>
@@ -939,6 +942,7 @@ details.det>summary::-webkit-details-marker{display:none}details.det>summary::be
       <div id="rq-det"></div></section>
   </div>
   <div id="sv-ret" hidden>
+  <h3 class="sv-h">Rapports en retard</h3>
     <div class="bar" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px">
       <select id="rt-eq"><option value="">Toutes les équipes</option></select>
       <select id="rt-j"><option value="2">RDV passé depuis plus de 2 jours</option><option value="3" selected>RDV passé depuis plus de 3 jours</option><option value="5">plus de 5 jours</option><option value="7">plus de 7 jours</option><option value="14">plus de 14 jours</option></select>
@@ -947,6 +951,7 @@ details.det>summary::-webkit-details-marker{display:none}details.det>summary::be
     <div id="rt-corps"></div>
   </div>
   <div id="sv-coh" hidden>
+  <h3 class="sv-h">Agenda et Nexxio</h3>
     <div class="bar" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px">
       <select id="ch-type"><option value="">Tous les écarts</option></select><span id="per-ch"></span>
       <input type="search" id="ch-q" placeholder="Rechercher : n° Nexxio, BC, équipe…"></div>
@@ -970,13 +975,15 @@ details.det>summary::-webkit-details-marker{display:none}details.det>summary::be
 </div>
 <!-- CHIFFRES -->
 <!-- 16/11 (J : « le manager faut que tu le mettes autre part ») : son propre onglet -->
-<div id="p-manager" hidden><p class="sub" style="margin:0 4px 12px">Compte rendu du jour du manager : ce que chaque agent a fait, ce qui bloque, ce qui t'attend. Tu peux aussi lui poser une question.</p>
+<div id="p-manager" hidden></div>
+<div id="p-chiffres" hidden>
+  <div class="seg" id="cvues" style="margin:0 0 16px"><button data-v="res">Résultats</button><button data-v="arg">Argent</button><button data-v="rob">Robot<span class="nb" id="nb-mgr" hidden style="margin-left:7px"></span></button></div>
+  <div class="treso" id="treso" data-cvg="arg"></div>
+  <div data-cvg="rob"><p class="sub" style="margin:0 4px 12px">Compte rendu du jour du manager : ce que chaque agent a fait, ce qui bloque, ce qui t'attend. Tu peux aussi lui poser une question.</p>
   <section class="card" id="manager" hidden style="margin-bottom:14px"></section>
   <section class="card" id="corrauto" hidden style="margin-bottom:14px"></section></div>
-<div id="p-chiffres" hidden>
-  <div class="treso" id="treso"></div>
-  <section class="card" id="etatrobot" style="margin-bottom:14px"><h2><span>État du robot</span><span class="tag" id="netat"></span></h2><div id="etat-l"></div></section>
-  <section class="card" id="sante" style="margin-bottom:14px"><h2><span>Santé des données</span><span class="tag" id="nsante"></span></h2><div id="sante-l"></div></section>
+  <section class="card" id="etatrobot" data-cvg="rob" style="margin-bottom:14px"><h2><span>État du robot</span><span class="tag" id="netat"></span></h2><div id="etat-l"></div></section>
+  <section class="card" id="sante" data-cvg="rob" style="margin-bottom:14px"><h2><span>Santé des données</span><span class="tag" id="nsante"></span></h2><div id="sante-l"></div></section>
   <div class="bar" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px">
     <div class="seg" id="cper"><button data-p="mois">Ce mois</button><button data-p="an">Cette année</button><button data-p="perso">Personnalisée</button></div>
     <span id="cdates" class="plage" style="display:none"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg><input type="date" id="cdu" title="Du"><span class="fl">→</span><input type="date" id="cau" title="Au"></span></div>
@@ -987,10 +994,10 @@ details.det>summary::-webkit-details-marker{display:none}details.det>summary::be
   <section class="card" style="margin-bottom:18px"><h2><span>Par bailleur et par marché sur la période</span><span class="tag" id="nmar"></span></h2>
     <p class="sub" style="padding-bottom:8px">Chaque bailleur avec ses marchés Nexxio (sinistres et lots Alliade, Carré de Soie, Porte du Sud et PAPH chez LMH…). Commandé : date de commande ; facturé : factures Nexxio de la période, avoirs déduits ; reste à facturer : aujourd'hui.</p>
     <div class="wrap"><table><thead><tr><th>Bailleur · marché</th><th class="num">Commandes</th><th class="num">Commandé HT</th><th class="num">Panier moyen</th><th class="num">Facturé HT</th><th class="num">Reste à facturer</th><th class="num">Marge</th></tr></thead><tbody id="tmar"></tbody></table></div></section>
-  <section class="card" style="margin-bottom:18px"><h2><span>Évolution jour par jour</span><span class="tag" id="nevo"></span></h2>
+  <section class="card" data-cvg="arg" style="margin-bottom:18px"><h2><span>Évolution jour par jour</span><span class="tag" id="nevo"></span></h2>
     <p class="sub" style="padding-bottom:8px">Ce qui reste à facturer, à encaisser et à planifier, relevé chaque jour par le robot : pour voir si ça baisse ou si ça s'accumule. L'écart compare aujourd'hui à la date de la colonne.</p>
     <div class="wrap"><table><thead><tr><th>Chiffre</th><th class="num">Aujourd'hui</th><th class="num">Hier</th><th class="num">Il y a 7 jours</th><th class="num">Premier relevé</th><th>Courbe</th></tr></thead><tbody id="evo"></tbody></table></div></section>
-  <section class="card" style="margin-bottom:18px"><h2><span>À encaisser : factures envoyées, pas encore payées</span><span class="tag" id="encst"></span></h2>
+  <section class="card" data-cvg="arg" style="margin-bottom:18px"><h2><span>À encaisser : factures envoyées, pas encore payées</span><span class="tag" id="encst"></span></h2>
     <div class="wrap"><table><thead><tr><th>Bailleur</th><th class="num">Factures</th><th class="num">À encaisser HT</th><th class="num">Moins de 30 j</th><th class="num">30 à 60 j</th><th class="num">60 à 90 j</th><th class="num">Plus de 90 j</th><th>La plus ancienne</th></tr></thead><tbody id="tenc"></tbody></table></div>
     <div class="tag" id="encx" style="margin-top:8px"></div><div id="encdet"></div></section>
   <div class="kpis" id="stats" style="margin-bottom:18px"></div>
@@ -2472,8 +2479,10 @@ function svDesc(){let d=document.getElementById('svdesc');if(!d){d=document.crea
   const f=document.getElementById('sv-fac');if(f&&!document.getElementById('svsomm')){const t=document.getElementById('tfc'),L=[['bap','Bon à payer'],[t&&t.closest('section'),'Factures reçues'],['rap-eq','Rapprochement par équipe']];
     const n=document.createElement('div');n.id='svsomm';n.className='sv-somm';n.innerHTML='<span class="tag" style="align-self:center">Aller à :</span>'+L.map((x,k)=>`<button class="btn" data-k="${k}">${x[1]}</button>`).join('');
     f.querySelector('.bar').after(n);n.querySelectorAll('button').forEach(b=>b.onclick=()=>{const x=L[+b.dataset.k][0],e=typeof x==='string'?document.getElementById(x):x;if(e)e.scrollIntoView({behavior:'smooth',block:'start'})})}}
-function svues(){['par','prix','rel','fac','ret','coh'].forEach(v=>document.getElementById('sv-'+v).hidden=v!==svue);document.querySelectorAll('#svue button').forEach(b=>b.classList.toggle('on',b.dataset.v===svue));store.set('svue',svue);try{svDesc()}catch(e){}
-  prixVue();facturesVue();retardVue();coherenceVue();if(svue==='rel')releveVue()}   // toutes pour les compteurs des boutons
+// 24/11 (J, cases cochées) : Relevés + Factures = « Factures et relevés » ; Rapports en retard + Agenda/Nexxio = « Écarts » (deux parties dans la même vue)
+const SVG={rel:'fac',fac:'fac',ret:'ret',coh:'ret'},SVM={fac:['fac','rel'],rel:['fac','rel'],ret:['ret','coh'],coh:['ret','coh']};
+function svues(){['par','prix','rel','fac','ret','coh'].forEach(v=>document.getElementById('sv-'+v).hidden=!(SVM[svue]||[svue]).includes(v));document.querySelectorAll('#svue button').forEach(b=>b.classList.toggle('on',(SVG[svue]||svue)===b.dataset.v));store.set('svue',svue);try{svDesc()}catch(e){}
+  prixVue();facturesVue();retardVue();coherenceVue();if(svue==='rel'||svue==='fac')releveVue()}   // toutes pour les compteurs des boutons
 document.querySelectorAll('#svue button').forEach(b=>b.onclick=()=>{svue=b.dataset.v;svues()});
 const PER_FC=choixPeriode('per-fc','tout',()=>facturesVue()), PER_RT=choixPeriode('per-rt','tout',()=>retardVue()), PER_CH=choixPeriode('per-ch','tout',()=>coherenceVue());
 {const g=store.get('fc',{});if(g.et)document.getElementById('fc-etat').value=g.et;const h=store.get('rt',{});if(h.j)document.getElementById('rt-j').value=h.j;
@@ -2560,8 +2569,12 @@ function telPage(tb){const lim=tb._lim||PAGE,rows=[...tb.rows],n=rows.length,on=
   b.onclick=()=>{tb._lim=lim+PAGE*2;telPage(tb)};tb.closest('.wrap').after(b)}
 document.querySelectorAll('.wrap tbody[id]').forEach(tb=>{new MutationObserver(()=>telPage(tb)).observe(tb,{childList:true});telPage(tb)});
 matchMedia('(max-width:700px)').addEventListener('change',()=>document.querySelectorAll('.wrap tbody[id]').forEach(telPage));
-const onglet=t=>{['exploitation','planning','devis','sst','chiffres','manager'].forEach(k=>document.getElementById('p-'+k).hidden=t!==k);
-  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));store.set('onglet',t);document.body.dataset.onglet=t;ptitre(t)};
+const onglet=t=>{if(t==='manager'){t='chiffres';CVU='rob'};['exploitation','planning','devis','sst','chiffres','manager'].forEach(k=>document.getElementById('p-'+k).hidden=t!==k);
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));store.set('onglet',t);document.body.dataset.onglet=t;ptitre(t);if(t==='chiffres')cvue()};
+// 24/11 (J, cases cochées) : Chiffres en trois vues (Résultats, Argent, Robot) ; le compte rendu du Manager est dans « Robot », plus d'onglet Manager
+var CVU=store.get('cv','res');
+function cvue(v){if(v)CVU=v;store.set('cv',CVU);const p=document.getElementById('p-chiffres');if(!p)return;[...p.children].forEach(el=>{if(el.id==='cvues')return;el.style.display=(el.dataset.cvg||'res')===CVU?'':'none'});document.querySelectorAll('#cvues button').forEach(b=>b.classList.toggle('on',b.dataset.v===CVU))}
+document.querySelectorAll('#cvues button').forEach(b=>b.onclick=()=>cvue(b.dataset.v));
 // 16/11 (J, charte graphique) : titre de la page avec l'icône et la couleur de l'onglet, pour savoir où l'on est
 const PTIT={exploitation:['Exploitation','Ta journée, les BC reçus et ce qui bloque'],planning:['Planning et facturation','Planifier, relancer les équipes, facturer'],
   devis:['Devis','Devis à faire valider et demandes de devis'],sst:['Sous-traitants','Équipes, rapports, factures et relevés'],
@@ -2948,7 +2961,7 @@ function accueil(){const el=document.getElementById('acc');if(!el)return;
     if(g==='faire'||f.titre==='À suivre'){const d=document.getElementById('det');if(d)d.open=true;const x=document.getElementById(g==='faire'?'faire':'suivi');if(x)x.scrollIntoView({behavior:'smooth'});return}
     if(g==='rel'){onglet('sst');svue='rel';svues();window.scrollTo(0,0);return}
     if(g==='relf'){onglet('planning');actionsFact();const e=document.getElementById('frel');if(e){e.classList.remove('ferme');e.scrollIntoView({behavior:'smooth'})}return}
-    if(g==='etat'){onglet('chiffres');const er=document.getElementById('etatrobot');if(er){er._ouv=true;document.getElementById('etat-l').hidden=false;er.scrollIntoView()}return}
+    if(g==='etat'){onglet('chiffres');cvue('rob');const er=document.getElementById('etatrobot');if(er){er._ouv=true;document.getElementById('etat-l').hidden=false;er.scrollIntoView()}return}
     if(g){pv=g;store.set('pv',g);if(g==='fact')store.set('ffact','toutes');onglet('planning');planning();window.scrollTo(0,0);telListe();return}
     const m=/data-fiche="([^"]+)"/.exec((f.liste||[])[0]||'');if(m&&NX[m[1]])fiche(m[1])};
   el.querySelectorAll('.c-r').forEach(r=>r.onclick=()=>{const f=get(r.dataset.ac)||(r.dataset.ac==='Relances des bailleurs'?{titre:'Relances des bailleurs'}:null);if(f)va(f)});
@@ -3067,7 +3080,7 @@ function journee0(){
     if(g==='faire'){document.getElementById('faire').scrollIntoView({behavior:'smooth'});return}
     if(g==='rel'){onglet('sst');svue='rel';svues();window.scrollTo(0,0);return}
     if(g==='relf'){onglet('planning');actionsFact();const e=document.getElementById('frel');if(e){e.classList.remove('ferme');e.scrollIntoView({behavior:'smooth'})}return}
-    if(g==='etat'){onglet('chiffres');const er=document.getElementById('etatrobot');er._ouv=true;document.getElementById('etat-l').hidden=false;er.scrollIntoView();return}
+    if(g==='etat'){onglet('chiffres');cvue('rob');const er=document.getElementById('etatrobot');er._ouv=true;document.getElementById('etat-l').hidden=false;er.scrollIntoView();return}
     pv=g;store.set('pv',g);if(g==='fact')store.set('ffact','toutes');onglet('planning');planning();window.scrollTo(0,0);telListe()});
 }
 try{journee()}catch(e){console.error('Ma journée',e)}
