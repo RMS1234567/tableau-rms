@@ -1937,7 +1937,9 @@ function demEtat(nbc){const a=(D.actions||{})['dem:'+nbc];if(!a)return '';const 
   return `<div style="margin-top:6px"><span class="chip ${ok?'ok':ko?'bad':'info'}">${esc(a.etat||'')}</span> ${esc(a.message||'')}${a.ordre?` <span class="tag">ordre : ${esc(a.ordre)}</span>`:''}${a.par?` <span class="tag">demandé par ${esc(a.par)}</span>`:''}</div>`}
 // 23/11 : diagnostic IA d'un BC rouge : la cause en une phrase ; s'il y a une question, un bouton par réponse (un clic = cette décision, coche diag:<n° BC>
 // {i,label,par}) ; après le clic « Ta décision : … » puis l'état de l'atelier. Le robot (reponses_diagnostics) note la réponse et lance l'atelier sur ce BC.
-function diagBloc(nbc){const d=(D.diagnostics||{})[nbc];if(!d||!d.cause)return '';let v=null;try{v=JSON.parse(NOTE.get('diag:'+nbc)||'null')}catch(e){}
+function diagBloc(nbc){const d=(D.diagnostics||{})[nbc];if(!d||!d.cause)return '';
+  // vu le 25/11 (CO1126L8800711, saisi 5329 orange à 12:51) : « Pourquoi ce BC est rouge » restait sur un BC qui ne l'est plus
+  const lr=[...L].reverse().find(x=>x.n_bc===nbc);if(lr&&lr.risque&&lr.risque!=='rouge')return '';let v=null;try{v=JSON.parse(NOTE.get('diag:'+nbc)||'null')}catch(e){}
   const rep=d.reponse||null,choix=rep||(v&&v.label?v:null),Q=(d.reponses||[]).length&&d.question;
   return `<div class="s" id="diag" data-bc="${esc(nbc)}"><h4>Pourquoi ce BC est rouge</h4><div>${esc(d.cause)}</div>
     ${choix?`<div style="margin-top:8px"><span class="chip ${rep?'ok':'info'}">${rep?'Décision prise':'Envoyée'}</span> <b>Ta décision : ${esc(choix.label)}</b>${rep&&rep.effet?'<div class="tag">'+esc(rep.effet)+'</div>':''}${rep&&rep.atelier?'<div class="tag">Atelier : '+esc(rep.atelier)+'</div>':(rep?'':'<div class="tag">Le robot la prend au prochain passage (quelques minutes).</div>')}</div>`
