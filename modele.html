@@ -1070,7 +1070,7 @@ const PROP=flag('prop:'), PROPS=D.propositions||{};   // 17/11 : « Appliquer »
 const PAY=flag('pay:'), BAP=flag('bap:');   // 19/11 (J, bon à payer validé d'un clic) : clé = nom du fichier de la facture, rien ne part et rien n'est payé d'ici
    // 13/11 (J) : facture de sous-traitant payée (bon à payer), clé = nom du fichier de la facture   // env: rapport envoyé au bailleur (12/11)
 // 12/11 (J) : aussi les commentaires (« com: ») et les tentatives d'appel au locataire (« app: »), partagés de la même façon
-const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','bap:','plan:','ext:','wa:','wam:','mgr:','mnom:','prop:','suiv:','vue:','diag:'], CO_TXT=['com:','app:','plan:','ext:','wa:','wam:','mgr:','mnom:','suiv:','vue:','diag:'];   // mgr: question au manager (16/11)   // wam: WhatsApp ouvert à la main (15/11 soir)   // wa: WhatsApp RDV (15/11)   // plan: demande de planification (13/11)
+const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','bap:','plan:','ext:','wa:','wam:','wac:','mgr:','mnom:','prop:','suiv:','vue:','diag:'], CO_TXT=['com:','app:','plan:','ext:','wa:','wam:','wac:','mgr:','mnom:','suiv:','vue:','diag:'];   // mgr: question au manager (16/11)   // wam: WhatsApp ouvert à la main (15/11 soir)   // wa: WhatsApp RDV (15/11)   // plan: demande de planification (13/11)
 const NOTE={get:k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},
   set:(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k);localStorage.setItem('ts:'+k,Date.now())}catch(e){}coSave(k)}};
 // coches des autres PC, relues par le robot (D.coches) : la plus récente gagne, avant le premier affichage
@@ -1957,10 +1957,10 @@ function fiche(n){const o=NX[n];if(!o)return;__fi=n;recentAjout(n);const pl=o.pl
     ${rdvLoc(n,pl)}
     ${factBloc(n,pl)}
     ${propBloc(n)}
-    ${planifBloc(n,pl,s)}${waBloc(n,pl)}
+    ${planifBloc(n,pl,s)}${waBloc(n,pl)}${waCreneauBloc(n,pl)}
     ${b.motif?`<div class="s"><h4>Note du robot</h4>${esc(b.motif)}</div>`:''}${b.n_bc&&(['rouge','orange'].includes(b.risque)||/reprendre/i.test(b.statut||''))?blocBC(b.n_bc):''}
     <div class="s">${b.pdf?pdfA(b.pdf,'Voir le BC (PDF)')+' · ':''}<a href="https://rmsbatiment.app.nexxio.fr/main/item?order_number=${encodeURIComponent(n)}" target="_blank">Ouvrir dans Nexxio</a>${agendaUrl(n,pl,x)?` · <a class="btn" href="${esc(agendaUrl(n,pl,x))}" target="_blank" title="Ouvre Google Agenda avec l'événement rempli comme le bouton de Nexxio : choisir l'agenda du sous-traitant puis Enregistrer">Ajouter à l'agenda</a>`:''}</div>`;
-  lierRdvLoc(n);lierSuiv(n);lierFact(n);lierProp(n);lierPlanif(n);lierWa(n);lierBlocBC();
+  lierRdvLoc(n);lierSuiv(n);lierFact(n);lierProp(n);lierPlanif(n);lierWa(n);lierWac(n);lierBlocBC();
   const f=document.getElementById('fiche');f.hidden=false;document.getElementById('ffermer').onclick=()=>f.hidden=true;f.onclick=e=>{if(e.target===f)f.hidden=true}}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('fiche').hidden=true});
 // 13/11 (J) : même événement que le lien « Ajoutez le à votre agenda Google » de Nexxio (vu sur 5264) : « RMS BATIMENT - <n° BC> »,
@@ -2069,6 +2069,25 @@ function lierWaMeta(n){const go=document.getElementById('wa-go');if(!go)return;c
     const t=document.getElementById('wa-t').value;
     if(!confirm(`Envoyer ce WhatsApp au ${telAff(t)} ?\n\n${waApercu(n,(D.planning||[]).find(x=>String(x.n_nexxio)===String(n))||{})}`))return;
     NOTE.set('wa:'+n,JSON.stringify({q:Date.now(),tel:t,par:WEB?webQui():''}));et.innerHTML=waEtat(n);annul()}}
+/* 25/11 (J : « pour ouvrir WhatsApp et demander un créneau au locataire, oui ») : bloc de la fiche d'une commande À PLANIFIER : le message de demande de créneau
+   (waCreneau, modifiable), le choix du portable et « Ouvrir dans WhatsApp » ; le robot n'envoie rien (règle « Tout sur clic ») : J relit et appuie lui-même sur Envoyer.
+   Le clic est noté « wac:<n> » dans les coches partagées (qui, quand, quel numéro), à part de « wam: » (RDV confirmé). */
+function wacEtat(n){let v=null;try{v=JSON.parse(NOTE.get('wac:'+n)||'null')}catch(e){}
+  return v&&v.q?`<span class="chip ok">Créneau demandé par WhatsApp</span> <span class="tag">le ${new Date(v.q).toLocaleDateString('fr-FR')} à ${new Date(v.q).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} pour le ${esc(telAff(v.tel||''))}${v.par?' · par '+esc(v.par):''} · vérifier dans WhatsApp que le message est bien parti</span>`:''}
+function waCreneauBloc(n,pl){const g=(D.logements||{})[n]||{};
+  if(!pl||!aPlanifier().some(x=>String(x.n_nexxio)===String(n))||g.vacant)return '';
+  const mob=[...new Set((g.tels||[]).map(t=>String(t).replace(/\D/g,'').replace(/^33(?=[67])/,'0')).filter(t=>/^0[67]\d{8}$/.test(t)))];
+  if(!mob.length)return `<div class="s wa"><h4>Demander un créneau par WhatsApp</h4><div class="tag">Pas de portable pour ce locataire : appeler (WhatsApp impossible).</div></div>`;
+  return `<div class="s wa"><h4>Demander un créneau par WhatsApp</h4>
+    <textarea id="wc-txt" rows="4" style="width:100%;box-sizing:border-box;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card,transparent);color:inherit">${esc(waCreneau(pl))}</textarea>
+    <div class="pf" style="margin-top:6px"><label>Portable<select id="wc-t">${mob.map(t=>`<option value="${t}">${telAff(t)}</option>`).join('')}</select></label>
+      <a class="btn prim" id="wc-go" href="#" target="_blank" rel="noopener">Ouvrir dans WhatsApp</a></div>
+    <div class="tag" style="margin-top:6px">WhatsApp s'ouvre avec le message écrit : relis-le (tu peux le modifier) et appuie sur Envoyer. Le robot n'envoie rien.</div>
+    <div id="wc-etat" style="margin-top:8px">${wacEtat(n)}</div></div>`}
+function lierWac(n){const go=document.getElementById('wc-go');if(!go)return;const et=document.getElementById('wc-etat');
+  const lien=()=>{const t=document.getElementById('wc-t').value;go.href='https://wa.me/33'+t.slice(1)+'?text='+encodeURIComponent(document.getElementById('wc-txt').value.trim());return t};
+  lien();document.getElementById('wc-t').onchange=lien;document.getElementById('wc-txt').oninput=lien;
+  go.onclick=()=>{const t=lien();NOTE.set('wac:'+n,JSON.stringify({q:Date.now(),tel:t,par:WEB?webQui():''}));setTimeout(()=>et.innerHTML=wacEtat(n),50)}}
 // 14/11 (J, roadmap : « Valider une commande Extranet depuis le dashboard ») : bouton « Valider » sur une commande de
 // l'Extranet qui attend l'accord de J (250 € HT ou moins, ou contrôle à voir), au lieu du fichier accepter_extranet.txt.
 // Le clic écrit « ext:<n° Extranet> » dans les coches partagées ; le robot l'accepte au passage suivant
