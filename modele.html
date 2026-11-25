@@ -1642,6 +1642,7 @@ function extranetLignes(){
     else if(S0.startsWith('livr')){k='att';a='Livrée : attente de la réception par Alliade';c=''}
     else if(rap){k='liv';a='Rapport reçu le '+fr(rap)+' : à livrer sur l\'Extranet';c='warn'}
     else if(!n){k='pb';a='Pas trouvée dans Nexxio';c='bad'}
+    else if(e.rdv_ecart){k='pb';a=e.rdv_ecart;c='bad'}   // 25/11 : RDV Extranet différent de Nexxio (jamais changé seul)
     else if(rdvN&&!rdvExt){k='rdv';a='RDV du '+fr(rdvN)+' à saisir sur l\'Extranet';c='info'}
     else if(!rdvN&&!rdvExt){k='rdv';a='RDV à prendre';c='warn'}
     else {k='trav';a='Travaux à faire'+(rdvN?' (RDV '+fr(rdvN)+')':'');c=''}
