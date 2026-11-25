@@ -1030,6 +1030,8 @@ details.det>summary::-webkit-details-marker{display:none}details.det>summary::be
 </div></div>
 <script>
 const D=/*DATA*/null;
+// 25/11 (J : « données du robot du 09:38 : le PC du bureau n'a rien envoyé depuis ») : sur la page en ligne, les données chargées vieillissent tant que J n'actualise pas (page en arrière-plan ou occupée) ; la fraîcheur du robot se juge sur le dernier envoi connu (tableau/meta), pas sur les données déjà chargées
+var coMetaIso='';function genereLe(){const a=D.genere_iso||'';return coMetaIso>a?coMetaIso:a}
 // 13/11 (J) : version web (page GitHub, compte Microsoft RMS BATIMENT). La page index.html se connecte, lit
 // BC CLIENTS\tableau_donnees.json dans OneDrive et remplace WEB par {clientId, tenant, scopes, base:{d:drive, i:dossier}}.
 // Fichier ouvert sur le PC : WEB reste null et tout marche comme avant.
@@ -1193,7 +1195,7 @@ const delai=l=>false;
 /* ---------- en-tête : fraîcheur du robot ---------- */
 document.getElementById('maj').textContent=`Mis à jour le ${D.genere}${D.pc?' · '+D.pc:''}${D.mode&&D.mode!=='auto'?' · mode '+D.mode:''}`;
 (function veille(){
-  const g=new Date(D.genere_iso||0), now=new Date(), min=Math.round((now-g)/60000), j=now.getDay(), h=now.getHours(), ouvre=true;   // 12/11 (J) : le robot tourne 24 h sur 24, un arrêt se signale à toute heure
+  const g=new Date(genereLe()||0), now=new Date(), min=Math.round((now-g)/60000), j=now.getDay(), h=now.getHours(), ouvre=true;   // 12/11 (J) : le robot tourne 24 h sur 24, un arrêt se signale à toute heure
   const el=document.getElementById('robot'), t=el.querySelector('span');
   if(min<=30){el.className='etat-robot ok';t.textContent=min<1?'Robot actif · à l\'instant':`Robot actif · il y a ${min} min`}
   else if(ouvre){el.className='etat-robot ko';t.textContent=`Robot arrêté depuis ${min>=120?Math.round(min/60)+' h':min+' min'}`;
@@ -1767,7 +1769,7 @@ document.getElementById('qd').oninput=devisVue;document.getElementById('voirdem'
 // 14/11 (J, roadmap) : « État du robot » (dernier passage de chaque tâche, erreurs du jour) affiché comme la santé des données
 setTimeout(function(){[['sante','sante-l','nsante'],['etat_robot','etat-l','netat']].forEach(function([cle,idl,idn]){const S=(D[cle]||[]).slice(),el=document.getElementById(idl);if(!el)return;   // après l'index NX
   // les lignes sont figées à l'heure du tableau : si le robot s'arrête, c'est cette première ligne, calculée à l'ouverture, qui le dit
-  if(cle==='etat_robot'){const min=Math.round((Date.now()-new Date(D.genere_iso||0))/60000);
+  if(cle==='etat_robot'){const min=Math.round((Date.now()-new Date(genereLe()||0))/60000);
     S.unshift({titre:'Tableau de bord à jour',etat:min>60?'bad':min>30?'warn':'ok',detail:(min<90?'il y a '+min+' min':'il y a '+Math.round(min/60)+' h')+(min>30?' : le robot ne tourne plus ou son PC est éteint ; les lignes ci-dessous datent de ce moment':' : le robot tourne'),exemples:[]})}
   const ic={ok:'✓',warn:'!',bad:'✕'},cl={ok:'ok',warn:'warn',bad:'bad'};
   const nb=S.filter(x=>x.etat!=='ok').length;document.getElementById(idn).textContent=nb?nb+' point(s) à voir':'tout est bon';
@@ -2768,13 +2770,13 @@ function coFB(c){const prem=!coLu,chg=coFusion({coches:c});coLu=Date.now();
   if(chg)coRedessiner();coBandeau();clicsAttente()}
 async function coBandeau(){const el=document.getElementById('alerte-co');if(!el)return;
   if(FB&&coErr){el.className='alerte-co rouge';el.innerHTML=`<span>⚠ Firebase injoignable : vos derniers clics ne sont pas encore envoyés au robot (nouvel essai toutes les 15 s). ${esc(coErr.message||String(coErr))}</span><button class="btn" id="co-re">Réessayer</button>`;document.getElementById('co-re').onclick=()=>coSave();return}
-  if(FB){const vieux=D.genere_iso&&(Date.now()-new Date(D.genere_iso))>45*60000;el.className='alerte-co '+(vieux?'pause':'on');
-    el.innerHTML=`<span>✓ Connecté (${esc(webQui())}) · coches en direct${coLu?'':' (connexion…)'} · données du robot du ${esc(D.genere||'?')}${vieux?' : <b>le PC du bureau n\'a rien envoyé depuis</b>':''}</span><button class="btn" id="co-sortir">Se déconnecter</button>`;
-    document.getElementById('co-sortir').onclick=()=>FB.sortir();return}
+  if(FB){const dernier=genereLe(),plus=coMetaIso>(D.genere_iso||''),vieux=dernier&&(Date.now()-new Date(dernier))>45*60000;el.className='alerte-co '+(vieux||plus?'pause':'on');
+    el.innerHTML=`<span>✓ Connecté (${esc(webQui())}) · coches en direct${coLu?'':' (connexion…)'} · données du robot du ${esc(D.genere||'?')}${plus?' : <b>des données plus récentes sont disponibles</b> ('+new Date(coMetaIso).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+')':vieux?' : <b>le PC du bureau n\'a rien envoyé depuis</b>':''}</span>${plus?'<button class="btn" id="co-maj">Actualiser</button>':''}<button class="btn" id="co-sortir">Se déconnecter</button>`;
+    document.getElementById('co-sortir').onclick=()=>FB.sortir();const cm=document.getElementById('co-maj');if(cm)cm.onclick=rechargerSansPerdre;return}
   // 23/11 : hors Firebase, alerte rouge permanente : les boutons et coches ne partent pas vers le robot
   el.className='alerte-co rouge';el.innerHTML='<span>⚠ Page locale : vos clics et coches ne sont <b>pas transmis au robot</b> (rien n’est écrit dans OneDrive). Pour agir, ouvrez le tableau en ligne.</span>'}
 if(FB){coBouton();coBandeau();FB.ecouter(coFB,e=>coBouton(e));
-  FB.meta(m=>{if(m.v&&m.v!==FB.v)nouvellesDonnees()});
+  FB.meta(m=>{coMetaIso=String(m.genere_iso||'');coBandeau();if(m.v&&m.v!==FB.v)nouvellesDonnees()});
   if(FB.vie)FB.vie(x=>{coVie=x;coVieISO=x.quand&&x.quand.toDate?x.quand.toDate().toISOString():(x.quand||null);vie()})}      // nouvelles données du robot : rechargé dès que la page est libre
 else{coBouton();coBandeau();document.getElementById('partage').onclick=coHorsLigne;
   if(!WEB&&'showDirectoryPicker' in window&&'indexedDB' in window){coIDB().then(d=>{coDir=d||null;coBouton();coLire()}).catch(()=>{});setInterval(()=>coLire().catch(()=>{}),30000)}}   // lecture seule des coches d'avant
