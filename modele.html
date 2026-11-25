@@ -885,6 +885,10 @@ details.det>summary::-webkit-details-marker{display:none}details.det>summary::be
     <p class="sub" id="ext-aide" style="padding-bottom:10px"></p>
     <div class="bar"><select id="ext-f"><option value="">Toutes les commandes</option><option value="faire">À faire par RMS</option><option value="liv">À livrer sur l'Extranet</option><option value="fact">À facturer</option><option value="rdv">RDV à saisir ou à prendre</option><option value="pb">Refusées ou pas dans Nexxio</option></select></div>
     <div class="wrap"><table><thead><tr><th>Commande</th><th>Créée le</th><th>Agence · description</th><th class="num">TTC</th><th>Extranet</th><th>Nexxio</th><th>À faire</th></tr></thead><tbody id="text"></tbody></table></div></section>
+  <section class="card vue" data-v="lmh" hidden><h2><span>Extranet LMH</span><span class="tag" id="nlmh"></span></h2>
+    <p class="sub" id="lmh-aide" style="padding-bottom:10px"></p>
+    <div class="bar"><select id="lmh-f"><option value="">Tous les dossiers</option><option value="prog">À programmer</option><option value="prgm">Programmés</option><option value="ecart">RDV différent de Nexxio</option><option value="info">Information ou question de LMH</option><option value="devis">Devis préalables</option></select></div>
+    <div class="wrap"><table><thead><tr><th>Commande LMH</th><th>Reçue le</th><th>Étape LMH</th><th>RDV LMH</th><th>Nexxio</th><th>À voir</th></tr></thead><tbody id="tlmh"></tbody></table></div></section>
   <section class="card vue" data-v="equipe" hidden><h2><span>Planning par équipe</span><span class="tag" id="nequipe"></span></h2>
     <div class="bar"><button class="btn" id="semp">‹ Semaine précédente</button><button class="btn" id="sema">Cette semaine</button><button class="btn" id="sems">Semaine suivante ›</button><span class="tag" id="semt"></span>
       <input type="search" id="qe" placeholder="Filtrer une équipe…" style="margin-left:auto"></div>
@@ -1535,6 +1539,7 @@ function planning(){
     tb(cours.length,'En cours',e0(cours.reduce((s,x)=>s+(+(x.restant!=null?x.restant:x.ht)||0),0))+' HT · chantiers commencés','var(--accent)','cours'),
     tb(dort.length,'Qui dorment',dort.filter(x=>x._j>30).length+' depuis plus de 30 jours','var(--rouge)','dort'),
     ...((D.extranet||[]).length?[(()=>{const E=extranetLignes(),f=E.filter(x=>x.faire);return tb(f.length,'Extranet Alliade',E.filter(x=>x.k==='liv').length+' à livrer · '+E.filter(x=>x.k==='fact').length+' à facturer','var(--orange)','ext')})()]:[]),
+    (()=>{const X=D.extranet_lmh,E=X?lmhLignes():[];return tb(X?E.filter(x=>x.prog).length:'–','Extranet LMH',X?E.filter(x=>x.prgm).length+' programmés · '+E.filter(x=>x.ecart).length+' écart(s)':'pas encore relu','var(--orange)','lmh')})(),
     tb((D.agenda||[]).filter(e=>(e.debut||'').slice(0,10)===today).length,'Par équipe',D.agenda_genere?new Set((D.agenda||[]).filter(e=>e.debut>=lundiDe(0)&&e.debut<lundiDe(1)).map(e=>e.equipe)).size+' équipes sur la semaine':'agendas pas encore reliés','var(--accent)','equipe')].join('');
   document.querySelectorAll('#ptiles .kpi').forEach(b=>b.onclick=()=>{pv=b.dataset.v;store.set('pv',pv);planning();telListe()});
   document.querySelectorAll('#p-planning .vue').forEach(sct=>sct.hidden=sct.dataset.v!==pv);
@@ -1616,7 +1621,7 @@ function planning(){
   document.getElementById('copiedort').onclick=e=>{const v=dort.filter(x=>x._j>90), cl=[...new Set(v.map(x=>x.client||'?'))].sort();
     copier(`Commandes qui dorment depuis plus de 3 mois (${v.length}) : à clôturer, annuler ou relancer dans Nexxio\n`+cl.map(c=>`\n${c} :\n`+
       v.filter(x=>(x.client||'?')===c).sort((a,b)=>b._j-a._j).map(x=>`- ${x.n_nexxio} · ${x.n_bc||''} · ${x.commune||''} · ${x.statut||''} · ${x._j} j · ${(x._r||[]).join(' ; ')}`).join('\n')).join('\n'),e.target)};
-  equipeVue();extranetVue();
+  equipeVue();extranetVue();lmhVue();
   document.querySelectorAll('#p-planning td.motif').forEach(td=>td.onclick=()=>td.classList.toggle('open'));
   document.querySelectorAll('input[data-fact]').forEach(c=>c.onchange=()=>{const k=c.dataset.fact,v=c.checked;FACT.set(k,v);setTimeout(planning,200);toast(v?'Marquée facturée':'Décochée',()=>{FACT.set(k,!v);setTimeout(planning,200)})});
   document.querySelectorAll('button[data-annule]').forEach(b=>b.onclick=e=>{e.stopPropagation();FACT.set(b.dataset.annule,true);setTimeout(planning,200)});
@@ -1649,6 +1654,36 @@ function extranetLignes(){
     if(/modification refus/i.test(e.statut||''))a+=' · modification refusée par Alliade';
     return {e,n,st,rap,rdvN,k,a,c,faire:!['att','ok','trav'].includes(k)}}).sort((x,y)=>(y.faire-x.faire)||((y.e.retard||0)-(x.e.retard||0))||(x.e.date<y.e.date?-1:1));
 }
+/* 25/11 (J : « une vue Extranet LMH dans le tableau, sur le modèle de celle d'Alliade », croisée avec Nexxio) : dossiers de l'Extranet LMH (D.extranet_lmh, lus par le robot,
+   jamais de donnée de locataire) : à programmer (avec ou sans RDV dans Nexxio), programmés, écart de RDV avec Nexxio en rouge, dernière « Information transmise par LMH »
+   (une question de LMH peut rester sans réponse), devis préalables. Un clic sur une ligne ouvre la fiche Nexxio. Lecture seule. */
+function lmhLignes(){const L=(D.extranet_lmh||{}).dossiers||[];
+  return L.map(d=>{const A=d.actions||[],Q=A.filter(a=>a.code==='AT_INC'||/information transmise par lmh/i.test(a.type||'')),der=Q.length?Q[Q.length-1]:null,info=!!der&&(der.lu===false||A[A.length-1]===der),   // AT_INC = information ou question de LMH (25/11, manager) ; sans réponse = non lue (lu:false) ou dernière action du dossier
+    
+    devis=/devis/i.test(d.categorie||''),prog=d.etape==='CMDENV'&&!devis,prgm=d.etape==='RDVPRO',n=d.n_nexxio||'';   // un devis préalable à programmer a son propre filtre, hors du compte « à programmer »
+    const lib=d.etape==='CMDENV'?(devis?'Devis préalable à programmer':'À programmer'):prgm?'Programmée':(d.sous_etape_lib||d.etape||'');
+    let voir='',c='';
+    if(d.rdv_ecart){voir='RDV différent : '+d.rdv_ecart;c='bad'}
+    else if(prog&&n&&d.rdv_nexxio){voir='RDV déjà dans Nexxio le '+fr(d.rdv_nexxio)+' : à programmer sur l’Extranet';c='warn'}
+    else if(prog&&n){voir='À programmer : pas de RDV dans Nexxio';c='warn'}
+    else if(prog){voir='À programmer';c='warn'}
+    else if(prgm&&n&&!d.rdv_nexxio){voir='Programmée chez LMH, pas de RDV dans Nexxio';c='warn'}
+    if(info)voir=(voir?voir+' · ':'')+'LMH a écrit le '+fr(der.date)+' : réponse ?';
+    return {d,n,prog,prgm,devis,info,lib,voir,c,ecart:!!d.rdv_ecart}})}
+function lmhVue(){const t=document.getElementById('tlmh');if(!t)return;
+  const E=lmhLignes(),f=document.getElementById('lmh-f').value,q=(document.getElementById('qp').value||'').toLowerCase(),X=D.extranet_lmh;
+  const filtre={prog:x=>x.prog,prgm:x=>x.prgm,ecart:x=>x.ecart,info:x=>x.info,devis:x=>x.devis}[f]||(()=>true);
+  const r=E.filter(filtre).filter(x=>!q||[x.d.commande,x.d.dossier,x.d.agence,x.d.lot,x.d.travaux_prevus,x.n,x.lib].join(' ').toLowerCase().includes(q));
+  const g=X&&X.genere?new Date(X.genere):null,ctl=(X&&X.controle)||[];
+  document.getElementById('nlmh').textContent=X?E.length+' dossiers · '+E.filter(x=>x.prog).length+' à programmer · '+E.filter(x=>x.ecart).length+' écart(s)':'pas encore relu';
+  document.getElementById('lmh-aide').innerHTML=!X?'<b>Extranet LMH pas encore relu</b> : le robot n’a pas encore écrit le fichier de l’Extranet LMH.'
+    :(ctl.length?`<b style="color:var(--rouge)">L’Extranet LMH a changé de présentation ou une anomalie a été vue : ${ctl.map(esc).join(' ; ')}. Prévenir l’agent des données.</b><br>`:'')
+    +esc((g?`Lu sur l’Extranet LMH le ${g.toLocaleDateString('fr-FR')} à ${g.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}. `:'')+'Dossiers croisés avec Nexxio (statut et RDV de l’agenda). Cliquer une ligne : fiche de la commande Nexxio.');
+  t.innerHTML=!X?'<tr><td colspan="6" class="vide">Extranet LMH pas encore relu.</td></tr>':r.length?r.map(x=>`<tr ${x.n?`data-n="${esc(x.n)}" style="cursor:pointer"`:''}><td class="nw"><b>${esc(x.d.commande||x.d.dossier)}</b><span class="b2">${esc(x.d.categorie||'')}${x.d.lot?' · '+esc(x.d.lot):''}</span></td>
+    <td class="nw">${fr(x.d.date_commande)}</td><td>${esc(x.lib)}${x.d.travaux_prevus?`<span class="b2">${esc(String(x.d.travaux_prevus).slice(0,90))}</span>`:''}</td>
+    <td class="nw">${/^\d{4}-/.test(x.d.rdv||'')?fr(x.d.rdv):esc(x.d.rdv==='?'?'à confirmer':'')}</td><td>${x.n?`<b>${esc(x.n)}</b><span class="b2">${esc(x.d.statut_nexxio||'')}${x.d.rdv_nexxio?' · RDV '+fr(x.d.rdv_nexxio):''}</span>`:'<span class="tag">non trouvée</span>'}</td>
+    <td>${x.voir?`<span class="chip ${x.c||'info'}">${esc(x.voir)}</span>`:''}</td></tr>`).join(''):'<tr><td colspan="6" class="vide">Aucun dossier pour ce filtre.</td></tr>';
+  t.querySelectorAll('tr[data-n]').forEach(tr=>tr.onclick=()=>{if(NX[tr.dataset.n])fiche(tr.dataset.n)})}
 function extranetVue(){
   if(!document.getElementById('text'))return;
   const f=document.getElementById('ext-f').value, q=(document.getElementById('qp').value||'').toLowerCase();
@@ -1670,6 +1705,7 @@ function extranetVue(){
 }
 let pv=store.get('pv','fact');
 document.getElementById('ext-f').value=store.get('extf','');document.getElementById('ext-f').onchange=extranetVue;
+document.getElementById('lmh-f').onchange=lmhVue;
 document.getElementById('qp').value=store.get('qp','');
 document.getElementById('qp').oninput=planning;
 document.getElementById('qe').oninput=equipeVue;
@@ -3036,6 +3072,7 @@ const OUEST=[
   ['Commandes à planifier, rendez-vous passés sans rapport','Planning et facturation › les tuiles du haut','pla:aplan'],
   ['Chantiers du jour, relances des bailleurs','Planning et facturation (en tête)','planning'],
   ['Rapports reçus à facturer, factures à relancer','Planning et facturation › À facturer','pla:fact'],
+  ['Commandes de l’Extranet LMH (à programmer, programmées, écarts de RDV)','Planning et facturation › Extranet LMH','pla:lmh'],
   ['Demandes de devis, devis en préparation, envoyés, acceptés','Devis','devis'],
   ['Une équipe : commandes, CA, rapports, prix','Sous-traitants › Par sous-traitant','sst:par'],
   ['Prix payés qui manquent dans l’agenda','Sous-traitants › Prix manquants','sst:prix'],
