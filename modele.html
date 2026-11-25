@@ -2579,7 +2579,12 @@ document.getElementById('qs').oninput=sstVue;
 const TEL=()=>matchMedia('(max-width:700px)').matches;
 function telListe(){if(!TEL())return;const p=document.getElementById('ptiles'),o=p.querySelector('.kpi.on'),h=document.getElementById('psuivi');
   if(o)p.scrollLeft=Math.max(0,o.offsetLeft-(p.clientWidth-o.offsetWidth)/2);
-  if(h)scrollTo(0,h.getBoundingClientRect().bottom+scrollY);telSemaine()}
+  const pl=document.getElementById('p-planning');if(pl)pl.style.paddingBottom='';
+  if(h)scrollTo(0,h.getBoundingClientRect().bottom+scrollY);
+  // 25/11 (veille de prod, téléphone, tuile « fact ») : une liste courte ne laisse pas assez de page pour la faire remonter ; un espace est ajouté en bas pour que la liste arrive toujours en haut de l'écran
+  const v=[...document.querySelectorAll('#p-planning .vue')].find(e=>!e.hidden&&e.getClientRects().length);
+  if(v&&pl){const t=v.getBoundingClientRect().top,cible=Math.round(innerHeight*0.2);if(t>cible+4){pl.style.paddingBottom=Math.ceil(t-cible)+'px';scrollTo(0,scrollY+t-cible)}}
+  telSemaine()}
 // 13/11 au soir : sur téléphone le planning par équipe se fait défiler de côté ; on arrive sur la colonne du jour
 function telSemaine(){const t=document.getElementById('tsem'),w=t.parentElement,a=t.querySelector('.h.auj');
   if(a&&a.getClientRects().length&&matchMedia('(max-width:700px)').matches)w.scrollLeft=Math.max(0,a.getBoundingClientRect().left-w.getBoundingClientRect().left+w.scrollLeft-88)}
