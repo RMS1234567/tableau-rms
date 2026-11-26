@@ -1660,7 +1660,7 @@ function extranetLignes(){
    jamais de donnée de locataire) : à programmer (avec ou sans RDV dans Nexxio), programmés, écart de RDV avec Nexxio en rouge, dernière « Information transmise par LMH »
    (une question de LMH peut rester sans réponse), devis préalables. Un clic sur une ligne ouvre la fiche Nexxio. Lecture seule. */
 function lmhLignes(){const L=(D.extranet_lmh||{}).dossiers||[];
-  return L.map(d=>{const A=d.actions||[],Q=A.filter(a=>a.code==='AT_INC'||/information transmise par lmh/i.test(a.type||'')),der=Q.length?Q[Q.length-1]:null,info=!!der&&(der.lu===false||A[A.length-1]===der),   // AT_INC = information ou question de LMH (25/11, manager) ; sans réponse = non lue (lu:false) ou dernière action du dossier
+  return L.map(d=>{const A=d.actions||[],Q=A.filter(a=>a.code==='AT_INC'||a.code==='AT_QPL'||/information transmise par lmh|question posée par lmh/i.test(a.type||'')),der=Q.length?Q[Q.length-1]:null,info=!!der&&(der.lu===false||A[A.length-1]===der),   // AT_INC = information ou question de LMH (25/11, manager) ; sans réponse = non lue (lu:false) ou dernière action du dossier
     
     devis=/devis/i.test(d.categorie||''),prog=d.etape==='CMDENV'&&!devis,prgm=d.etape==='RDVPRO',n=d.n_nexxio||'';   // un devis préalable à programmer a son propre filtre, hors du compte « à programmer »
     const lib=d.etape==='CMDENV'?(devis?'Devis préalable à programmer':'À programmer'):prgm?'Programmée':(d.sous_etape_lib||d.etape||'');
@@ -1670,7 +1670,7 @@ function lmhLignes(){const L=(D.extranet_lmh||{}).dossiers||[];
     else if(prog&&n){voir='À programmer : pas de RDV dans Nexxio';c='warn'}
     else if(prog){voir='À programmer';c='warn'}
     else if(prgm&&n&&!d.rdv_nexxio){voir='Programmée chez LMH, pas de RDV dans Nexxio';c='warn'}
-    if(info)voir=(voir?voir+' · ':'')+'LMH a écrit le '+fr(der.date)+' : réponse ?';
+    if(info)voir=(voir?voir+' · ':'')+(der.code==='AT_QPL'||/question/i.test(der.type||'')?'LMH a posé une question le ':'LMH a écrit le ')+fr(der.date)+' : réponse ?';
     return {d,n,prog,prgm,devis,info,lib,voir,c,ecart:!!d.rdv_ecart}})}
 function lmhVue(){const t=document.getElementById('tlmh');if(!t)return;
   const E=lmhLignes(),f=document.getElementById('lmh-f').value,q=(document.getElementById('qp').value||'').toLowerCase(),X=D.extranet_lmh;
@@ -1682,7 +1682,7 @@ function lmhVue(){const t=document.getElementById('tlmh');if(!t)return;
     :(ctl.length?`<b style="color:var(--rouge)">L’Extranet LMH a changé de présentation ou une anomalie a été vue : ${ctl.map(esc).join(' ; ')}. Prévenir l’agent des données.</b><br>`:'')
     +esc((g?`Lu sur l’Extranet LMH le ${g.toLocaleDateString('fr-FR')} à ${g.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}. `:'')+'Dossiers croisés avec Nexxio (statut et RDV de l’agenda). Cliquer une ligne : fiche de la commande Nexxio.');
   t.innerHTML=!X?'<tr><td colspan="6" class="vide">Extranet LMH pas encore relu.</td></tr>':r.length?r.map(x=>`<tr ${x.n?`data-n="${esc(x.n)}" style="cursor:pointer"`:''}><td class="nw"><b>${esc(x.d.commande||x.d.dossier)}</b><span class="b2">${esc(x.d.categorie||'')}${x.d.lot?' · '+esc(x.d.lot):''}</span></td>
-    <td class="nw">${fr(x.d.date_commande)}</td><td>${esc(x.lib)}${x.d.travaux_prevus?`<span class="b2">${esc(String(x.d.travaux_prevus).slice(0,90))}</span>`:''}</td>
+    <td class="nw">${x.d.date_commande?fr(x.d.date_commande):'—'}</td><td>${esc(x.lib)}${x.d.travaux_prevus?`<span class="b2">${/^\d{4}-\d\d-\d\d/.test(x.d.travaux_prevus)?'travaux prévus le '+fr(String(x.d.travaux_prevus).slice(0,10)):esc(String(x.d.travaux_prevus).slice(0,90))}</span>`:''}</td>
     <td class="nw">${/^\d{4}-/.test(x.d.rdv||'')?fr(x.d.rdv):esc(x.d.rdv==='?'?'à confirmer':'')}</td><td>${x.n?`<b>${esc(x.n)}</b><span class="b2">${esc(x.d.statut_nexxio||'')}${x.d.rdv_nexxio?' · RDV '+fr(x.d.rdv_nexxio):''}</span>`:'<span class="tag">non trouvée</span>'}</td>
     <td>${x.voir?`<span class="chip ${x.c||'info'}">${esc(x.voir)}</span>`:''}</td></tr>`).join(''):'<tr><td colspan="6" class="vide">Aucun dossier pour ce filtre.</td></tr>';
   t.querySelectorAll('tr[data-n]').forEach(tr=>tr.onclick=()=>{if(NX[tr.dataset.n])fiche(tr.dataset.n)})}
@@ -2622,8 +2622,9 @@ function telListe(){if(!TEL())return;const p=document.getElementById('ptiles'),o
   const pl=document.getElementById('p-planning');if(pl)pl.style.paddingBottom='';
   if(h)scrollTo(0,h.getBoundingClientRect().bottom+scrollY);
   // 25/11 (veille de prod, téléphone, tuile « fact ») : une liste courte ne laisse pas assez de page pour la faire remonter ; un espace est ajouté en bas pour que la liste arrive toujours en haut de l'écran
-  const v=[...document.querySelectorAll('#p-planning .vue')].find(e=>!e.hidden&&e.getClientRects().length);
-  if(v&&pl){const t=v.getBoundingClientRect().top,cible=Math.round(innerHeight*0.2);if(t>cible+4){pl.style.paddingBottom=Math.ceil(t-cible)+'px';scrollTo(0,scrollY+t-cible)}}
+  const aligne=()=>{const v=[...document.querySelectorAll('#p-planning .vue')].find(e=>!e.hidden&&e.getClientRects().length);
+    if(v&&pl){const t=v.getBoundingClientRect().top,cible=Math.round(innerHeight*0.2);if(t>cible+4){pl.style.paddingBottom=(parseFloat(pl.style.paddingBottom)||0)+Math.ceil(t-cible)+'px';scrollTo(0,scrollY+t-cible)}}};
+  aligne();setTimeout(aligne,150);   // 26/11 : la veille du robot signale encore « fact » : une 2e mise en place après que la page s'est posée (machine plus lente, blocs qui bougent au-dessus)
   telSemaine()}
 // 13/11 au soir : sur téléphone le planning par équipe se fait défiler de côté ; on arrive sur la colonne du jour
 function telSemaine(){const t=document.getElementById('tsem'),w=t.parentElement,a=t.querySelector('.h.auj');
