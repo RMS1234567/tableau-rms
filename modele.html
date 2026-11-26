@@ -2972,15 +2972,8 @@ function chantiersJour(){const sec=document.getElementById('cj');if(!sec)return;
    à encaisser (dont en retard), à payer aux sous-traitants, et ce qu'il reste entre les deux. Une ligne en haut de l'accueil, chaque chiffre mène à sa liste. Lecture seule. */
 /* 20/11 (J : « connecter les briques entre elles pour que les données soient le plus fiables possible ») : UNE seule définition de chaque liste, utilisée partout
    (tuile et vue du Planning, trois colonnes, Ma journée, Chantiers du jour) ; avant, « à planifier » valait 68 ici et 13 là, « RDV passés sans rapport » 53 et 42. */
-function aRetard(){return (D.planning||[]).filter(x=>{   // 24/11 (J : « si des chiffres s'emmêlent ou font double, tu peux y toucher ») : UNE seule définition, partout (accueil, Planning, Chantiers, Écarts par équipe : 39 et 40 avant)
-  if(!['Planifiée','Planifié','En cours'].includes(x.statut))return false;
-  const n=x.n_nexxio,ds=((D.ag_rdv||{})[n]||[]).map(e=>e[1]).filter(d=>d<=today),rd=x.rdv_iso?x.rdv_iso.slice(0,10):'';if(rd&&rd<=today)ds.push(rd);
-  ds.sort();const der=ds[ds.length-1];if(!der||der>=jr(3))return false;
-  const t=new Date(der);t.setDate(t.getDate()-30);const lo=t.toISOString().slice(0,10),deb=ds.filter(d=>d>=lo)[0]||der,R=RAP_N[n]||[];
-  if(R.some(r=>r.date>=deb)||(!R.length&&x.rapports))return false;   // un rapport daté du dernier passage (ou connu sans date) : plus en retard
-  x._der=der;return true})}
-function aPlanifier(){const DC=Object.fromEntries((D.sst||[]).map(x=>[x.n_nexxio,x.date])),dc=x=>DC[x.n_nexxio]||(L.find(l=>l.n_nexxio===x.n_nexxio)||{}).jour||'';   // moins de 3 mois, sans rapport ni RDV d'agenda
-  return (D.planning||[]).filter(x=>x.statut==='Prise en compte'&&!x.rdv&&!x.rapports&&!AG_N[x.n_nexxio]&&!(dc(x)&&dc(x)<jr(90))).sort((a,b)=>(dc(a)||'9')<(dc(b)||'9')?-1:1)}
+function aRetard(){const R=new Map((D.rdv_retard||[]).map(r=>[r.n,r.der]));return (D.planning||[]).filter(x=>{const d=R.get(x.n_nexxio);if(d)x._der=d;return !!d})}   // 26/11 : liste calculée par tableau.rdv_sans_rapport (Python), la même partout
+function aPlanifier(){const R=new Map((D.a_planifier||[]).map((n,i)=>[n,i]));return (D.planning||[]).filter(x=>R.has(x.n_nexxio)).sort((a,b)=>R.get(a.n_nexxio)-R.get(b.n_nexxio))}   // calculée par tableau.a_planifier (Python)
 function tresorerie(){const el=document.getElementById('treso');if(!el)return;
   const age=f=>Math.round((new Date(today)-new Date(f.date))/864e5);
   const regT=new Set((D.extranet_factures||[]).filter(x=>/^réglée/i.test(x.reglee||'')).map(x=>x.ref_fournisseur));
