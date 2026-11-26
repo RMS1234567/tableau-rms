@@ -1005,7 +1005,7 @@ details.det>summary::-webkit-details-marker{display:none}details.det>summary::be
   <section class="card" style="margin-bottom:18px"><h2><span>Commandes par bailleur sur la période</span><span class="tag">lues dans Nexxio</span></h2>
     <div class="wrap"><table><thead><tr><th>Bailleur</th><th class="num">Commandes</th><th class="num">Commandé HT</th><th class="num">Panier moyen</th><th class="num">Facturé HT</th><th class="num">Payé aux SST</th><th class="num">Marge</th></tr></thead><tbody id="tcli"></tbody></table></div></section>
   <section class="card" style="margin-bottom:18px"><h2><span>Par bailleur et par marché sur la période</span><span class="tag" id="nmar"></span></h2>
-    <p class="sub" style="padding-bottom:8px">Chaque bailleur avec ses marchés Nexxio (sinistres et lots Alliade, Carré de Soie, Porte du Sud et PAPH chez LMH…). Commandé : date de commande ; facturé : factures Nexxio de la période, avoirs déduits ; reste à facturer : aujourd'hui.</p>
+    <p class="sub" style="padding-bottom:8px">Chaque bailleur avec ses marchés Nexxio (sinistres et lots Alliade, Carré de Soie, Porte du Sud et PAPH chez LMH…). Commandé : date de saisie Nexxio, sans les brouillons ; facturé : factures Nexxio de la période, avoirs déduits ; reste à facturer : aujourd'hui.</p>
     <div class="wrap"><table><thead><tr><th>Bailleur · marché</th><th class="num">Commandes</th><th class="num">Commandé HT</th><th class="num">Panier moyen</th><th class="num">Facturé HT</th><th class="num">Reste à facturer</th><th class="num">Marge</th></tr></thead><tbody id="tmar"></tbody></table></div></section>
   <section class="card" data-cvg="arg" style="margin-bottom:18px"><h2><span>Évolution jour par jour</span><span class="tag" id="nevo"></span></h2>
     <p class="sub" style="padding-bottom:8px">Ce qui reste à facturer, à encaisser et à planifier, relevé chaque jour par le robot : pour voir si ça baisse ou si ça s'accumule. L'écart compare aujourd'hui à la date de la colonne.</p>
@@ -1785,20 +1785,21 @@ function moisVue(m0,fin){
   const nb=Math.round((new Date(fin)-new Date(m0))/864e5)+1, dec=(d,k)=>{const x=new Date(d);x.setDate(x.getDate()-k);return x.toISOString().slice(0,10)};
   const pm=dec(m0,nb), pmFin=dec(m0,1);   // période précédente de même longueur
   const entre=(d,a,b)=>d&&d>=a&&d<=b, som=(r,f)=>r.reduce((s,x)=>s+(f(x)||0),0);
-  const cmd=S.filter(x=>entre(x.date,m0,fin)), cmdP=S.filter(x=>entre(x.date,pm,pmFin));
+  // 26/11 (J, « Comme Nexxio ») : Commandé = commandes à leur DATE DE SAISIE Nexxio, hors annulées et hors brouillons « En création » (comptés à part)
+  const cmd=S.filter(x=>entre(x.saisie,m0,fin)), cmdP=S.filter(x=>entre(x.saisie,pm,pmFin)), brouillons=S.filter(x=>(x.statut||'')==='En création');
   let fac=S.filter(x=>entre(x.facturee,m0,fin)), facP=S.filter(x=>entre(x.facturee,pm,pmFin));
   // 13/11 (J) : si la liste des factures Nexxio couvre la période, le facturé vient des vraies factures (avoirs déduits,
   // vieilles commandes facturées cette année, situations) : une ligne par commande, montant net de la période
   const FN=D.fnx||[], couvre=a=>D.fnx_depuis&&a>=D.fnx_depuis;
   const parCmd=(a,b)=>{const g={};FN.filter(f=>entre(f.date,a,b)).forEach(f=>{const s=S.find(y=>y.n_nexxio===f.n_nexxio)||{};
-    const o=g[f.n_nexxio]=g[f.n_nexxio]||{n_nexxio:f.n_nexxio,client:f.client||s.client,ht:0,cout:s.cout,nb:0};o.ht+=f.ht||0;if(f.type!=='avoir')o.nb++});return Object.values(g)};
+    const o=g[f.n_nexxio]=g[f.n_nexxio]||{n_nexxio:f.n_nexxio,client:f.client||s.client,ht:0,cout:s.cout,nb:0};o.ht+=f.ht||0;if(f.type!=='avoir')o.nb++});return Object.values(g).filter(o=>Math.abs(o.ht)>0.005)};   // 26/11 : factures et avoirs qui s'annulent (net 0, 4449) : la commande ne compte pas, comme Nexxio
   if(FN.length&&couvre(m0))fac=parCmd(m0,fin);
   if(FN.length&&couvre(pm))facP=parCmd(pm,pmFin);
   const reste=som(P,x=>x.restant), aF=P.filter(x=>x.rapports>0&&(x.restant||0)>0);
   const mg=fac.filter(x=>x.cout!=null), mgCA=som(mg,x=>x.ht), mgC=som(mg,x=>x.cout);
   const delta=(a,b)=>{if(!b)return '';const v=(a-b)/b;return `<span class="chip ${v>=0?'ok':'bad'}">${v>=0?'+':''}${Math.round(v*100)} %</span> vs période précédente`};
   const t=(v,l,s,c)=>`<div class="kpi" style="cursor:default;--c:${c}"><span class="l">${l}</span><b>${v}</b><small>${s}</small></div>`;
-  document.getElementById('moist').textContent='du '+fr(m0)+' au '+fr(fin)+' · commandes lues dans Nexxio (date de commande, date de facture)';
+  document.getElementById('moist').textContent='du '+fr(m0)+' au '+fr(fin)+' · commandé à la date de saisie Nexxio, facturé à la date de facture'+(brouillons.length?' · à part : '+brouillons.length+' brouillon(s) « En création » ('+e0(som(brouillons,x=>x.ht))+' HT, aujourd’hui), non comptés':'');
   const CLI2={'GRAND LYON HABITAT':'GLH','LYON METROPOLE HABITAT':'LMH','ALLIADE HABITAT':'ALLIADE',"IN'LI AURA":"IN'LI","IN'LI":"IN'LI"};
   const cle=x=>CLI2[String(x.client||'').toUpperCase()]||(x.client&&!/:/.test(x.client)?String(x.client).replace(/\s+-\s+\d+$/,''):'Autre');
   const grp={};cmd.forEach(x=>{const g=grp[cle(x)]=grp[cle(x)]||{n:0,ht:0,fa:0,co:0,caC:0};g.n++;g.ht+=x.ht||0;if(x.cout!=null){g.co+=x.cout;g.caC+=x.ht||0}});
@@ -1806,7 +1807,7 @@ function moisVue(m0,fin){
   document.getElementById('tcli').innerHTML=Object.entries(grp).sort((a,b)=>b[1].ht-a[1].ht).map(([k,g])=>`<tr><td>${bai(k)}</td><td class="num">${g.n}</td><td class="num"><b>${e0(g.ht)}</b></td><td class="num">${e0(g.n?g.ht/g.n:0)}</td><td class="num">${e0(g.fa)}</td><td class="num">${g.caC?e0(g.co):''}</td><td class="num">${g.caC?e0(g.caC-g.co)+' ('+pct((g.caC-g.co)/g.caC)+')':''}</td></tr>`).join('')||'<tr><td colspan="7" class="vide">Aucune commande sur la période.</td></tr>';
   marchesVue(cmd,m0,fin,cle);
   document.getElementById('mois').innerHTML=[
-    t(e0(som(cmd,x=>x.ht)),'Commandé HT',`${cmd.length} commandes · `+delta(som(cmd,x=>x.ht),som(cmdP,x=>x.ht)),'var(--accent)'),
+    t(e0(som(cmd,x=>x.ht)),'Commandé HT',`${cmd.length} commandes saisies (date de saisie Nexxio) · `+delta(som(cmd,x=>x.ht),som(cmdP,x=>x.ht)),'var(--accent)'),
     t(e0(som(fac,x=>x.ht)),'Facturé HT',`${fac.length} commandes · `+delta(som(fac,x=>x.ht),som(facP,x=>x.ht)),'var(--vert)'),
     t(e0(reste),"Reste à facturer (aujourd'hui)",`dont ${e0(som(aF,x=>x.restant))} avec rapport reçu (${aF.length})`,'var(--orange)'),
     t(mg.length?e0(mgCA-mgC):'—','Marge sur le facturé de la période',mg.length?`${pct((mgCA-mgC)/mgCA)} sur ${mg.length} commandes avec prix agenda`:'prix des agendas pas encore lus','var(--accent)')].join('');
@@ -2986,7 +2987,7 @@ function tresorerie(){const el=document.getElementById('treso');if(!el)return;
   const mois=L.filter(l=>l.jour.slice(0,7)===today.slice(0,7)&&VRAI(l)),cmd=som(mois);
   const c=(cl,t,v,sous,go)=>`<button class="tz ${cl}" data-tz="${go}"><span class="tzl">${t}</span><b>${e0(v)}</b><small>${sous}</small></button>`;
   el.innerHTML=c('tz1','À facturer aux clients',fact,'rapport reçu, pas encore facturé HT','fact')+c('tz2','À encaisser',enc,(ret?`dont ${e0(ret)} en retard de plus de 60 jours`:'envoyées, non pointées payées')+' · moins d’un an','enc')+c('tz3','À payer aux sous-traitants',pay,'factures reçues depuis 60 jours, pas cochées payées','pay')+
-    `<div class="tz tz4"><span class="tzl">Commandé ce mois-ci</span><b>${e0(cmd)}</b><small>${mois.length} BC reçus, HT</small></div>`;
+    `<div class="tz tz4"><span class="tzl">BC reçus ce mois-ci</span><b>${e0(cmd)}</b><small>${mois.length} BC reçus, HT</small></div>`;
   el.querySelectorAll('[data-tz]').forEach(b=>b.onclick=()=>{const g=b.dataset.tz;
     if(g==='fact'){pv='fact';store.set('pv','fact');onglet('planning');planning();window.scrollTo(0,0);telListe()}
     else if(g==='enc'){onglet('planning');actionsFact();const x=document.getElementById('frel');if(x){x.classList.remove('ferme');x.scrollIntoView({behavior:'smooth'})}}
@@ -3398,7 +3399,7 @@ setTimeout(()=>{const DEF=[
   ['#treso .tz1','À facturer : commandes avec rapport reçu et un restant à facturer dans Nexxio, pas cochées « facturé ». Même liste que la tuile À facturer du Planning.'],
   ['#treso .tz2','À encaisser : factures « Envoyé » dans Nexxio de moins d’un an, sans celles déjà réglées selon l’Extranet Alliade. Plus d’un an : à pointer, voir Chiffres.'],
   ['#treso .tz3','À payer : factures de sous-traitants reçues depuis 60 jours que tu n’as pas cochées « payées » (Sous-traitants, Factures).'],
-  ['#treso .tz4','Commandé ce mois-ci : vrais BC reçus ce mois (annulations, doublons, compléments et « pas pour RMS » exclus), montant HT.'],
+  ['#treso .tz4','BC reçus ce mois-ci (pas le « Commandé » de Nexxio, qui est à la date de saisie) : vrais BC reçus ce mois (annulations, doublons, compléments et « pas pour RMS » exclus), montant HT.'],
   ['#trois .t3a > h2','Arrivés aujourd’hui : BC dont la première trace (journal du robot ou classement du PDF) date d’aujourd’hui.'],
   ['#trois .t3b > h2','À faire par toi : BC à reprendre, commandes attendant ton accord, commandes encore en création.'],
   ['#trois .t3c2 > h2','À planifier : commandes prises en compte dans Nexxio, sans rendez-vous, sans rapport, de moins de 3 mois. Même liste que la tuile À planifier du Planning.'],
@@ -3418,8 +3419,8 @@ const TT=[
   ['Commandes affectées','Commandes de la période qui ont un sous-traitant affecté dans Nexxio.'],
   ['CA affecté HT','Montant HT des lignes affectées à un sous-traitant sur la période.'],
   ['Sans affectation','Commandes de la période déjà planifiées (ou annulées, clôturées) sans sous-traitant affecté dans Nexxio.'],
-  ['Commandé HT','Commandes lues dans Nexxio dont la date de commande est dans la période, montant HT.'],
-  ['Facturé HT','Factures émises dans Nexxio sur la période (date de facture), avoirs déduits ; si l’historique des factures ne couvre pas la période, commandes dont la date « facturée » tombe dans la période.'],
+  ['Commandé HT','Commandes saisies dans Nexxio sur la période (date de saisie Nexxio), hors annulées et brouillons « En création » : comme l’accueil de Nexxio. Montant HT.'],
+  ['Facturé HT','Factures émises dans Nexxio sur la période (date de facture), avoirs déduits ; une commande dont facture et avoir s’annulent n’est pas comptée ; si l’historique des factures ne couvre pas la période, commandes dont la date « facturée » tombe dans la période.'],
   ['Reste à facturer','Restant à facturer des commandes ouvertes, relevé aujourd’hui (pas seulement celles avec rapport : voir À facturer à l’accueil pour celles prêtes).'],
   ['Marge sur le facturé','Facturé moins ce qui est payé aux sous-traitants d’après le prix des agendas, sur les commandes dont le prix est connu.'],
   ['Montant HT des BC reçus','Montant HT des vrais BC saisis dans Nexxio (en création ou pris en compte) sur la période.'],
