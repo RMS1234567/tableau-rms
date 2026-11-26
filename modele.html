@@ -2623,9 +2623,13 @@ function telListe(){if(!TEL())return;const p=document.getElementById('ptiles'),o
   const pl=document.getElementById('p-planning');if(pl)pl.style.paddingBottom='';
   if(h)scrollTo(0,h.getBoundingClientRect().bottom+scrollY);
   // 25/11 (veille de prod, téléphone, tuile « fact ») : une liste courte ne laisse pas assez de page pour la faire remonter ; un espace est ajouté en bas pour que la liste arrive toujours en haut de l'écran
+  // 26/11 (veille du robot : liste à 1696 px à 250 ms, puis en place ; et 5801 px de vide ajoutés en bas, en production) : chaque mise en place repart de zéro,
+  // on fait d'abord défiler, et l'espace n'est ajouté que si la page est trop courte pour monter la liste ; plusieurs passages (PC lent)
   const aligne=()=>{const v=[...document.querySelectorAll('#p-planning .vue')].find(e=>!e.hidden&&e.getClientRects().length);
-    if(v&&pl){const t=v.getBoundingClientRect().top,cible=Math.round(innerHeight*0.2);if(t>cible+4){pl.style.paddingBottom=(parseFloat(pl.style.paddingBottom)||0)+Math.ceil(t-cible)+'px';scrollTo(0,scrollY+t-cible)}}};
-  aligne();setTimeout(aligne,150);   // 26/11 : la veille du robot signale encore « fact » : une 2e mise en place après que la page s'est posée (machine plus lente, blocs qui bougent au-dessus)
+    if(!v||!pl||store.get('onglet','')!=='planning')return;pl.style.paddingBottom='';const cible=Math.round(innerHeight*0.2);
+    let t=v.getBoundingClientRect().top;if(t>cible+4){scrollTo(0,scrollY+t-cible);t=v.getBoundingClientRect().top;
+      if(t>cible+4){pl.style.paddingBottom=Math.ceil(t-cible)+'px';scrollTo(0,scrollY+t-cible)}}};
+  aligne();setTimeout(aligne,150);setTimeout(aligne,700);
   telSemaine()}
 // 13/11 au soir : sur téléphone le planning par équipe se fait défiler de côté ; on arrive sur la colonne du jour
 function telSemaine(){const t=document.getElementById('tsem'),w=t.parentElement,a=t.querySelector('.h.auj');
@@ -2642,7 +2646,7 @@ function telPage(tb){const lim=tb._lim||PAGE,rows=[...tb.rows],n=rows.length,on=
 document.querySelectorAll('.wrap tbody[id]').forEach(tb=>{new MutationObserver(()=>telPage(tb)).observe(tb,{childList:true});telPage(tb)});
 matchMedia('(max-width:700px)').addEventListener('change',()=>document.querySelectorAll('.wrap tbody[id]').forEach(telPage));
 const onglet=t=>{if(t==='manager'){t='chiffres';CVU='rob'};['exploitation','planning','devis','sst','chiffres','manager'].forEach(k=>document.getElementById('p-'+k).hidden=t!==k);
-  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));store.set('onglet',t);document.body.dataset.onglet=t;ptitre(t);if(t==='chiffres')cvue();if(t==='devis')dvTri();if(t==='planning')ptTri()};
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));store.set('onglet',t);document.body.dataset.onglet=t;ptitre(t);if(t==='chiffres')cvue();if(t==='devis')dvTri();if(t==='planning')ptTri();else{const pp=document.getElementById('p-planning');if(pp)pp.style.paddingBottom=''}};
 // 24/11 (J, cases cochées) : Chiffres en trois vues (Résultats, Argent, Robot) ; le compte rendu du Manager est dans « Robot », plus d'onglet Manager
 var CVU=store.get('cv','res');
 function cvue(v){if(v)CVU=v;store.set('cv',CVU);const p=document.getElementById('p-chiffres');if(!p)return;[...p.children].forEach(el=>{if(el.id==='cvues')return;el.style.display=(el.dataset.cvg||'res')===CVU?'':'none'});document.querySelectorAll('#cvues button').forEach(b=>b.classList.toggle('on',b.dataset.v===CVU))}
