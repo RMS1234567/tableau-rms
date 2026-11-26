@@ -793,6 +793,11 @@ details.det>summary::-webkit-details-marker{display:none}details.det>summary::be
 #acc .c-it{padding:2px 4px 8px 56px}#acc .c-i{display:flex;gap:10px;padding:8px 6px;border-top:1px dashed var(--line);cursor:pointer;border-radius:8px;font-size:14px}#acc .c-i:hover{background:var(--soft)}
 #acc .c-i b{min-width:64px;font-variant-numeric:tabular-nums;color:var(--accent)}#acc .c-i span{color:var(--muted)}#acc .c-all{padding:8px 6px;font-size:13.5px;color:var(--accent);cursor:pointer}
 .tache[data-fbc]:hover .tt b{color:var(--accent)}
+#acc .fs{margin:20px 0 0;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 26px 14px}#acc .fs h3{margin:0 0 8px;font-size:17px}
+#acc .fs-r{display:flex;gap:12px;align-items:baseline;padding:9px 4px;border-top:1px solid var(--line);cursor:pointer;font-size:14px;border-radius:8px}#acc .fs-r:hover{background:var(--soft)}
+#acc .fs-h{color:var(--muted);font-variant-numeric:tabular-nums;min-width:42px}#acc .fs-r b{min-width:62px;color:var(--accent);font-variant-numeric:tabular-nums}#acc .fs-p{flex:1;min-width:0}
+#acc .fs-d{padding:10px 4px;border-top:1px solid var(--line);color:var(--muted);font-size:13.5px;cursor:pointer}#acc .fs-b{margin:8px 0 4px}#acc .fs-v{color:var(--muted);padding:6px 4px}
+@media (max-width:700px){#acc .fs-r{flex-wrap:wrap}#acc .fs-p{flex-basis:100%}}
 </style></head><body>
 <div class="app">
 <aside class="side">
@@ -3024,6 +3029,17 @@ function relancesBailleurs(){const sec=document.getElementById('relb');if(!sec)r
 /* 24/11 (J : « le dashboard a trop d'info dans tous les sens, pas assez épuré » ; cases cochées : seulement ce que je dois faire, 4 cartes, grand nombre retiré) :
    l'accueil n'est plus que quatre cartes d'actions, une ligne par action (nombre, quoi), un bouton par carte ; tout le reste est rangé dans « Détails » ou dans
    les onglets. Les nombres viennent des mêmes listes que « Ma journée » (FOCG, rempli par journee0()). Lecture seule. */
+/* 26/11 (J : « Ce que le robot a fait seul aujourd'hui ») : les gestes faits sans J dans la journée (heure, commande, une phrase), chacun menant à sa fiche. Les lignes passées
+   au vert, classées et les références LMH, nombreuses, sont regroupées et dépliables. Rien si le fichier du robot est absent. Lecture seule. */
+var FS_TOUT=false,FS_PLUS=false;
+const FS_DISCRET={ligne_verte:'ligne(s) passée(s) au vert',ligne_classee:'ligne(s) classée(s) (déjà traitées par J ou Salim)',reference_lmh:'référence(s) LMH notée(s)'};
+function faitsSeuls(){const el=document.getElementById('acc'),F=D.faits_seuls;if(!el||!F)return;let s=document.getElementById('faits');if(!s){s=document.createElement('section');s.id='faits';s.className='fs';el.appendChild(s)}
+  const T=(F.faits||[]).filter(x=>x.date.slice(0,10)===today).sort((a,b)=>a.date<b.date?1:-1),P=T.filter(x=>!FS_DISCRET[x.type]),Q=T.filter(x=>FS_DISCRET[x.type]);
+  const lig=x=>`<div class="fs-r" data-n="${esc(x.n_nexxio)}" data-bc="${esc(x.n_bc)}" title="${esc(x.regle)}"><span class="fs-h">${esc(x.date.slice(11,16))}</span><b>${esc(x.n_nexxio||x.n_bc||'robot')}</b><span class="fs-p">${esc(x.phrase)}</span></div>`;
+  const grp=Object.entries(Q.reduce((o,x)=>{o[x.type]=(o[x.type]||0)+1;return o},{})).map(([k,n])=>n+' '+FS_DISCRET[k]).join(' · ');
+  s.innerHTML=`<h3>Ce que le robot a fait seul aujourd’hui <span class="tag">${T.length} geste(s)</span></h3>${T.length?'':'<div class="fs-v">Rien pour l’instant aujourd’hui.</div>'}${(FS_TOUT?P:P.slice(0,6)).map(lig).join('')}${P.length>6&&!FS_TOUT?`<button class="btn fs-b" id="fs-tout">Voir les ${P.length-6} autres</button>`:''}${Q.length?`<div class="fs-d" id="fs-plus">${FS_PLUS?'▾':'▸'} et ${esc(grp)}</div>${FS_PLUS?Q.map(lig).join(''):''}`:''}`;
+  const t=document.getElementById('fs-tout');if(t)t.onclick=()=>{FS_TOUT=true;faitsSeuls()};const q=document.getElementById('fs-plus');if(q)q.onclick=()=>{FS_PLUS=!FS_PLUS;faitsSeuls()};
+  s.querySelectorAll('.fs-r').forEach(r=>r.onclick=()=>{const n=r.dataset.n,bc=r.dataset.bc;if(n&&NX[n])fiche(n);else if(bc)ficheBC(bc)})}
 function accueil(){const el=document.getElementById('acc');if(!el)return;
   const F=window.FOCG||[],get=t=>F.find(f=>f.titre===t),relb=(typeof RELB!=='undefined'?RELB:[]).filter(r=>(r.jour||'')>=jr(60)&&!ENV.get(r.id)).length;
   const CARTES=[
@@ -3053,6 +3069,7 @@ function accueil(){const el=document.getElementById('acc');if(!el)return;
   el.querySelectorAll('.c-r').forEach(r=>r.onclick=()=>{const nx=r.nextElementSibling;if(nx&&nx.classList.contains('c-it')){nx.hidden=!nx.hidden;const sm=r.querySelector('small');if(sm)sm.textContent=nx.hidden?'▾':'▴';return}const f=cible(r.dataset.ac);if(f)va(f)});
   el.querySelectorAll('.c-i').forEach(i=>i.onclick=()=>ouvre(i.dataset.k));
   el.querySelectorAll('.c-all').forEach(a=>a.onclick=()=>{const f=cible(a.dataset.all);if(f)va(f)});
+  faitsSeuls();
   el.querySelectorAll('.c-b').forEach(b=>b.onclick=()=>{const c=CARTES[+b.dataset.card];
     if(c.u){const x=c.L.map(([n,s])=>get(s)).find(Boolean);if(x)va(x);return}
     if(c.go==='planning'){onglet('planning');window.scrollTo(0,0);return}
