@@ -1657,7 +1657,7 @@ function extranetLignes(){
     return {e,n,st,rap,rdvN,k,a,c,faire:!['att','ok','trav'].includes(k)}}).sort((x,y)=>(y.faire-x.faire)||((y.e.retard||0)-(x.e.retard||0))||(x.e.date<y.e.date?-1:1));
 }
 /* 25/11 (J : « une vue Extranet LMH dans le tableau, sur le modèle de celle d'Alliade », croisée avec Nexxio) : dossiers de l'Extranet LMH (D.extranet_lmh, lus par le robot,
-   jamais de donnée de locataire) : à programmer (avec ou sans RDV dans Nexxio), programmés, écart de RDV avec Nexxio en rouge, dernière « Information transmise par LMH »
+   jamais de donnée de locataire) : à programmer (avec ou sans RDV dans Nexxio), programmés, écart de RDV avec Nexxio pour info (Nexxio fait foi, J le 26/11), dernière « Information transmise par LMH »
    (une question de LMH peut rester sans réponse), devis préalables. Un clic sur une ligne ouvre la fiche Nexxio. Lecture seule. */
 function lmhLignes(){const L=(D.extranet_lmh||{}).dossiers||[];
   return L.map(d=>{const A=d.actions||[],Q=A.filter(a=>a.code==='AT_INC'||a.code==='AT_QPL'||/information transmise par lmh|question posée par lmh/i.test(a.type||'')),der=Q.length?Q[Q.length-1]:null,info=!!der&&(der.lu===false||A[A.length-1]===der),   // AT_INC = information ou question de LMH (25/11, manager) ; sans réponse = non lue (lu:false) ou dernière action du dossier
@@ -1665,7 +1665,7 @@ function lmhLignes(){const L=(D.extranet_lmh||{}).dossiers||[];
     devis=/devis/i.test(d.categorie||''),prog=d.etape==='CMDENV'&&!devis,prgm=d.etape==='RDVPRO',n=d.n_nexxio||'';   // un devis préalable à programmer a son propre filtre, hors du compte « à programmer »
     const lib=d.etape==='CMDENV'?(devis?'Devis préalable à programmer':'À programmer'):prgm?'Programmée':(d.sous_etape_lib||d.etape||'');
     let voir='',c='';
-    if(d.rdv_ecart){voir='RDV différent : '+d.rdv_ecart;c='bad'}
+    if(d.rdv_ecart){voir='RDV différent : '+d.rdv_ecart;c=''}   // J le 26/11 (5301, « Nexxio fait foi ») : info, plus une alerte
     else if(prog&&n&&d.rdv_nexxio){voir='RDV déjà dans Nexxio le '+fr(d.rdv_nexxio)+' : à programmer sur l’Extranet';c='warn'}
     else if(prog&&n){voir='À programmer : pas de RDV dans Nexxio';c='warn'}
     else if(prog){voir='À programmer';c='warn'}
