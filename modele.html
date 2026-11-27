@@ -1081,7 +1081,7 @@ const PROP=flag('prop:'), PROPS=D.propositions||{};   // 17/11 : « Appliquer »
 const PAY=flag('pay:'), BAP=flag('bap:');   // 19/11 (J, bon à payer validé d'un clic) : clé = nom du fichier de la facture, rien ne part et rien n'est payé d'ici
    // 13/11 (J) : facture de sous-traitant payée (bon à payer), clé = nom du fichier de la facture   // env: rapport envoyé au bailleur (12/11)
 // 12/11 (J) : aussi les commentaires (« com: ») et les tentatives d'appel au locataire (« app: »), partagés de la même façon
-const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','bap:','plan:','ext:','wa:','wam:','wac:','mgr:','mnom:','prop:','suiv:','vue:','diag:'], CO_TXT=['com:','app:','plan:','ext:','wa:','wam:','wac:','mgr:','mnom:','suiv:','vue:','diag:'];   // mgr: question au manager (16/11)   // wam: WhatsApp ouvert à la main (15/11 soir)   // wa: WhatsApp RDV (15/11)   // plan: demande de planification (13/11)
+const CO_P=['imp:','ok:','fact:','dev:','cles:','env:','com:','app:','pay:','bap:','plan:','ext:','wa:','wam:','wac:','mgr:','mnom:','prop:','suiv:','vue:','diag:','clicpb:'], CO_TXT=['com:','app:','plan:','ext:','wa:','wam:','wac:','mgr:','mnom:','suiv:','vue:','diag:','clicpb:'];   // mgr: question au manager (16/11)   // wam: WhatsApp ouvert à la main (15/11 soir)   // wa: WhatsApp RDV (15/11)   // plan: demande de planification (13/11)
 const NOTE={get:k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},
   set:(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k);localStorage.setItem('ts:'+k,Date.now())}catch(e){}coSave(k)}};
 // coches des autres PC, relues par le robot (D.coches) : la plus récente gagne, avant le premier affichage
@@ -2207,6 +2207,40 @@ function lierRdvLoc(n){const box=document.querySelector('#fichein .rdvloc');if(!
 document.addEventListener('click',e=>{if(e.target.closest('a,input,label,summary,button,th,#tcmd td.motif,#faire .tm'))return;
   const tr=e.target.closest('.wrap tbody tr'), b=(tr?[...tr.querySelectorAll('td b')].find(x=>NX[x.textContent.trim()]):null)||e.target.closest('td b');
   if(!b)return;const n=b.textContent.trim();if(NX[n]&&!b.closest('#tsdet tr[data-s]'))fiche(n)});
+/* 27/11 (J : « je peux plus cliquer sur les commandes » ; page en ligne d'un autre PC, onglets et recherche OK, panne non
+   reproduite) : la page surveille les clics sur une ligne de commande. Fiche restée fermée, clic jamais arrivé : elle
+   l'ouvre en secours et note la raison (aussi quand la ligne est couverte) dans la coche « clicpb:<navigateur> », relue
+   par le robot (tableau_donnees.json). La note : balises, identifiants, n° de commande et message d'erreur sans ses
+   textes cités ; aucun texte de la page. */
+const ERRJS=[];let CLIC_T=0,APPUI=null,PB_T=0;
+const sansTexte=s=>String(s||'').replace(/(["'«“])[^"'»”]*(["'»”])/g,'$1…$2').replace(/\d{6,}/g,'…').slice(0,160);
+const noterErr=m=>{ERRJS.push(sansTexte(m));ERRJS.splice(0,ERRJS.length-3)};
+addEventListener('error',e=>noterErr(e.message+' l.'+(e.lineno||'?')));
+addEventListener('unhandledrejection',e=>noterErr(e.reason&&e.reason.message||e.reason));
+const cheminDe=el=>{const r=[];for(let x=el;x&&x.tagName&&x!==document.body&&r.length<5;x=x.parentElement)r.push(x.tagName.toLowerCase()+(x.id?'#'+x.id:''));return r.join(' < ')};
+const LIBRE='a,input,label,summary,button,th,select,textarea,#tcmd td.motif,#faire .tm';
+function cmdLigne(el){const tr=el&&el.closest&&el.closest('.wrap tbody tr');if(!tr||tr.dataset.s||tr.dataset.f||tr.dataset.rq||tr.closest('#tsdet'))return null;
+  const b=[...tr.querySelectorAll('td b')].find(x=>NX[x.textContent.trim()]);return b?{n:b.textContent.trim(),table:(tr.parentElement||{}).id||''}:null}
+function clicPb(raison,c,cible){try{if(Date.now()-PB_T<20000)return;PB_T=Date.now();
+  NOTE.set('clicpb:'+coId,JSON.stringify({q:new Date().toISOString(),raison,table:c.table,n:c.n,cible:cheminDe(cible),erreurs:ERRJS,donnees:D.genere||'',
+    ecran:innerWidth+'x'+innerHeight+' zoom '+Math.round(devicePixelRatio*100),style:(document.documentElement.dataset.style||'')+' '+(document.documentElement.dataset.dens||''),
+    traduit:/translated/.test(document.documentElement.className),nav:navigator.userAgent.slice(-90)}))}catch(e){console.error('Clic',e)}}
+function secours(raison,c,cible){const f=document.getElementById('fiche');if(!f.hidden)return;let r=raison;
+  try{fiche(c.n)}catch(e){r+=' ; erreur à l’ouverture : '+sansTexte(e.message)}
+  clicPb(r,c,cible);try{toast(f.hidden?'La fiche '+c.n+' ne s’ouvre pas : la raison est notée, passe par la recherche':'Fiche ouverte en secours (la raison est notée)')}catch(e){}}
+addEventListener('click',e=>{CLIC_T=Date.now();if(!e.target.closest||e.target.closest(LIBRE)||SELM)return;
+  const c=cmdLigne(e.target),f=document.getElementById('fiche');if(!c||!f.hidden)return;const cible=e.target;
+  setTimeout(()=>secours('clic reçu, fiche restée fermée',c,cible),300)},true);
+// clic jamais produit (ligne redessinée pendant l'appui, extension du navigateur) ou ligne couverte par un élément invisible
+addEventListener('pointerdown',e=>{APPUI=e.button===0?{x:e.clientX,y:e.clientY,t:Date.now(),el:e.target}:null},true);
+addEventListener('pointerup',e=>{const a=APPUI;APPUI=null;if(!a||SELM||e.button!==0||Date.now()-a.t>700||Math.abs(e.clientX-a.x)>6||Math.abs(e.clientY-a.y)>6)return;
+  if(!document.getElementById('fiche').hidden||String(getSelection()).length)return;const haut=document.elementFromPoint(e.clientX,e.clientY);if(!haut||haut.closest(LIBRE))return;
+  const c=cmdLigne(haut);
+  if(c){setTimeout(()=>{if(CLIC_T<a.t)secours('appui sans clic'+(a.el.isConnected?'':' (ligne redessinée pendant l’appui)'),c,haut)},350);return}
+  // l'élément touché n'est pas une ligne mais une ligne est dessous, hors des panneaux prévus : noté seulement, rien n'est ouvert
+  if(haut.closest('#fiche,#gres,#selbar,#toast,#aidek,#nouv,table,header,nav,.tabs'))return;
+  const dessous=document.elementsFromPoint(e.clientX,e.clientY).map(cmdLigne).find(Boolean);
+  if(dessous&&!haut.contains(document.querySelector('.wrap')))clicPb('ligne couverte par un autre élément',dessous,haut)},true);
 // 12/11 (J) : chaque tableau se trie en cliquant sur le titre d'une colonne (client, date, montant...) ; 2e clic : sens
 // inverse. Le choix est gardé pour chaque tableau et réappliqué à chaque mise à jour.
 const MOIS={janv:1,fevr:2,mars:3,avr:4,mai:5,juin:6,juil:7,aout:8,sept:9,oct:10,nov:11,dec:12};
